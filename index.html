@@ -8,502 +8,687 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 :root {
-  --bg: #0f172a;
-  --card: #1e293b;
-  --card2: #273548;
-  --border: #334155;
-  --text: #e2e8f0;
-  --text2: #94a3b8;
-  --accent: #3b82f6;
-  --accent2: #6366f1;
-  --green: #22c55e;
-  --red: #ef4444;
-  --yellow: #eab308;
-  --orange: #f97316;
-  --purple: #a855f7;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --bg: #0b1120;
+  --bg-2: #131c31;
+  --card: rgba(30, 41, 59, 0.72);
+  --card-solid: #1e293b;
+  --card2: rgba(39, 53, 72, 0.6);
+  --card2-solid: #273548;
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.28);
+  --text: #e8edf5;
+  --text2: #93a4be;
+  --text3: #64748b;
+  --accent: #5b8cff;
+  --accent-2: #8b5cf6;
+  --accent-soft: rgba(91, 140, 255, 0.14);
+  --green: #34d399;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --orange: #fb923c;
+  --purple: #c084fc;
+  --teal: #2dd4bf;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 7px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.28);
+  --shadow-sm: 0 2px 10px rgba(0,0,0,0.2);
+  --glow-accent: 0 0 0 1px rgba(91,140,255,0.4), 0 8px 28px rgba(91,140,255,0.18);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 * { margin:0; padding:0; box-sizing:border-box; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
   background: var(--bg);
+  background-image:
+    radial-gradient(1200px 600px at 85% -10%, rgba(91,140,255,0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(139,92,246,0.08), transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 70px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 84px);
+  -webkit-font-smoothing: antialiased;
 }
 a { color: var(--accent); text-decoration: none; }
 
-/* Header */
-.header {
-  background: linear-gradient(135deg, #1e3a5f, #1e293b);
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+/* ===== Sticky Topbar (header + tabs fixed together) ===== */
+.topbar {
   position: sticky;
   top: 0;
   z-index: 100;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(11, 17, 32, 0.82);
+  border-bottom: 1px solid var(--border);
+}
+
+.header {
+  padding: 14px 20px 10px;
 }
 .header h1 {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
-  background: linear-gradient(to right, #60a5fa, #a78bfa);
+  letter-spacing: 0.2px;
+  background: linear-gradient(100deg, #7da7ff 0%, #b79dff 50%, #6ee7d7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.header .subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.header .subtitle { font-size: 11px; color: var(--text2); margin-top: 3px; letter-spacing: 0.3px; }
 
 /* Nav Tabs */
 .nav-tabs {
   display: flex;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
+  background: transparent;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  padding: 0 8px;
+  position: relative;
 }
 .nav-tabs::-webkit-scrollbar { display: none; }
 .nav-tab {
   flex: 0 0 auto;
-  padding: 12px 20px;
+  padding: 11px 16px;
   font-size: 14px;
   color: var(--text2);
-  border-bottom: 2px solid transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: color 0.25s var(--ease), background 0.25s var(--ease);
   user-select: none;
+  position: relative;
 }
+.nav-tab:hover { color: var(--text); }
 .nav-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  color: #fff;
   font-weight: 600;
 }
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 12px; right: 12px; bottom: -1px; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(91,140,255,0.6);
+}
+
+/* Backup bar (now below tabs, scrolls away) */
+.backup-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.5);
+}
+.backup-bar::-webkit-scrollbar { display: none; }
+.backup-bar button {
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-strong);
+  background: var(--card2);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s var(--ease);
+}
+.backup-bar button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-soft);
+}
+#importFile { display: none; }
 
 /* Main Content */
-.main { padding: 16px; max-width: 900px; margin: 0 auto; }
+.main { padding: 16px; max-width: 920px; margin: 0 auto; }
 
 /* Cards */
 .card {
   background: var(--card);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  padding: 16px;
+  padding: 18px;
   margin-bottom: 16px;
   box-shadow: var(--shadow);
+  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.card:hover {
+  border-color: var(--border-strong);
 }
 .card-title {
   font-size: 15px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  color: var(--text);
+}
+.card-title::before {
+  content: '';
+  width: 3px; height: 15px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
 }
 
 /* Section divider */
 .section-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text2);
-  margin: 16px 0 8px;
-  padding-bottom: 6px;
+  margin: 16px 0 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 .section-label:first-child { margin-top: 0; }
 .section-label .count {
   font-size: 11px;
-  padding: 1px 7px;
-  border-radius: 8px;
-  background: rgba(59,130,246,0.15);
-  color: #60a5fa;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* Today Section */
 .today-section {
-  background: linear-gradient(135deg, #1e3a5f 0%, #1e293b 100%);
-  border: 1px solid #3b82f6;
+  background:
+    linear-gradient(135deg, rgba(91,140,255,0.12) 0%, rgba(139,92,246,0.08) 100%),
+    var(--card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(91,140,255,0.28);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 18px;
   margin-bottom: 16px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
 }
-.today-section h3 { font-size: 15px; margin-bottom: 10px; color: #60a5fa; }
+.today-section h3 { font-size: 15px; margin-bottom: 12px; color: #9ec1ff; font-weight: 600; }
 .today-list { list-style: none; }
 .today-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   font-size: 14px;
+  transition: background 0.2s var(--ease);
 }
 .today-item:last-child { border-bottom: none; }
-.today-item .left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.today-item .left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
 .platform-tag {
   font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 2px 9px;
+  border-radius: 12px;
   font-weight: 500;
   white-space: nowrap;
+  letter-spacing: 0.2px;
 }
-.platform-tag.video { background: rgba(249,115,22,0.2); color: #fb923c; }
-.platform-tag.article { background: rgba(99,102,241,0.2); color: #818cf8; }
+.platform-tag.video { background: rgba(251,146,60,0.16); color: #fdba74; border: 1px solid rgba(251,146,60,0.2); }
+.platform-tag.article { background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.2); }
+
 .status-done { color: var(--green); font-size: 13px; }
 .status-pending { color: var(--yellow); font-size: 13px; }
 .status-overdue { color: var(--red); font-size: 13px; font-weight: 600; }
+
+/* Buttons */
 .btn-done {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: white;
   border: none;
-  padding: 4px 12px;
-  border-radius: 6px;
+  padding: 5px 14px;
+  border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s var(--ease);
+  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
 }
-.btn-done:hover { background: #2563eb; }
+.btn-done:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(91,140,255,0.45); }
+.btn-done:active { transform: translateY(0); }
+
 .btn-check-done {
-  background: rgba(34,197,94,0.2);
+  background: rgba(52,211,153,0.16);
   color: var(--green);
-  border: 1px solid rgba(34,197,94,0.4);
-  padding: 2px 8px;
-  border-radius: 6px;
+  border: 1px solid rgba(52,211,153,0.36);
+  padding: 3px 9px;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   line-height: 1;
+  transition: all 0.2s var(--ease);
 }
-.btn-check-done:hover { background: rgba(34,197,94,0.3); }
+.btn-check-done:hover { background: rgba(52,211,153,0.26); transform: scale(1.05); }
+
 .btn-overdue {
-  background: rgba(239,68,68,0.2);
+  background: rgba(248,113,113,0.16);
   color: var(--red);
-  border: 1px solid rgba(239,68,68,0.4);
-  padding: 4px 10px;
-  border-radius: 6px;
+  border: 1px solid rgba(248,113,113,0.36);
+  padding: 4px 11px;
+  border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
+  transition: all 0.2s var(--ease);
 }
-.btn-overdue:hover { background: rgba(239,68,68,0.3); }
+.btn-overdue:hover { background: rgba(248,113,113,0.26); }
 
-/* Platform Grid */
-.platform-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
+/* FAB prompt popover */
+.fab-prompt {
+  position: fixed; right: 20px; bottom: calc(148px + env(safe-area-inset-bottom));
+  width: 280px; background: var(--card-solid);
+  border: 1px solid var(--border-strong); border-radius: 14px;
+  padding: 16px; z-index: 95; box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(12px) scale(0.96); pointer-events: none;
+  transition: all 0.3s var(--ease);
 }
-.platform-card {
+.fab-prompt.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.fab-prompt::after {
+  content: ''; position: absolute; right: 16px; bottom: -7px;
+  width: 14px; height: 14px; background: var(--card-solid);
+  border-right: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong);
+  transform: rotate(45deg);
+}
+.fab-prompt .prompt-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.fab-prompt .prompt-desc { font-size: 12px; color: var(--text2); margin-bottom: 14px; line-height: 1.5; }
+.fab-prompt .prompt-platform { color: var(--accent); font-weight: 600; }
+.fab-prompt .prompt-actions { display: flex; gap: 8px; }
+.fab-prompt .prompt-actions button {
+  flex: 1; padding: 9px; border: none; border-radius: 8px; font-size: 13px;
+  cursor: pointer; font-weight: 500; transition: all 0.2s var(--ease);
+}
+.fab-prompt .btn-prompt-register {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white;
+  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
+}
+.fab-prompt .btn-prompt-register:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,140,255,0.45); }
+.fab-prompt .btn-prompt-skip { background: var(--card2-solid); color: var(--text2); }
+.fab-prompt .btn-prompt-skip:hover { background: var(--border-strong); color: var(--text); }
+.platform-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--card2);
   border-radius: var(--radius-sm);
-  padding: 14px 10px;
-  text-align: center;
   border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all 0.2s;
-  user-select: none;
-  position: relative;
+  transition: all 0.25s var(--ease);
 }
-.platform-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-.platform-card .platform-icon {
-  width: 44px;
-  height: 44px;
+.platform-row:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.platform-row-icon {
+  width: 38px; height: 38px;
   border-radius: 10px;
-  margin: 0 auto 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 700;
   color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
-.platform-card .platform-name { font-size: 13px; font-weight: 500; }
-.platform-card .platform-target { font-size: 10px; color: var(--text2); margin-top: 2px; }
-.platform-card.video .platform-icon { background: linear-gradient(135deg, #f97316, #ef4444); }
-.platform-card.article .platform-icon { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-.platform-card.done { opacity: 0.6; }
-.platform-card.done::after {
-  content: '\2713';
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  color: var(--green);
-  font-size: 16px;
-  font-weight: 700;
-}
-
-/* Calendar */
-.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.calendar-nav { display: flex; align-items: center; gap: 8px; }
-.calendar-nav button {
-  background: var(--card2); border: 1px solid var(--border); color: var(--text);
-  width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 14px;
-}
-.calendar-nav button:hover { border-color: var(--accent); }
-.calendar-month { font-weight: 600; font-size: 15px; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-.calendar-grid .day-header { font-size: 11px; color: var(--text2); padding: 6px 0; font-weight: 600; }
-.calendar-day {
-  aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 13px; border-radius: 6px; cursor: pointer; position: relative; transition: all 0.15s;
-  border: 1px solid transparent;
-}
-.calendar-day:hover { background: var(--card2); }
-.calendar-day.today { border-color: var(--accent); background: rgba(59,130,246,0.1); font-weight: 700; }
-.calendar-day.other-month { opacity: 0.3; }
-.calendar-day .dots { display: flex; gap: 2px; margin-top: 2px; }
-.calendar-day .dot { width: 5px; height: 5px; border-radius: 50%; }
-.calendar-day .dot.video { background: #f97316; }
-.calendar-day .dot.article { background: #6366f1; }
-.calendar-day .dot.done { background: #22c55e; }
-
-/* Day Detail */
-.day-detail { background: var(--card2); border-radius: var(--radius-sm); padding: 12px; margin-top: 12px; }
-.day-detail h4 { font-size: 14px; margin-bottom: 8px; color: var(--accent); }
-.day-task {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-.day-task:last-child { border-bottom: none; }
-.day-task .task-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-
-/* Content List */
-.content-item {
-  background: var(--card2); border-radius: var(--radius-sm); padding: 12px;
-  margin-bottom: 10px; border-left: 3px solid var(--border);
-}
-.content-item.video { border-left-color: #f97316; }
-.content-item.article { border-left-color: #6366f1; }
-.content-item .content-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; gap: 8px; }
-.content-item .content-title { font-size: 14px; font-weight: 600; }
-.content-item .content-preview {
-  font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 6px;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.content-item .content-meta {
-  font-size: 11px; color: var(--text2); margin-bottom: 8px;
-}
-.content-item .content-url {
-  font-size: 12px; margin-bottom: 8px;
-}
-.content-item .content-url a { color: #60a5fa; word-break: break-all; }
-.content-item .content-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.content-item .content-actions button {
-  font-size: 12px; padding: 4px 10px; border-radius: 4px; border: none; cursor: pointer;
-}
-.btn-publish { background: var(--green); color: white; }
-.btn-edit { background: var(--card); color: var(--text2); border: 1px solid var(--border) !important; }
-.btn-delete { background: rgba(239,68,68,0.2); color: var(--red); }
-
-/* Stats */
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-.stat-card { background: var(--card2); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
-.stat-card .stat-value {
-  font-size: 24px; font-weight: 700;
-  background: linear-gradient(to right, #60a5fa, #a78bfa);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.stat-card .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
-
-/* Data Table */
-.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.data-table th {
-  text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border);
-  color: var(--text2); font-weight: 600; font-size: 12px; white-space: nowrap;
-}
-.data-table td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-.data-table tr:hover { background: rgba(255,255,255,0.02); }
-
-/* AI inclusion badges */
-.ai-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 50%; font-size: 10px; font-weight: 700;
-}
-.ai-badge.yes { background: rgba(34,197,94,0.2); color: #4ade80; }
-.ai-badge.no { background: rgba(100,116,139,0.2); color: #64748b; }
-
-/* AI checklist */
-.ai-checks { display: flex; flex-wrap: wrap; gap: 8px; }
-.ai-check-item {
-  display: flex; align-items: center; gap: 4px;
-  padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--bg); cursor: pointer; user-select: none; font-size: 13px;
-  transition: all 0.2s; min-height: 36px;
-}
-.ai-check-item.checked { border-color: var(--green); background: rgba(34,197,94,0.1); }
-.ai-check-item .check-box {
-  width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--border);
-  display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0;
-}
-.ai-check-item.checked .check-box { background: var(--green); border-color: var(--green); color: white; }
-
-/* Bar Chart */
-.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 10px 0; }
-.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
-.bar { width: 100%; max-width: 32px; border-radius: 4px 4px 0 0; transition: height 0.3s; }
-.bar.video { background: linear-gradient(to top, #f97316, #fb923c); }
-.bar.article { background: linear-gradient(to top, #6366f1, #818cf8); }
-.bar-label { font-size: 10px; color: var(--text2); margin-top: 4px; text-align: center; white-space: nowrap; }
-.bar-value { font-size: 10px; margin-bottom: 2px; color: var(--text); }
-
-/* Modal */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-  z-index: 1000; justify-content: center; align-items: center; padding: 20px;
-}
-.modal-overlay.active { display: flex; }
-.modal {
-  background: var(--card); border-radius: var(--radius); padding: 20px;
-  width: 100%; max-width: 460px; max-height: 85vh; overflow-y: auto;
-  border: 1px solid var(--border); box-shadow: var(--shadow);
-}
-.modal h3 { font-size: 16px; margin-bottom: 16px; }
-.form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 4px; }
-.form-group input, .form-group select, .form-group textarea {
-  width: 100%; padding: 10px 12px; background: var(--bg);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  color: var(--text); font-size: 16px; font-family: inherit;
-}
-.form-group textarea { min-height: 70px; resize: vertical; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.modal-actions { display: flex; gap: 10px; margin-top: 16px; }
-.modal-actions button {
-  flex: 1; padding: 10px; border: none; border-radius: var(--radius-sm);
-  font-size: 14px; cursor: pointer; font-weight: 500;
-}
-.btn-cancel { background: var(--card2); color: var(--text2); }
-.btn-save { background: var(--accent); color: white; }
-.btn-save:hover { background: #2563eb; }
-
-/* FAB */
-.fab {
-  position: fixed; right: 20px; bottom: calc(80px + env(safe-area-inset-bottom));
-  width: 48px; height: 48px; border-radius: 50%; background: var(--accent);
-  color: white; border: none; font-size: 24px; cursor: pointer;
-  box-shadow: 0 4px 12px rgba(59,130,246,0.4);
-  display: flex; align-items: center; justify-content: center; z-index: 90;
-}
-
-/* Toolbar */
-.toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-.toolbar button, .toolbar select {
-  padding: 8px 14px; background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text); font-size: 13px; cursor: pointer;
-}
-.toolbar button:hover, .toolbar select:hover { border-color: var(--accent); }
-.toolbar .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
-
-/* Filter pills */
-.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.filter-pill {
-  padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
-  border: 1px solid var(--border); background: transparent; color: var(--text2); transition: all 0.2s;
-}
-.filter-pill.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-/* Backup Bar */
-.backup-bar {
-  display: flex; gap: 8px; padding: 10px 16px; background: var(--card);
-  border-bottom: 1px solid var(--border); overflow-x: auto;
-}
-.backup-bar button {
-  padding: 6px 12px; font-size: 12px; border-radius: 6px;
-  border: 1px solid var(--border); background: var(--card2); color: var(--text2);
-  cursor: pointer; white-space: nowrap;
-}
-.backup-bar button:hover { border-color: var(--accent); color: var(--text); }
-#importFile { display: none; }
-
-/* Badge */
-.badge {
-  display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 8px;
-  background: rgba(59,130,246,0.2); color: #60a5fa; margin-left: 4px;
-}
-
-/* Platform Rows (list layout) */
-.platform-rows { display: flex; flex-direction: column; gap: 8px; }
-.platform-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px; background: var(--card2);
-  border-radius: var(--radius-sm); border: 1px solid var(--border);
-  transition: all 0.2s;
-}
-.platform-row:hover { border-color: var(--accent); }
-.platform-row-icon {
-  width: 36px; height: 36px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 700; color: white; flex-shrink: 0;
-}
-.platform-row-icon.video { background: linear-gradient(135deg, #f97316, #ef4444); }
-.platform-row-icon.article { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.platform-row-icon.video { background: linear-gradient(135deg, #fb923c, #ef4444); }
+.platform-row-icon.article { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
 .platform-row-info { flex: 1; min-width: 0; }
 .platform-row-name { font-size: 14px; font-weight: 600; }
 .platform-row-stat { font-size: 11px; color: var(--text2); margin-top: 2px; }
 .platform-row-btn { flex-shrink: 0; }
 
+/* Calendar */
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.calendar-nav { display: flex; align-items: center; gap: 8px; }
+.calendar-nav button {
+  background: var(--card2); border: 1px solid var(--border-strong); color: var(--text);
+  width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 14px;
+  transition: all 0.2s var(--ease);
+}
+.calendar-nav button:hover { border-color: var(--accent); background: var(--accent-soft); }
+.calendar-month { font-weight: 600; font-size: 15px; min-width: 96px; text-align: center; }
+.btn-today {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white; border: none; padding: 7px 14px; border-radius: 9px;
+  cursor: pointer; font-size: 12px; font-weight: 500;
+  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
+  transition: all 0.2s var(--ease);
+}
+.btn-today:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,140,255,0.45); }
+
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
+.calendar-grid .day-header { font-size: 11px; color: var(--text3); padding: 4px 0; font-weight: 600; letter-spacing: 0.5px; }
+.calendar-day {
+  height: 36px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 12px; border-radius: 8px; cursor: pointer; position: relative;
+  transition: all 0.2s var(--ease);
+  border: 1px solid transparent;
+  color: var(--text);
+}
+.calendar-day:hover { background: var(--card2); border-color: var(--border-strong); }
+.calendar-day.today {
+  color: var(--accent);
+  font-weight: 700;
+  border-color: rgba(91,140,255,0.5);
+}
+.calendar-day.selected {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-weight: 700;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(91,140,255,0.4);
+  transform: scale(1.04);
+}
+.calendar-day.selected .dot { box-shadow: 0 0 0 1.5px rgba(255,255,255,0.7); }
+.calendar-day.other-month { opacity: 0.3; }
+.calendar-day .dots { display: flex; gap: 2px; margin-top: 2px; height: 5px; }
+.calendar-day .dot { width: 5px; height: 5px; border-radius: 50%; transition: background 0.2s; }
+.calendar-day .dot.video { background: var(--orange); }
+.calendar-day .dot.article { background: var(--accent-2); }
+.calendar-day .dot.done { background: var(--green); }
+
+/* Day Detail */
+.day-detail {
+  background: var(--card2);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+}
+.day-detail h4 { font-size: 14px; margin-bottom: 10px; color: var(--accent); font-weight: 600; }
+.day-task {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.day-task:last-child { border-bottom: none; }
+.day-task .task-name { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+/* Content List */
+.content-item {
+  background: var(--card2); border-radius: var(--radius-sm); padding: 14px;
+  margin-bottom: 10px; border-left: 3px solid var(--border);
+  transition: all 0.25s var(--ease);
+}
+.content-item:hover { transform: translateX(2px); border-left-color: var(--accent); }
+.content-item.video { border-left-color: var(--orange); }
+.content-item.article { border-left-color: var(--accent-2); }
+.content-item .content-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; gap: 8px; }
+.content-item .content-title { font-size: 14px; font-weight: 600; }
+.content-item .content-preview {
+  font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 7px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.content-item .content-meta { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.content-item .content-url { font-size: 12px; margin-bottom: 8px; }
+.content-item .content-url a { color: #7da7ff; word-break: break-all; }
+.content-item .content-url a:hover { text-decoration: underline; }
+.content-item .content-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.content-item .content-actions button {
+  font-size: 12px; padding: 5px 12px; border-radius: 7px; border: none; cursor: pointer;
+  transition: all 0.2s var(--ease); font-weight: 500;
+}
+.btn-edit { background: var(--card-solid); color: var(--text2); border: 1px solid var(--border-strong) !important; }
+.btn-edit:hover { border-color: var(--accent) !important; color: var(--text); }
+.btn-delete { background: rgba(248,113,113,0.14); color: var(--red); }
+.btn-delete:hover { background: rgba(248,113,113,0.24); }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.stat-card {
+  background: var(--card2);
+  border-radius: var(--radius-sm);
+  padding: 16px 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all 0.25s var(--ease);
+}
+.stat-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.stat-card .stat-value {
+  font-size: 24px; font-weight: 700;
+  background: linear-gradient(100deg, #7da7ff, #c4b5fd);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  line-height: 1.1;
+}
+.stat-card .stat-label { font-size: 11px; color: var(--text2); margin-top: 5px; letter-spacing: 0.3px; }
+
+/* Data Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th {
+  text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border-strong);
+  color: var(--text2); font-weight: 600; font-size: 12px; white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+.data-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+.data-table tr { transition: background 0.2s; }
+.data-table tr:hover { background: rgba(91,140,255,0.04); }
+
+/* AI badges */
+.ai-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 700;
+}
+.ai-badge.yes { background: rgba(52,211,153,0.18); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.3); }
+.ai-badge.no { background: rgba(100,116,139,0.18); color: #64748b; }
+
+/* AI checklist */
+.ai-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-check-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-strong);
+  background: var(--card2); cursor: pointer; user-select: none; font-size: 13px;
+  transition: all 0.2s var(--ease); min-height: 38px;
+}
+.ai-check-item:hover { border-color: var(--accent); }
+.ai-check-item.checked { border-color: var(--green); background: rgba(52,211,153,0.1); }
+.ai-check-item .check-box {
+  width: 16px; height: 16px; border-radius: 5px; border: 2px solid var(--border-strong);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0;
+  transition: all 0.2s var(--ease);
+}
+.ai-check-item.checked .check-box { background: var(--green); border-color: var(--green); color: white; }
+
+/* Bar Chart */
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 130px; padding: 10px 0; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; max-width: 34px; border-radius: 6px 6px 0 0; transition: height 0.4s var(--ease); }
+.bar.video { background: linear-gradient(to top, #fb923c, #fdba74); box-shadow: 0 0 12px rgba(251,146,60,0.3); }
+.bar.article { background: linear-gradient(to top, #8b5cf6, #c4b5fd); box-shadow: 0 0 12px rgba(139,92,246,0.3); }
+.bar-label { font-size: 10px; color: var(--text2); margin-top: 5px; text-align: center; white-space: nowrap; }
+.bar-value { font-size: 10px; margin-bottom: 3px; color: var(--text); font-weight: 600; }
+
+/* Modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(8,12,24,0.7);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  z-index: 1000; justify-content: center; align-items: center; padding: 20px;
+}
+.modal-overlay.active { display: flex; animation: overlayIn 0.25s var(--ease); }
+.modal {
+  background: var(--card-solid);
+  border-radius: var(--radius);
+  padding: 22px;
+  width: 100%; max-width: 460px; max-height: 85vh; overflow-y: auto;
+  border: 1px solid var(--border-strong); box-shadow: var(--shadow);
+  animation: modalIn 0.3s var(--ease);
+}
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalIn { from { opacity: 0; transform: scale(0.94) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal h3 { font-size: 16px; margin-bottom: 18px; font-weight: 600; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.2px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 11px 13px; background: var(--bg-2);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-xs);
+  color: var(--text); font-size: 16px; font-family: inherit;
+  transition: all 0.2s var(--ease);
+}
+.form-group textarea { min-height: 70px; resize: vertical; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+.modal-actions button {
+  flex: 1; padding: 11px; border: none; border-radius: var(--radius-xs);
+  font-size: 14px; cursor: pointer; font-weight: 500;
+  transition: all 0.2s var(--ease);
+}
+.btn-cancel { background: var(--card2-solid); color: var(--text2); }
+.btn-cancel:hover { background: var(--border-strong); color: var(--text); }
+.btn-save { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; box-shadow: 0 2px 10px rgba(91,140,255,0.35); }
+.btn-save:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,140,255,0.5); }
+
+/* FAB */
+.fab {
+  position: fixed; right: 20px; bottom: calc(84px + env(safe-area-inset-bottom));
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white; border: none; font-size: 26px; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(91,140,255,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 90;
+  transition: all 0.25s var(--ease);
+}
+.fab:hover { transform: scale(1.08) rotate(90deg); box-shadow: 0 8px 26px rgba(91,140,255,0.6); }
+.fab:active { transform: scale(1.02); }
+
+/* Toolbar */
+.toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.toolbar button, .toolbar select {
+  padding: 9px 16px; background: var(--card); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs); color: var(--text); font-size: 13px; cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.toolbar button:hover, .toolbar select:hover { border-color: var(--accent); background: var(--accent-soft); }
+.toolbar .btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white; border-color: transparent;
+  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+  font-weight: 500;
+}
+.toolbar .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,140,255,0.45); }
+
+/* Filter pills */
+.filter-pills { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+.filter-pill {
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer;
+  border: 1px solid var(--border-strong); background: transparent; color: var(--text2);
+  transition: all 0.2s var(--ease); font-weight: 500;
+}
+.filter-pill:hover { border-color: var(--accent); color: var(--text); }
+.filter-pill.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white; border-color: transparent;
+  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+}
+
+/* Badge */
+.badge {
+  display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  background: var(--accent-soft); color: var(--accent); margin-left: 4px; font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-  .header { padding: 12px 16px; }
+  .header { padding: 12px 16px 8px; }
   .header h1 { font-size: 17px; }
-  .main { padding: 12px; }
-  .platform-rows { gap: 6px; }
-  .platform-row { padding: 8px 10px; gap: 10px; }
-  .platform-row-icon { width: 32px; height: 32px; font-size: 14px; }
+  .main { padding: 14px; }
+  .platform-rows { gap: 7px; }
+  .platform-row { padding: 10px 12px; gap: 11px; }
+  .platform-row-icon { width: 34px; height: 34px; font-size: 14px; }
   .platform-row-name { font-size: 13px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .form-row { grid-template-columns: 1fr; }
   .nav-tab { padding: 10px 14px; font-size: 13px; }
-  .bar-chart { height: 90px; }
+  .bar-chart { height: 100px; }
+  .calendar-day { height: 32px; }
 }
 @media (max-width: 480px) {
-  .platform-row { padding: 8px; gap: 8px; }
-  .platform-row-icon { width: 28px; height: 28px; font-size: 12px; }
+  .platform-row { padding: 9px 10px; gap: 9px; }
+  .platform-row-icon { width: 30px; height: 30px; font-size: 12px; }
   .today-item { font-size: 13px; }
   .data-table { font-size: 11px; }
-  .data-table th, .data-table td { padding: 6px 4px; }
-  .modal { padding: 16px; }
+  .data-table th, .data-table td { padding: 7px 5px; }
+  .modal { padding: 18px; }
+  .calendar-day { height: 30px; font-size: 11px; }
+  .calendar-grid .day-header { padding: 3px 0; font-size: 10px; }
+  .calendar-day .dots { gap: 1px; margin-top: 1px; }
+  .calendar-day .dot { width: 4px; height: 4px; }
+  .stat-card .stat-value { font-size: 21px; }
+  .card { padding: 15px; }
 }
 
 /* Toast */
 .toast {
-  position: fixed; bottom: calc(100px + env(safe-area-inset-bottom)); left: 50%;
-  transform: translateX(-50%); background: #1e293b; color: white;
-  padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 2000;
-  border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-  opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  position: fixed; bottom: calc(110px + env(safe-area-inset-bottom)); left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--card-solid); color: white;
+  padding: 11px 22px; border-radius: 24px; font-size: 13px; z-index: 2000;
+  border: 1px solid var(--border-strong); box-shadow: var(--shadow);
+  opacity: 0; transition: all 0.35s var(--ease); pointer-events: none;
+  font-weight: 500;
 }
-.toast.show { opacity: 1; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* Empty state */
-.empty-state { text-align: center; padding: 40px 20px; color: var(--text2); }
-.empty-state .empty-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
-.empty-state p { font-size: 14px; }
+.empty-state { text-align: center; padding: 44px 20px; color: var(--text3); }
+.empty-state .empty-icon {
+  font-size: 36px; margin-bottom: 12px; opacity: 0.4;
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 2px dashed var(--border-strong);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+}
+.empty-state p { font-size: 13px; }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
 /* Confirm modal */
-.confirm-text { font-size: 14px; color: var(--text2); margin-bottom: 16px; line-height: 1.6; }
+.confirm-text { font-size: 14px; color: var(--text2); margin-bottom: 18px; line-height: 1.6; }
 
 /* Tab sub-sections */
-.sub-tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
+.sub-tab-bar { display: flex; gap: 6px; margin-bottom: 14px; padding: 4px; background: var(--card2); border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .sub-tab {
-  flex: 1; padding: 8px; text-align: center; font-size: 13px; cursor: pointer;
-  border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent;
-  color: var(--text2); transition: all 0.2s;
+  flex: 1; padding: 9px; text-align: center; font-size: 13px; cursor: pointer;
+  border-radius: var(--radius-xs); border: none; background: transparent;
+  color: var(--text2); transition: all 0.25s var(--ease); font-weight: 500;
 }
-.sub-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+.sub-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white;
+  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>新媒体内容发布工作台</h1>
-  <div class="subtitle">4短视频 + 5文书平台 · 每日1条 · AI收录追踪</div>
+<div class="topbar">
+  <div class="header">
+    <h1>新媒体内容发布工作台</h1>
+    <div class="subtitle">4短视频 + 5文书平台 · 每日1条 · AI收录追踪</div>
+  </div>
+  <div class="nav-tabs" id="navTabs">
+    <div class="nav-tab active" data-tab="today">今日待办</div>
+    <div class="nav-tab" data-tab="calendar">发布日历</div>
+    <div class="nav-tab" data-tab="content">内容登记</div>
+    <div class="nav-tab" data-tab="data">数据复盘</div>
+    <div class="nav-tab" data-tab="overview">发布总览</div>
+  </div>
 </div>
 
 <div class="backup-bar">
@@ -514,17 +699,18 @@ a { color: var(--accent); text-decoration: none; }
   <input type="file" id="importFile" accept=".json" onchange="importData(event)">
 </div>
 
-<div class="nav-tabs" id="navTabs">
-  <div class="nav-tab active" data-tab="today">今天要处理</div>
-  <div class="nav-tab" data-tab="calendar">发布日历</div>
-  <div class="nav-tab" data-tab="platform">平台管理</div>
-  <div class="nav-tab" data-tab="content">内容登记</div>
-  <div class="nav-tab" data-tab="data">数据复盘</div>
-</div>
-
 <div class="main" id="mainContent"></div>
 
 <button class="fab" id="fabBtn" onclick="openAddModal()">+</button>
+
+<div class="fab-prompt" id="fabPrompt">
+  <div class="prompt-title">登记发布内容</div>
+  <div class="prompt-desc"><span class="prompt-platform" id="promptPlatform"></span> 已标记完成，是否登记内容标题、链接等信息？</div>
+  <div class="prompt-actions">
+    <button class="btn-prompt-skip" onclick="dismissFabPrompt()">取消</button>
+    <button class="btn-prompt-register" id="promptRegisterBtn">登记</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -599,13 +785,14 @@ let currentMonth = new Date();
 let selectedDate = null;
 let dataSubTab = 'video'; // 'video' or 'article'
 let editId = null;
+let overviewMonth = new Date();
 
 function render() {
   ensureDailyTasks();
   const html = {
     today: renderToday,
     calendar: renderCalendar,
-    platform: renderPlatform,
+    overview: renderOverview,
     content: renderContent,
     data: renderData
   };
@@ -619,10 +806,10 @@ function renderToday() {
   const todayVideo = todayTasks.filter(t => t.type === 'video');
   const todayArticle = todayTasks.filter(t => t.type === 'article');
 
-  let html = '<div class="today-section"><h3>今天要处理</h3>';
+  let html = '<div class="today-section"><h3>今日待办</h3>';
 
   // Today - video
-  html += '<div style="font-size:13px;color:#fb923c;margin-bottom:6px;font-weight:600;">短视频平台（每日各1条）</div><ul class="today-list">';
+  html += '<div style="font-size:13px;color:#fdba74;margin-bottom:6px;font-weight:600;">短视频平台（每日各1条）</div><ul class="today-list">';
   todayVideo.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
     html += `<li class="today-item">
@@ -633,7 +820,7 @@ function renderToday() {
   html += '</ul>';
 
   // Today - article
-  html += '<div style="font-size:13px;color:#818cf8;margin:10px 0 6px;font-weight:600;">文书平台（每日各1条）</div><ul class="today-list">';
+  html += '<div style="font-size:13px;color:#c4b5fd;margin:10px 0 6px;font-weight:600;">文书平台（每日各1条）</div><ul class="today-list">';
   todayArticle.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
     html += `<li class="today-item">
@@ -645,9 +832,9 @@ function renderToday() {
 
   const doneCount = todayTasks.filter(t => t.done).length;
   if (doneCount === todayTasks.length && todayTasks.length > 0) {
-    html += '<p style="color:var(--green);margin-top:8px;font-size:13px;">今日全部完成！</p>';
+    html += '<p style="color:var(--green);margin-top:10px;font-size:13px;">今日全部完成！</p>';
   } else {
-    html += `<p style="color:var(--text2);margin-top:8px;font-size:12px;">已完成 ${doneCount}/${todayTasks.length}</p>`;
+    html += `<p style="color:var(--text2);margin-top:10px;font-size:12px;">已完成 ${doneCount}/${todayTasks.length}</p>`;
   }
   html += '</div>';
 
@@ -671,8 +858,38 @@ function renderToday() {
 
 function markDone(id) {
   const t = tasks.find(x => x.id == id || x.id == Number(id));
-  if (t) { t.done = !t.done; saveData('tasks', tasks); render(); showToast(t.done ? '已标记完成' : '已撤销'); }
+  if (t) {
+    t.done = !t.done; saveData('tasks', tasks); render();
+    showToast(t.done ? '已标记完成' : '已撤销');
+    if (t.done) showFabPrompt(t.platform);
+  }
 }
+
+// ===== FAB PROMPT =====
+let pendingPromptPlatform = null;
+function showFabPrompt(platform) {
+  pendingPromptPlatform = platform;
+  document.getElementById('promptPlatform').textContent = platform;
+  document.getElementById('fabPrompt').classList.add('show');
+}
+function dismissFabPrompt() {
+  document.getElementById('fabPrompt').classList.remove('show');
+  pendingPromptPlatform = null;
+}
+function registerFromPrompt() {
+  const platform = pendingPromptPlatform;
+  dismissFabPrompt();
+  openAddModal(platform);
+}
+document.getElementById('promptRegisterBtn').addEventListener('click', registerFromPrompt);
+document.addEventListener('click', function(e) {
+  if (!e.target.isConnected) return;
+  const prompt = document.getElementById('fabPrompt');
+  const fab = document.getElementById('fabBtn');
+  if (!prompt.contains(e.target) && !fab.contains(e.target) && prompt.classList.contains('show')) {
+    dismissFabPrompt();
+  }
+});
 
 // ===== CALENDAR TAB =====
 function renderCalendar() {
@@ -681,12 +898,13 @@ function renderCalendar() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
+  const todayStr = getToday();
 
   let html = `<div class="card"><div class="calendar-header"><div class="calendar-nav">
     <button onclick="changeMonth(-1)">&#8249;</button>
     <span class="calendar-month">${year}年${month+1}月</span>
     <button onclick="changeMonth(1)">&#8250;</button>
-  </div><button onclick="goToday()" style="background:var(--accent);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">今天</button></div>
+  </div><button class="btn-today" onclick="goToday()">今天</button></div>
   <div class="calendar-grid">
     <div class="day-header">日</div><div class="day-header">一</div><div class="day-header">二</div><div class="day-header">三</div><div class="day-header">四</div><div class="day-header">五</div><div class="day-header">六</div>`;
 
@@ -695,13 +913,17 @@ function renderCalendar() {
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === selectedDate;
     const dayTasks = tasks.filter(t => t.date === dateStr);
     const doneTasks = dayTasks.filter(t => t.done);
     const videoDots = dayTasks.filter(t => t.type === 'video' && !t.done).length;
     const articleDots = dayTasks.filter(t => t.type === 'article' && !t.done).length;
     const doneDots = doneTasks.length;
-    html += `<div class="calendar-day${isToday ? ' today' : ''}" onclick="selectDay('${dateStr}')">${d}<div class="dots">`;
+    let classes = 'calendar-day';
+    if (isToday) classes += ' today';
+    if (isSelected) classes += ' selected';
+    html += `<div class="${classes}" onclick="selectDay('${dateStr}')">${d}<div class="dots">`;
     if (videoDots > 0) html += '<span class="dot video"></span>';
     if (articleDots > 0) html += '<span class="dot article"></span>';
     if (doneDots > 0) html += '<span class="dot done"></span>';
@@ -710,7 +932,6 @@ function renderCalendar() {
   html += '</div></div>';
 
   if (selectedDate) {
-    const todayStr = getToday();
     const dayTasks = tasks.filter(t => t.date === selectedDate);
     const dv = dayTasks.filter(t => t.type === 'video');
     const da = dayTasks.filter(t => t.type === 'article');
@@ -719,7 +940,7 @@ function renderCalendar() {
     if (dayTasks.length === 0) { html += '<p style="font-size:13px;color:var(--text2);">暂无任务</p>'; }
     else {
       if (dv.length > 0) {
-        html += '<div style="font-size:12px;color:#fb923c;margin-bottom:4px;">短视频平台</div>';
+        html += '<div style="font-size:12px;color:#fdba74;margin-bottom:4px;font-weight:600;">短视频平台</div>';
         dv.forEach(t => {
           const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
           if (t.done) {
@@ -730,7 +951,7 @@ function renderCalendar() {
         });
       }
       if (da.length > 0) {
-        html += '<div style="font-size:12px;color:#818cf8;margin:8px 0 4px;">文书平台</div>';
+        html += '<div style="font-size:12px;color:#c4b5fd;margin:8px 0 4px;font-weight:600;">文书平台</div>';
         da.forEach(t => {
           const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
           if (t.done) {
@@ -750,82 +971,98 @@ function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth() + de
 function goToday() { currentMonth = new Date(); selectedDate = getToday(); render(); }
 function selectDay(date) { selectedDate = date; render(); }
 
-// ===== PLATFORM TAB =====
-function renderPlatform() {
-  const today = getToday();
-  const thisMonth = getToday().slice(0, 7);
-  const monthTasks = tasks.filter(t => t.date.startsWith(thisMonth));
-  let html = '';
+// ===== OVERVIEW TAB =====
+function renderOverview() {
+  const year = overviewMonth.getFullYear();
+  const month = overviewMonth.getMonth() + 1;
+  const monthStr = `${year}-${String(month).padStart(2,'0')}`;
+  const monthTasks = tasks.filter(t => t.date.startsWith(monthStr));
 
-  // Video platforms section
-  html += '<div class="card"><div class="card-title">短视频平台（每日各1条）</div>';
+  let html = `<div class="card"><div class="calendar-header"><div class="calendar-nav">
+    <button onclick="changeOverviewMonth(-1)">&#8249;</button>
+    <span class="calendar-month">${year}年${month}月</span>
+    <button onclick="changeOverviewMonth(1)">&#8250;</button>
+  </div><button class="btn-today" onclick="goOverviewThisMonth()">本月</button></div>`;
+
+  // 总览统计
+  const videoTasks = monthTasks.filter(t => t.type === 'video');
+  const articleTasks = monthTasks.filter(t => t.type === 'article');
+  const vDone = videoTasks.filter(t => t.done).length;
+  const aDone = articleTasks.filter(t => t.done).length;
+  const totalDone = vDone + aDone;
+  const totalAll = monthTasks.length;
+  const rate = totalAll > 0 ? Math.round(totalDone/totalAll*100) : 0;
+  const rateColor = rate >= 80 ? 'var(--green)' : rate >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+  html += `<div class="stats-grid">
+    <div class="stat-card"><div class="stat-value">${totalDone}</div><div class="stat-label">本月已发布</div></div>
+    <div class="stat-card"><div class="stat-value">${vDone}</div><div class="stat-label">短视频条数</div></div>
+    <div class="stat-card"><div class="stat-value">${aDone}</div><div class="stat-label">文书条数</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${rateColor};">${rate}%</div><div class="stat-label">完成率</div></div>
+  </div></div>`;
+
+  // 各平台对比柱状图
+  html += '<div class="card"><div class="card-title">各平台本月发布条数对比</div>';
+  const platformCounts = {};
+  ALL_PLATFORMS.forEach(p => platformCounts[p] = { done: 0, total: 0 });
+  monthTasks.forEach(t => {
+    if (platformCounts[t.platform]) {
+      platformCounts[t.platform].done += t.done ? 1 : 0;
+      platformCounts[t.platform].total += 1;
+    }
+  });
+  const maxCount = Math.max(...Object.values(platformCounts).map(c => c.done), 1);
+  html += '<div class="bar-chart">';
+  ALL_PLATFORMS.forEach(p => {
+    const v = platformCounts[p].done;
+    const h = Math.round(v / maxCount * 100);
+    const barClass = isVideo(p) ? 'video' : 'article';
+    html += `<div class="bar-col"><div class="bar-value">${v}</div><div class="bar ${barClass}" style="height:${Math.max(h,4)}%"></div><div class="bar-label">${PLATFORM_SHORT[p]}</div></div>`;
+  });
+  html += '</div></div>';
+
+  // 各平台明细 + 进度条
+  html += '<div class="card"><div class="card-title">各平台发布明细</div>';
+  html += '<div class="section-label"><span style="color:#fdba74;">短视频平台</span><span class="count">' + VIDEO_PLATFORMS.length + '</span></div>';
   html += '<div class="platform-rows">';
   VIDEO_PLATFORMS.forEach(p => {
-    const todayTask = tasks.find(x => x.date === today && x.platform === p);
-    const todayDone = todayTask && todayTask.done ? 1 : 0;
-    const monthDone = monthTasks.filter(t => t.platform === p && t.done).length;
-    const monthTotal = monthTasks.filter(t => t.platform === p).length;
-    const taskId = todayTask ? todayTask.id : '';
+    const c = platformCounts[p];
+    const pct = c.total > 0 ? Math.round(c.done/c.total*100) : 0;
     html += `<div class="platform-row video">
       <div class="platform-row-icon video">${PLATFORM_SHORT[p]}</div>
       <div class="platform-row-info">
         <div class="platform-row-name">${p}</div>
-        <div class="platform-row-stat">今日 ${todayDone}/1 · 本月 ${monthDone}/${monthTotal}</div>
-      </div>
-      <div class="platform-row-btn">
-        ${todayDone ? `<button class="btn-check-done" onclick="markDone('${taskId}')" title="点击取消">&#10003;</button>` : `<button class="btn-done" onclick="markDone('${taskId}')">完成</button>`}
+        <div class="platform-row-stat">${c.done}/${c.total} 已发布 · ${pct}%</div>
+        <div style="height:5px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#fb923c,#fdba74);transition:width 0.5s var(--ease);border-radius:3px;"></div>
+        </div>
       </div>
     </div>`;
   });
-  html += '</div></div>';
-
-  // Article platforms section
-  html += '<div class="card"><div class="card-title">文书平台（每日各1条）</div>';
+  html += '</div>';
+  html += '<div class="section-label"><span style="color:#c4b5fd;">文书平台</span><span class="count">' + ARTICLE_PLATFORMS.length + '</span></div>';
   html += '<div class="platform-rows">';
   ARTICLE_PLATFORMS.forEach(p => {
-    const todayTask = tasks.find(x => x.date === today && x.platform === p);
-    const todayDone = todayTask && todayTask.done ? 1 : 0;
-    const monthDone = monthTasks.filter(t => t.platform === p && t.done).length;
-    const monthTotal = monthTasks.filter(t => t.platform === p).length;
-    const taskId = todayTask ? todayTask.id : '';
+    const c = platformCounts[p];
+    const pct = c.total > 0 ? Math.round(c.done/c.total*100) : 0;
     html += `<div class="platform-row article">
       <div class="platform-row-icon article">${PLATFORM_SHORT[p]}</div>
       <div class="platform-row-info">
         <div class="platform-row-name">${p}</div>
-        <div class="platform-row-stat">今日 ${todayDone}/1 · 本月 ${monthDone}/${monthTotal}</div>
-      </div>
-      <div class="platform-row-btn">
-        ${todayDone ? `<button class="btn-check-done" onclick="markDone('${taskId}')" title="点击取消">&#10003;</button>` : `<button class="btn-done" onclick="markDone('${taskId}')">完成</button>`}
+        <div class="platform-row-stat">${c.done}/${c.total} 已发布 · ${pct}%</div>
+        <div style="height:5px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#8b5cf6,#c4b5fd);transition:width 0.5s var(--ease);border-radius:3px;"></div>
+        </div>
       </div>
     </div>`;
   });
   html += '</div></div>';
 
-  // Monthly stats
-  html += '<div class="card"><div class="card-title">本月发布统计</div>';
-  html += '<div class="section-label"><span style="color:#fb923c;">短视频平台</span><span class="count">' + VIDEO_PLATFORMS.length + '</span></div>';
-  VIDEO_PLATFORMS.forEach(p => {
-    const pTasks = monthTasks.filter(t => t.platform === p);
-    const done = pTasks.filter(t => t.done).length;
-    const total = pTasks.length;
-    html += `<div class="day-task"><span class="task-name"><span class="platform-tag video">${p}</span></span><span style="font-size:13px;color:var(--text2);">${done}/${total} 已完成</span></div>`;
-  });
-  html += '<div class="section-label"><span style="color:#818cf8;">文书平台</span><span class="count">' + ARTICLE_PLATFORMS.length + '</span></div>';
-  ARTICLE_PLATFORMS.forEach(p => {
-    const pTasks = monthTasks.filter(t => t.platform === p);
-    const done = pTasks.filter(t => t.done).length;
-    const total = pTasks.length;
-    html += `<div class="day-task"><span class="task-name"><span class="platform-tag article">${p}</span></span><span style="font-size:13px;color:var(--text2);">${done}/${total} 已完成</span></div>`;
-  });
-  html += '</div>';
-
   return html;
 }
 
-function selectPlatform(platform) {
-  const pContents = contents.filter(c => c.platform === platform);
-  showToast(`${platform}: ${pContents.length}条内容`);
-}
+function changeOverviewMonth(delta) { overviewMonth.setMonth(overviewMonth.getMonth() + delta); render(); }
+function goOverviewThisMonth() { overviewMonth = new Date(); render(); }
 
 // ===== CONTENT REGISTRATION TAB =====
 function renderContent() {
@@ -839,7 +1076,7 @@ function renderContent() {
 
   const sorted = [...contents].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
   html += '<div id="contentList">';
-  if (sorted.length === 0) html += '<div class="empty-state"><div class="empty-icon">[ + ]</div><p>暂无登记记录，点击右下角 + 号登记</p></div>';
+  if (sorted.length === 0) html += '<div class="empty-state"><div class="empty-icon">+</div><p>暂无登记记录，点击右下角 + 号登记</p></div>';
   else sorted.forEach(c => html += renderContentItem(c));
   html += '</div></div>';
   return html;
@@ -876,7 +1113,7 @@ function filterContent(filter, el) {
   else if (filter === 'article') filtered = filtered.filter(c => isArticle(c.platform));
   filtered.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
   document.getElementById('contentList').innerHTML = filtered.length === 0
-    ? '<div class="empty-state"><div class="empty-icon">[ + ]</div><p>无匹配记录</p></div>'
+    ? '<div class="empty-state"><div class="empty-icon">+</div><p>无匹配记录</p></div>'
     : filtered.map(c => renderContentItem(c)).join('');
 }
 
@@ -1100,18 +1337,19 @@ function formatNum(n) {
 }
 
 // ===== MODAL =====
-function openAddModal() {
+function openAddModal(prefillPlatform) {
   editId = null;
+  const preP = prefillPlatform || VIDEO_PLATFORMS[0];
   document.getElementById('modalContent').innerHTML = `
     <h3>登记内容</h3>
     <div class="form-row">
       <div class="form-group"><label>平台</label>
         <select id="cPlatform">
           <optgroup label="短视频平台">
-            ${VIDEO_PLATFORMS.map(p => `<option value="${p}">${p}</option>`).join('')}
+            ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${p===preP?'selected':''}>${p}</option>`).join('')}
           </optgroup>
           <optgroup label="文书平台">
-            ${ARTICLE_PLATFORMS.map(p => `<option value="${p}">${p}</option>`).join('')}
+            ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${p===preP?'selected':''}>${p}</option>`).join('')}
           </optgroup>
         </select>
       </div>
@@ -1226,7 +1464,7 @@ function clearAllData() {
     <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据），此操作不可恢复！<br><br>建议先导出备份。</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save" style="background:var(--red);" onclick="confirmClear()">确认清空</button>
+      <button class="btn-save" style="background:linear-gradient(135deg,#f87171,#ef4444);" onclick="confirmClear()">确认清空</button>
     </div>`;
   document.getElementById('modalOverlay').classList.add('active');
 }
