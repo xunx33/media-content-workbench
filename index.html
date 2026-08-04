@@ -54,187 +54,109 @@ body {
 }
 a { color: var(--accent); text-decoration: none; }
 
-/* ===== Sticky Topbar (header + tabs fixed together) ===== */
+/* ===== Sticky Topbar ===== */
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: sticky; top: 0; z-index: 100;
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   background: rgba(11, 17, 32, 0.82);
   border-bottom: 1px solid var(--border);
 }
-
-.header {
-  padding: 14px 20px 10px;
-}
+.header { padding: 14px 20px 10px; }
 .header h1 {
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  font-size: 19px; font-weight: 700; letter-spacing: 0.2px;
   background: linear-gradient(100deg, #7da7ff 0%, #b79dff 50%, #6ee7d7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .header .subtitle { font-size: 11px; color: var(--text2); margin-top: 3px; letter-spacing: 0.3px; }
 
 /* Nav Tabs */
 .nav-tabs {
-  display: flex;
-  background: transparent;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0 8px;
-  position: relative;
+  display: flex; background: transparent; overflow-x: auto;
+  -webkit-overflow-scrolling: touch; padding: 0 8px; position: relative;
 }
 .nav-tabs::-webkit-scrollbar { display: none; }
 .nav-tab {
-  flex: 0 0 auto;
-  padding: 11px 16px;
-  font-size: 14px;
-  color: var(--text2);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.25s var(--ease), background 0.25s var(--ease);
-  user-select: none;
-  position: relative;
+  flex: 0 0 auto; padding: 11px 16px; font-size: 14px; color: var(--text2);
+  cursor: pointer; white-space: nowrap; transition: color 0.25s var(--ease); user-select: none; position: relative;
 }
 .nav-tab:hover { color: var(--text); }
-.nav-tab.active {
-  color: #fff;
-  font-weight: 600;
-}
+.nav-tab.active { color: #fff; font-weight: 600; }
 .nav-tab.active::after {
-  content: '';
-  position: absolute;
-  left: 12px; right: 12px; bottom: -1px; height: 2px;
+  content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px;
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  border-radius: 2px;
-  box-shadow: 0 0 12px rgba(91,140,255,0.6);
+  border-radius: 2px; box-shadow: 0 0 12px rgba(91,140,255,0.6);
 }
 
-/* Backup bar (now below tabs, scrolls away) */
+/* Backup bar */
 .backup-bar {
-  display: flex;
-  gap: 8px;
-  padding: 10px 16px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto;
+  -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--border);
   background: rgba(15, 23, 42, 0.5);
 }
 .backup-bar::-webkit-scrollbar { display: none; }
 .backup-bar button {
-  padding: 6px 14px;
-  font-size: 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border-strong);
-  background: var(--card2);
-  color: var(--text2);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s var(--ease);
+  padding: 6px 14px; font-size: 12px; border-radius: 20px;
+  border: 1px solid var(--border-strong); background: var(--card2);
+  color: var(--text2); cursor: pointer; white-space: nowrap; transition: all 0.2s var(--ease);
 }
-.backup-bar button:hover {
-  border-color: var(--accent);
-  color: var(--text);
-  background: var(--accent-soft);
-}
+.backup-bar button:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
 #importFile { display: none; }
 
-/* Main Content */
+/* Main */
 .main { padding: 16px; max-width: 920px; margin: 0 auto; }
 
 /* Cards */
 .card {
-  background: var(--card);
-  backdrop-filter: blur(14px) saturate(140%);
+  background: var(--card); backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  padding: 18px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow);
-  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  border-radius: var(--radius); border: 1px solid var(--border);
+  padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow);
+  transition: border-color 0.3s var(--ease);
 }
-.card:hover {
-  border-color: var(--border-strong);
-}
+.card:hover { border-color: var(--border-strong); }
 .card-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
+  font-size: 15px; font-weight: 600; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px; color: var(--text);
 }
 .card-title::before {
-  content: '';
-  width: 3px; height: 15px;
-  border-radius: 3px;
+  content: ''; width: 3px; height: 15px; border-radius: 3px;
   background: linear-gradient(180deg, var(--accent), var(--accent-2));
 }
 
-/* Section divider */
+/* Section label */
 .section-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text2);
-  margin: 16px 0 10px;
-  padding-bottom: 8px;
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  margin: 16px 0 10px; padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;
 }
 .section-label:first-child { margin-top: 0; }
 .section-label .count {
-  font-size: 11px;
-  padding: 1px 8px;
-  border-radius: 10px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 600;
+  font-size: 11px; padding: 1px 8px; border-radius: 10px;
+  background: var(--accent-soft); color: var(--accent); font-weight: 600;
 }
 
 /* Today Section */
 .today-section {
-  background:
-    linear-gradient(135deg, rgba(91,140,255,0.12) 0%, rgba(139,92,246,0.08) 100%),
-    var(--card);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(91,140,255,0.28);
-  border-radius: var(--radius);
-  padding: 18px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
+  background: linear-gradient(135deg, rgba(91,140,255,0.12) 0%, rgba(139,92,246,0.08) 100%), var(--card);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(91,140,255,0.28); border-radius: var(--radius);
+  padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 .today-section h3 { font-size: 15px; margin-bottom: 12px; color: #9ec1ff; font-weight: 600; }
 .today-list { list-style: none; }
 .today-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  font-size: 14px;
-  transition: background 0.2s var(--ease);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 14px; transition: background 0.2s var(--ease);
 }
 .today-item:last-child { border-bottom: none; }
 .today-item .left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .platform-tag {
-  font-size: 11px;
-  padding: 2px 9px;
-  border-radius: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  letter-spacing: 0.2px;
+  font-size: 11px; padding: 2px 9px; border-radius: 12px;
+  font-weight: 500; white-space: nowrap; letter-spacing: 0.2px;
 }
 .platform-tag.video { background: rgba(251,146,60,0.16); color: #fdba74; border: 1px solid rgba(251,146,60,0.2); }
 .platform-tag.article { background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.2); }
@@ -246,45 +168,29 @@ a { color: var(--accent); text-decoration: none; }
 /* Buttons */
 .btn-done {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white;
-  border: none;
-  padding: 5px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s var(--ease);
-  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
+  color: white; border: none; padding: 5px 14px; border-radius: 8px;
+  font-size: 12px; cursor: pointer; font-weight: 500;
+  transition: all 0.2s var(--ease); box-shadow: 0 2px 8px rgba(91,140,255,0.3);
 }
 .btn-done:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(91,140,255,0.45); }
 .btn-done:active { transform: translateY(0); }
 
 .btn-check-done {
-  background: rgba(52,211,153,0.16);
-  color: var(--green);
-  border: 1px solid rgba(52,211,153,0.36);
-  padding: 3px 9px;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  line-height: 1;
+  background: rgba(52,211,153,0.16); color: var(--green);
+  border: 1px solid rgba(52,211,153,0.36); padding: 3px 9px;
+  border-radius: 8px; font-size: 14px; cursor: pointer; line-height: 1;
   transition: all 0.2s var(--ease);
 }
 .btn-check-done:hover { background: rgba(52,211,153,0.26); transform: scale(1.05); }
 
 .btn-overdue {
-  background: rgba(248,113,113,0.16);
-  color: var(--red);
-  border: 1px solid rgba(248,113,113,0.36);
-  padding: 4px 11px;
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s var(--ease);
+  background: rgba(248,113,113,0.16); color: var(--red);
+  border: 1px solid rgba(248,113,113,0.36); padding: 4px 11px;
+  border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s var(--ease);
 }
 .btn-overdue:hover { background: rgba(248,113,113,0.26); }
 
-/* FAB prompt popover */
+/* FAB prompt */
 .fab-prompt {
   position: fixed; right: 20px; bottom: calc(148px + env(safe-area-inset-bottom));
   width: 280px; background: var(--card-solid);
@@ -300,7 +206,7 @@ a { color: var(--accent); text-decoration: none; }
   border-right: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong);
   transform: rotate(45deg);
 }
-.fab-prompt .prompt-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.fab-prompt .prompt-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
 .fab-prompt .prompt-desc { font-size: 12px; color: var(--text2); margin-bottom: 14px; line-height: 1.5; }
 .fab-prompt .prompt-platform { color: var(--accent); font-weight: 600; }
 .fab-prompt .prompt-actions { display: flex; gap: 8px; }
@@ -315,31 +221,19 @@ a { color: var(--accent); text-decoration: none; }
 .fab-prompt .btn-prompt-register:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,140,255,0.45); }
 .fab-prompt .btn-prompt-skip { background: var(--card2-solid); color: var(--text2); }
 .fab-prompt .btn-prompt-skip:hover { background: var(--border-strong); color: var(--text); }
+
+/* Platform Rows */
+.platform-rows { display: flex; flex-direction: column; gap: 8px; }
 .platform-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  background: var(--card2);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  transition: all 0.25s var(--ease);
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: var(--card2); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); transition: all 0.25s var(--ease);
 }
-.platform-row:hover {
-  border-color: var(--accent);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
+.platform-row:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .platform-row-icon {
-  width: 38px; height: 38px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
-  color: white;
-  flex-shrink: 0;
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: white; flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 .platform-row-icon.video { background: linear-gradient(135deg, #fb923c, #ef4444); }
@@ -363,8 +257,7 @@ a { color: var(--accent); text-decoration: none; }
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: white; border: none; padding: 7px 14px; border-radius: 9px;
   cursor: pointer; font-size: 12px; font-weight: 500;
-  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
-  transition: all 0.2s var(--ease);
+  box-shadow: 0 2px 8px rgba(91,140,255,0.3); transition: all 0.2s var(--ease);
 }
 .btn-today:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,140,255,0.45); }
 
@@ -373,23 +266,14 @@ a { color: var(--accent); text-decoration: none; }
 .calendar-day {
   height: 36px; display: flex; flex-direction: column; align-items: center; justify-content: center;
   font-size: 12px; border-radius: 8px; cursor: pointer; position: relative;
-  transition: all 0.2s var(--ease);
-  border: 1px solid transparent;
-  color: var(--text);
+  transition: all 0.2s var(--ease); border: 1px solid transparent; color: var(--text);
 }
 .calendar-day:hover { background: var(--card2); border-color: var(--border-strong); }
-.calendar-day.today {
-  color: var(--accent);
-  font-weight: 700;
-  border-color: rgba(91,140,255,0.5);
-}
+.calendar-day.today { color: var(--accent); font-weight: 700; border-color: rgba(91,140,255,0.5); }
 .calendar-day.selected {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
-  font-weight: 700;
-  border-color: transparent;
-  box-shadow: 0 4px 14px rgba(91,140,255,0.4);
-  transform: scale(1.04);
+  color: #fff; font-weight: 700; border-color: transparent;
+  box-shadow: 0 4px 14px rgba(91,140,255,0.4); transform: scale(1.04);
 }
 .calendar-day.selected .dot { box-shadow: 0 0 0 1.5px rgba(255,255,255,0.7); }
 .calendar-day.other-month { opacity: 0.3; }
@@ -401,11 +285,8 @@ a { color: var(--accent); text-decoration: none; }
 
 /* Day Detail */
 .day-detail {
-  background: var(--card2);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  margin-top: 14px;
-  border: 1px solid var(--border);
+  background: var(--card2); border-radius: var(--radius-sm);
+  padding: 14px; margin-top: 14px; border: 1px solid var(--border);
 }
 .day-detail h4 { font-size: 14px; margin-bottom: 10px; color: var(--accent); font-weight: 600; }
 .day-task {
@@ -436,30 +317,49 @@ a { color: var(--accent); text-decoration: none; }
 .content-item .content-url a:hover { text-decoration: underline; }
 .content-item .content-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .content-item .content-actions button {
-  font-size: 12px; padding: 5px 12px; border-radius: 7px; border: none; cursor: pointer;
-  transition: all 0.2s var(--ease); font-weight: 500;
+  font-size: 12px; padding: 5px 12px; border-radius: 7px; border: none;
+  cursor: pointer; transition: all 0.2s var(--ease); font-weight: 500;
 }
 .btn-edit { background: var(--card-solid); color: var(--text2); border: 1px solid var(--border-strong) !important; }
 .btn-edit:hover { border-color: var(--accent) !important; color: var(--text); }
 .btn-delete { background: rgba(248,113,113,0.14); color: var(--red); }
 .btn-delete:hover { background: rgba(248,113,113,0.24); }
 
+/* Search */
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; padding: 10px 14px; background: var(--bg-2);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  transition: all 0.2s var(--ease);
+}
+.search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search-box .search-icon { font-size: 16px; flex-shrink: 0; }
+.search-box input {
+  flex: 1; background: transparent; border: none; color: var(--text);
+  font-size: 16px; font-family: inherit; outline: none; min-width: 0;
+}
+.search-box input::placeholder { color: var(--text3); }
+.search-box .search-clear {
+  background: var(--card2); border: 1px solid var(--border-strong);
+  color: var(--text2); padding: 4px 10px; border-radius: 7px;
+  font-size: 12px; cursor: pointer; transition: all 0.2s var(--ease); flex-shrink: 0;
+}
+.search-box .search-clear:hover { border-color: var(--accent); color: var(--text); }
+.search-highlight {
+  background: rgba(91,140,255,0.3); color: #fff; border-radius: 3px; padding: 0 2px;
+}
+
 /* Stats */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .stat-card {
-  background: var(--card2);
-  border-radius: var(--radius-sm);
-  padding: 16px 12px;
-  text-align: center;
-  border: 1px solid var(--border);
-  transition: all 0.25s var(--ease);
+  background: var(--card2); border-radius: var(--radius-sm); padding: 16px 12px;
+  text-align: center; border: 1px solid var(--border); transition: all 0.25s var(--ease);
 }
 .stat-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
 .stat-card .stat-value {
   font-size: 24px; font-weight: 700;
   background: linear-gradient(100deg, #7da7ff, #c4b5fd);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  line-height: 1.1;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;
 }
 .stat-card .stat-label { font-size: 11px; color: var(--text2); margin-top: 5px; letter-spacing: 0.3px; }
 
@@ -467,8 +367,7 @@ a { color: var(--accent); text-decoration: none; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .data-table th {
   text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border-strong);
-  color: var(--text2); font-weight: 600; font-size: 12px; white-space: nowrap;
-  letter-spacing: 0.3px;
+  color: var(--text2); font-weight: 600; font-size: 12px; white-space: nowrap; letter-spacing: 0.3px;
 }
 .data-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
 .data-table tr { transition: background 0.2s; }
@@ -485,8 +384,8 @@ a { color: var(--accent); text-decoration: none; }
 /* AI checklist */
 .ai-checks { display: flex; flex-wrap: wrap; gap: 8px; }
 .ai-check-item {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-strong);
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+  border-radius: 10px; border: 1px solid var(--border-strong);
   background: var(--card2); cursor: pointer; user-select: none; font-size: 13px;
   transition: all 0.2s var(--ease); min-height: 38px;
 }
@@ -516,9 +415,7 @@ a { color: var(--accent); text-decoration: none; }
 }
 .modal-overlay.active { display: flex; animation: overlayIn 0.25s var(--ease); }
 .modal {
-  background: var(--card-solid);
-  border-radius: var(--radius);
-  padding: 22px;
+  background: var(--card-solid); border-radius: var(--radius); padding: 22px;
   width: 100%; max-width: 460px; max-height: 85vh; overflow-y: auto;
   border: 1px solid var(--border-strong); box-shadow: var(--shadow);
   animation: modalIn 0.3s var(--ease);
@@ -531,8 +428,7 @@ a { color: var(--accent); text-decoration: none; }
 .form-group input, .form-group select, .form-group textarea {
   width: 100%; padding: 11px 13px; background: var(--bg-2);
   border: 1px solid var(--border-strong); border-radius: var(--radius-xs);
-  color: var(--text); font-size: 16px; font-family: inherit;
-  transition: all 0.2s var(--ease);
+  color: var(--text); font-size: 16px; font-family: inherit; transition: all 0.2s var(--ease);
 }
 .form-group textarea { min-height: 70px; resize: vertical; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -542,13 +438,17 @@ a { color: var(--accent); text-decoration: none; }
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
 .modal-actions button {
   flex: 1; padding: 11px; border: none; border-radius: var(--radius-xs);
-  font-size: 14px; cursor: pointer; font-weight: 500;
-  transition: all 0.2s var(--ease);
+  font-size: 14px; cursor: pointer; font-weight: 500; transition: all 0.2s var(--ease);
 }
 .btn-cancel { background: var(--card2-solid); color: var(--text2); }
 .btn-cancel:hover { background: var(--border-strong); color: var(--text); }
 .btn-save { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; box-shadow: 0 2px 10px rgba(91,140,255,0.35); }
 .btn-save:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,140,255,0.5); }
+.btn-save.btn-danger { background: linear-gradient(135deg, #f87171, #ef4444); box-shadow: 0 2px 10px rgba(248,113,113,0.35); }
+.btn-save.btn-danger:hover { box-shadow: 0 4px 16px rgba(248,113,113,0.5); }
+
+/* Confirm modal */
+.confirm-text { font-size: 14px; color: var(--text2); margin-bottom: 18px; line-height: 1.6; }
 
 /* FAB */
 .fab {
@@ -573,9 +473,7 @@ a { color: var(--accent); text-decoration: none; }
 .toolbar button:hover, .toolbar select:hover { border-color: var(--accent); background: var(--accent-soft); }
 .toolbar .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white; border-color: transparent;
-  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
-  font-weight: 500;
+  color: white; border-color: transparent; box-shadow: 0 2px 10px rgba(91,140,255,0.3); font-weight: 500;
 }
 .toolbar .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,140,255,0.45); }
 
@@ -589,8 +487,7 @@ a { color: var(--accent); text-decoration: none; }
 .filter-pill:hover { border-color: var(--accent); color: var(--text); }
 .filter-pill.active {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white; border-color: transparent;
-  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+  color: white; border-color: transparent; box-shadow: 0 2px 10px rgba(91,140,255,0.3);
 }
 
 /* Badge */
@@ -636,8 +533,7 @@ a { color: var(--accent); text-decoration: none; }
   background: var(--card-solid); color: white;
   padding: 11px 22px; border-radius: 24px; font-size: 13px; z-index: 2000;
   border: 1px solid var(--border-strong); box-shadow: var(--shadow);
-  opacity: 0; transition: all 0.35s var(--ease); pointer-events: none;
-  font-weight: 500;
+  opacity: 0; transition: all 0.35s var(--ease); pointer-events: none; font-weight: 500;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -647,8 +543,7 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 36px; margin-bottom: 12px; opacity: 0.4;
   width: 64px; height: 64px; border-radius: 50%;
   border: 2px dashed var(--border-strong);
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
 }
 .empty-state p { font-size: 13px; }
 
@@ -658,11 +553,11 @@ a { color: var(--accent); text-decoration: none; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
-/* Confirm modal */
-.confirm-text { font-size: 14px; color: var(--text2); margin-bottom: 18px; line-height: 1.6; }
-
 /* Tab sub-sections */
-.sub-tab-bar { display: flex; gap: 6px; margin-bottom: 14px; padding: 4px; background: var(--card2); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.sub-tab-bar {
+  display: flex; gap: 6px; margin-bottom: 14px; padding: 4px;
+  background: var(--card2); border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
 .sub-tab {
   flex: 1; padding: 9px; text-align: center; font-size: 13px; cursor: pointer;
   border-radius: var(--radius-xs); border: none; background: transparent;
@@ -670,8 +565,7 @@ a { color: var(--accent); text-decoration: none; }
 }
 .sub-tab.active {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white;
-  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+  color: white; box-shadow: 0 2px 10px rgba(91,140,255,0.3);
 }
 </style>
 </head>
@@ -734,8 +628,8 @@ function saveData(key, val) { localStorage.setItem(STORAGE_KEY + key, JSON.strin
 
 let tasks = loadData('tasks');
 let contents = loadData('contents');
-let stats = loadData('stats');       // video stats: views/likes/shares/comments
-let aiStats = loadData('aiStats');   // article AI inclusion stats
+let stats = loadData('stats');
+let aiStats = loadData('aiStats');
 
 function getToday() {
   const d = new Date();
@@ -744,28 +638,16 @@ function getToday() {
 function isVideo(p) { return VIDEO_PLATFORMS.includes(p); }
 function isArticle(p) { return ARTICLE_PLATFORMS.includes(p); }
 
-// Ensure daily tasks: each platform 1 task per day.
-// Also backfill all days from start of current month up to today so monthly stats are meaningful.
 function ensureDailyTasks() {
   const today = new Date();
   const todayStr = getToday();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   let changed = false;
-
-  // Backfill: month start → today (so 月总量 reflects actual month progress)
   for (let d = new Date(monthStart); d <= today; d.setDate(d.getDate() + 1)) {
     const dateStr = getDayStr(d);
     ALL_PLATFORMS.forEach(p => {
       if (!tasks.find(t => t.date === dateStr && t.platform === p)) {
-        tasks.push({
-          id: Date.now() + Math.random(),
-          date: dateStr,
-          platform: p,
-          type: isVideo(p) ? 'video' : 'article',
-          done: false,
-          contentId: null,
-          target: DAILY_TARGET
-        });
+        tasks.push({ id: Date.now() + Math.random(), date: dateStr, platform: p, type: isVideo(p) ? 'video' : 'article', done: false, contentId: null, target: DAILY_TARGET });
         changed = true;
       }
     });
@@ -783,9 +665,10 @@ ensureDailyTasks();
 let currentTab = 'today';
 let currentMonth = new Date();
 let selectedDate = null;
-let dataSubTab = 'video'; // 'video' or 'article'
+let dataSubTab = 'video';
 let editId = null;
 let overviewMonth = new Date();
+let searchKeyword = '';
 
 function render() {
   ensureDailyTasks();
@@ -808,7 +691,6 @@ function renderToday() {
 
   let html = '<div class="today-section"><h3>今日待办</h3>';
 
-  // Today - video
   html += '<div style="font-size:13px;color:#fdba74;margin-bottom:6px;font-weight:600;">短视频平台（每日各1条）</div><ul class="today-list">';
   todayVideo.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
@@ -819,7 +701,6 @@ function renderToday() {
   });
   html += '</ul>';
 
-  // Today - article
   html += '<div style="font-size:13px;color:#c4b5fd;margin:10px 0 6px;font-weight:600;">文书平台（每日各1条）</div><ul class="today-list">';
   todayArticle.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
@@ -838,7 +719,6 @@ function renderToday() {
   }
   html += '</div>';
 
-  // Daily overview
   html += '<div class="card"><div class="card-title">本日发布概览</div>';
   const tVideo = todayTasks.filter(t => t.type === 'video');
   const tArticle = todayTasks.filter(t => t.type === 'article');
@@ -851,7 +731,7 @@ function renderToday() {
     <div class="stat-card"><div class="stat-value">${aDone}/${aTotal}</div><div class="stat-label">文书</div></div>
     <div class="stat-card"><div class="stat-value">${doneCount}</div><div class="stat-label">今日完成</div></div>
     <div class="stat-card"><div class="stat-value">${todayTasks.length - doneCount}</div><div class="stat-label">今日待办</div></div>
-  </div></div>`;
+  </div></div>';
 
   return html;
 }
@@ -897,7 +777,6 @@ function renderCalendar() {
   const month = currentMonth.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const today = new Date();
   const todayStr = getToday();
 
   let html = `<div class="card"><div class="calendar-header"><div class="calendar-nav">
@@ -984,7 +863,6 @@ function renderOverview() {
     <button onclick="changeOverviewMonth(1)">&#8250;</button>
   </div><button class="btn-today" onclick="goOverviewThisMonth()">本月</button></div>`;
 
-  // 总览统计
   const videoTasks = monthTasks.filter(t => t.type === 'video');
   const articleTasks = monthTasks.filter(t => t.type === 'article');
   const vDone = videoTasks.filter(t => t.done).length;
@@ -1001,7 +879,6 @@ function renderOverview() {
     <div class="stat-card"><div class="stat-value" style="color:${rateColor};">${rate}%</div><div class="stat-label">完成率</div></div>
   </div></div>`;
 
-  // 各平台对比柱状图
   html += '<div class="card"><div class="card-title">各平台本月发布条数对比</div>';
   const platformCounts = {};
   ALL_PLATFORMS.forEach(p => platformCounts[p] = { done: 0, total: 0 });
@@ -1021,7 +898,6 @@ function renderOverview() {
   });
   html += '</div></div>';
 
-  // 各平台明细 + 进度条
   html += '<div class="card"><div class="card-title">各平台发布明细</div>';
   html += '<div class="section-label"><span style="color:#fdba74;">短视频平台</span><span class="count">' + VIDEO_PLATFORMS.length + '</span></div>';
   html += '<div class="platform-rows">';
@@ -1067,6 +943,14 @@ function goOverviewThisMonth() { overviewMonth = new Date(); render(); }
 // ===== CONTENT REGISTRATION TAB =====
 function renderContent() {
   let html = `<div class="card"><div class="card-title">内容登记 <span class="badge">${contents.length}条</span></div>`;
+
+  // Search box
+  html += `<div class="search-box">
+    <span class="search-icon">&#128269;</span>
+    <input type="text" id="searchInput" placeholder="搜索标题/选题/平台/链接..." value="${searchKeyword}" oninput="handleSearch(this.value)">
+    ${searchKeyword ? `<button class="search-clear" onclick="clearSearch()">清除</button>` : ''}
+  </div>`;
+
   html += `<div class="filter-pills">
     <span class="filter-pill active" onclick="filterContent('all',this)">全部</span>
     <span class="filter-pill" onclick="filterContent('today',this)">今日</span>
@@ -1074,26 +958,85 @@ function renderContent() {
     <span class="filter-pill" onclick="filterContent('article',this)">文书</span>
   </div>`;
 
-  const sorted = [...contents].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  const sorted = getFilteredContents();
   html += '<div id="contentList">';
-  if (sorted.length === 0) html += '<div class="empty-state"><div class="empty-icon">+</div><p>暂无登记记录，点击右下角 + 号登记</p></div>';
-  else sorted.forEach(c => html += renderContentItem(c));
+  if (sorted.length === 0) {
+    html += `<div class="empty-state"><div class="empty-icon">${searchKeyword ? '&#128270;' : '+'}</div><p>${searchKeyword ? '未找到匹配内容' : '暂无登记记录，点击右下角 + 号登记'}</p></div>`;
+  } else {
+    sorted.forEach(c => html += renderContentItem(c));
+  }
   html += '</div></div>';
   return html;
 }
 
+function getFilteredContents() {
+  const today = getToday();
+  let filtered = [...contents];
+
+  // Apply search
+  if (searchKeyword) {
+    const kw = searchKeyword.toLowerCase();
+    filtered = filtered.filter(c =>
+      (c.title || '').toLowerCase().includes(kw) ||
+      (c.topic || '').toLowerCase().includes(kw) ||
+      (c.platform || '').toLowerCase().includes(kw) ||
+      (c.url || '').toLowerCase().includes(kw)
+    );
+  }
+
+  // Apply filter pill
+  const activePill = document.querySelector('#mainContent .filter-pill.active');
+  if (activePill) {
+    const filter = activePill.textContent.trim();
+    if (filter === '今日') filtered = filtered.filter(c => c.createdAt === today);
+    else if (filter === '短视频') filtered = filtered.filter(c => isVideo(c.platform));
+    else if (filter === '文书') filtered = filtered.filter(c => isArticle(c.platform));
+  }
+
+  filtered.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  return filtered;
+}
+
+function handleSearch(value) {
+  searchKeyword = value.trim();
+  // Debounce
+  clearTimeout(window._searchTimer);
+  window._searchTimer = setTimeout(() => {
+    render();
+  }, 200);
+}
+
+function clearSearch() {
+  searchKeyword = '';
+  document.getElementById('searchInput').value = '';
+  render();
+}
+
+function highlightText(text, keyword) {
+  if (!keyword) return text;
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(regex, '<span class="search-highlight">$1</span>');
+}
+
 function renderContentItem(c) {
   const type = isVideo(c.platform) ? 'video' : 'article';
+  const kw = searchKeyword;
+  const titleHtml = highlightText(c.title, kw);
+  const topicHtml = c.topic ? highlightText(c.topic, kw) : '';
+  const platformHtml = highlightText(c.platform, kw);
+
   let html = `<div class="content-item ${type}">
     <div class="content-header">
-      <span class="content-title">${c.title}</span>
-      <span class="platform-tag ${type}">${c.platform}</span>
+      <span class="content-title">${titleHtml}</span>
+      <span class="platform-tag ${type}">${platformHtml}</span>
     </div>`;
   if (c.topic) {
-    html += `<div class="content-preview"><span style="color:var(--text2);">选题：</span>${c.topic}</div>`;
+    html += `<div class="content-preview"><span style="color:var(--text2);">选题：</span>${topicHtml}</div>`;
   }
   if (c.url) {
-    html += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${c.url}" target="_blank">${c.url.length > 50 ? c.url.slice(0,50)+'...' : c.url}</a></div>`;
+    const urlHtml = highlightText(c.url, kw);
+    html += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${c.url}" target="_blank">${c.url.length > 50 ? urlHtml.slice(0,50)+'...' : urlHtml}</a></div>`;
   }
   html += `<div class="content-meta">${c.createdAt || ''}</div>`;
   html += `<div class="content-actions">
@@ -1106,21 +1049,38 @@ function renderContentItem(c) {
 function filterContent(filter, el) {
   document.querySelectorAll('#mainContent .filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
-  const today = getToday();
-  let filtered = [...contents];
-  if (filter === 'today') filtered = filtered.filter(c => c.createdAt === today);
-  else if (filter === 'video') filtered = filtered.filter(c => isVideo(c.platform));
-  else if (filter === 'article') filtered = filtered.filter(c => isArticle(c.platform));
-  filtered.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
-  document.getElementById('contentList').innerHTML = filtered.length === 0
-    ? '<div class="empty-state"><div class="empty-icon">+</div><p>无匹配记录</p></div>'
-    : filtered.map(c => renderContentItem(c)).join('');
+  const sorted = getFilteredContents();
+  document.getElementById('contentList').innerHTML = sorted.length === 0
+    ? `<div class="empty-state"><div class="empty-icon">${searchKeyword ? '&#128270;' : '+'}</div><p>${searchKeyword ? '未找到匹配内容' : '暂无匹配记录'}</p></div>`
+    : sorted.map(c => renderContentItem(c)).join('');
 }
 
 function deleteContent(id) {
-  if (!confirm('确定删除这条记录吗？')) return;
-  contents = contents.filter(c => c.id != id && c.id != Number(id));
-  saveData('contents', contents); render(); showToast('已删除');
+  showConfirm({
+    title: '确认删除',
+    desc: '确定删除这条记录吗？删除后不可恢复。',
+    danger: true,
+    onOk: () => {
+      contents = contents.filter(c => c.id != id && c.id != Number(id));
+      saveData('contents', contents); render(); showToast('已删除');
+    }
+  });
+}
+
+// ===== UNIFIED CONFIRM =====
+function showConfirm({ title, desc, danger = false, onOk }) {
+  document.getElementById('modalContent').innerHTML = `
+    <h3>${title}</h3>
+    <p class="confirm-text">${desc}</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save ${danger ? 'btn-danger' : ''}" id="confirmOkBtn">${danger ? '确认删除' : '确认'}</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('confirmOkBtn').onclick = () => {
+    closeModal();
+    if (onOk) onOk();
+  };
 }
 
 // ===== DATA TAB =====
@@ -1128,7 +1088,6 @@ function renderData() {
   const thisMonth = getToday().slice(0, 7);
   let html = '';
 
-  // Sub-tabs
   html += `<div class="sub-tab-bar">
     <div class="sub-tab ${dataSubTab==='video'?'active':''}" onclick="switchDataTab('video')">短视频数据（浏览/互动）</div>
     <div class="sub-tab ${dataSubTab==='article'?'active':''}" onclick="switchDataTab('article')">文书数据（AI收录）</div>
@@ -1144,7 +1103,6 @@ function renderData() {
 
 function switchDataTab(tab) { dataSubTab = tab; render(); }
 
-// --- Video data ---
 function renderVideoData(thisMonth) {
   const monthStats = stats.filter(s => s.date.startsWith(thisMonth) && isVideo(s.platform));
   const totalViews = monthStats.reduce((sum, s) => sum + (s.views || 0), 0);
@@ -1160,7 +1118,6 @@ function renderVideoData(thisMonth) {
       <div class="stat-card"><div class="stat-value">${formatNum(totalComments)}</div><div class="stat-label">总评论</div></div>
     </div></div>`;
 
-  // Bar chart
   html += '<div class="card"><div class="card-title">各平台播放量对比</div>';
   const platformViews = {};
   VIDEO_PLATFORMS.forEach(p => platformViews[p] = 0);
@@ -1174,7 +1131,6 @@ function renderVideoData(thisMonth) {
   });
   html += '</div></div>';
 
-  // Entry form
   html += `<div class="card"><div class="card-title">录入视频数据</div>
     <div class="form-row">
       <div class="form-group"><label>平台</label><select id="statPlatform">
@@ -1195,7 +1151,6 @@ function renderVideoData(thisMonth) {
     </div>
   </div>`;
 
-  // Table
   html += '<div class="card"><div class="card-title">详细数据</div>';
   const recentStats = monthStats.sort((a,b) => b.date.localeCompare(a.date));
   if (recentStats.length === 0) html += '<div class="empty-state"><p>暂无数据，点击上方录入</p></div>';
@@ -1225,18 +1180,22 @@ function saveStat() {
 }
 
 function deleteStat(id) {
-  if (!confirm('确定删除？')) return;
-  stats = stats.filter(s => s.id != id && s.id != Number(id));
-  saveData('stats', stats); render(); showToast('已删除');
+  showConfirm({
+    title: '确认删除',
+    desc: '确定删除这条数据吗？删除后不可恢复。',
+    danger: true,
+    onOk: () => {
+      stats = stats.filter(s => s.id != id && s.id != Number(id));
+      saveData('stats', stats); render(); showToast('已删除');
+    }
+  });
 }
 
-// --- Article AI data ---
 function renderArticleData(thisMonth) {
   const monthAiStats = aiStats.filter(s => s.date.startsWith(thisMonth) && isArticle(s.platform));
   let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪</div>`;
   html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">追踪 6 大 AI 引擎收录情况：${AI_ENGINES.join('、')}</p>`;
 
-  // Summary
   let totalChecked = 0, totalPossible = 0;
   monthAiStats.forEach(s => {
     AI_ENGINES.forEach(ai => { totalPossible++; if (s.ai && s.ai[ai]) totalChecked++; });
@@ -1248,7 +1207,6 @@ function renderArticleData(thisMonth) {
     <div class="stat-card"><div class="stat-value" style="color:${rate>=50?'var(--green)':'var(--yellow)'};">${rate}%</div><div class="stat-label">收录率</div></div>
   </div></div>`;
 
-  // AI engine coverage chart
   html += '<div class="card"><div class="card-title">各 AI 引擎收录分布</div>';
   const aiCounts = {};
   AI_ENGINES.forEach(ai => aiCounts[ai] = 0);
@@ -1262,7 +1220,6 @@ function renderArticleData(thisMonth) {
   });
   html += '</div></div>';
 
-  // Entry form
   html += `<div class="card"><div class="card-title">录入 AI 收录数据</div>
     <div class="form-row">
       <div class="form-group"><label>平台</label><select id="aiPlatform">
@@ -1281,7 +1238,6 @@ function renderArticleData(thisMonth) {
     </div>
   </div>`;
 
-  // Table
   html += '<div class="card"><div class="card-title">详细数据</div>';
   if (monthAiStats.length === 0) html += '<div class="empty-state"><p>暂无数据，点击上方录入</p></div>';
   else {
@@ -1324,9 +1280,15 @@ function saveAiStat() {
 }
 
 function deleteAiStat(id) {
-  if (!confirm('确定删除？')) return;
-  aiStats = aiStats.filter(s => s.id != id && s.id != Number(id));
-  saveData('aiStats', aiStats); render(); showToast('已删除');
+  showConfirm({
+    title: '确认删除',
+    desc: '确定删除这条数据吗？删除后不可恢复。',
+    danger: true,
+    onOk: () => {
+      aiStats = aiStats.filter(s => s.id != id && s.id != Number(id));
+      saveData('aiStats', aiStats); render(); showToast('已删除');
+    }
+  });
 }
 
 // ===== UTIL =====
@@ -1459,58 +1421,60 @@ function importData(event) {
 }
 
 function clearAllData() {
-  document.getElementById('modalContent').innerHTML = `
-    <h3>确认清空</h3>
-    <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据），此操作不可恢复！<br><br>建议先导出备份。</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save" style="background:linear-gradient(135deg,#f87171,#ef4444);" onclick="confirmClear()">确认清空</button>
-    </div>`;
-  document.getElementById('modalOverlay').classList.add('active');
-}
-
-function confirmClear() {
-  tasks = []; contents = []; stats = []; aiStats = [];
-  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats);
-  selectedDate = null; closeModal(); ensureDailyTasks(); render();
-  showToast('已清空，已重置今日任务');
+  showConfirm({
+    title: '确认清空',
+    desc: '即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据），此操作不可恢复！<br><br>建议先导出备份。',
+    danger: true,
+    onOk: () => {
+      tasks = []; contents = []; stats = []; aiStats = [];
+      saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats);
+      selectedDate = null; ensureDailyTasks(); render();
+      showToast('已清空，已重置今日任务');
+    }
+  });
 }
 
 function fillSampleData() {
-  if (!confirm('将重置为示例数据，当前数据会被覆盖。是否继续？')) return;
-  const today = getToday();
-  const yestDate = new Date(Date.now() - 86400000);
-  const yest = yestDate.getFullYear() + '-' + String(yestDate.getMonth()+1).padStart(2,'0') + '-' + String(yestDate.getDate()).padStart(2,'0');
+  showConfirm({
+    title: '重置示例数据',
+    desc: '将重置为示例数据，当前数据会被覆盖。是否继续？',
+    danger: true,
+    onOk: () => {
+      const today = getToday();
+      const yestDate = new Date(Date.now() - 86400000);
+      const yest = yestDate.getFullYear() + '-' + String(yestDate.getMonth()+1).padStart(2,'0') + '-' + String(yestDate.getDate()).padStart(2,'0');
 
-  tasks = [];
-  ALL_PLATFORMS.forEach((p, i) => {
-    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: i < 4, contentId: null, target: DAILY_TARGET });
+      tasks = [];
+      ALL_PLATFORMS.forEach((p, i) => {
+        tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: i < 4, contentId: null, target: DAILY_TARGET });
+      });
+      tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, contentId: null, target: DAILY_TARGET });
+
+      contents = [
+        { id: 1, title: '新品开箱vlog：夏日防晒好物推荐', platform: '抖音', topic: '好物推荐/防晒', url: 'https://www.douyin.com/video/7234567890', createdAt: today },
+        { id: 2, title: '618购物清单｜闭眼入的5件数码好物', platform: '小红书', topic: '数码好物/购物清单', url: 'https://www.xiaohongshu.com/explore/abc123', createdAt: today },
+        { id: 3, title: 'Python自动化脚本：批量处理Excel报表', platform: '知乎', topic: 'Python/自动化/教程', url: 'https://zhuanlan.zhihu.com/p/123456', createdAt: today },
+        { id: 4, title: '如何用AI提升10倍工作效率', platform: '公众号', topic: 'AI工具/效率提升', url: 'https://mp.weixin.qq.com/s/xxxxx', createdAt: today },
+        { id: 5, title: '街头美食探店EP38', platform: '快手', topic: '探店/美食', url: '', createdAt: yest },
+      ];
+
+      stats = [
+        { id: 101, platform: '抖音', date: today, views: 12500, likes: 890, shares: 156, comments: 230 },
+        { id: 102, platform: '小红书', date: today, views: 8200, likes: 1200, shares: 89, comments: 175 },
+        { id: 103, platform: '视频号', date: today, views: 5600, likes: 340, shares: 67, comments: 89 },
+        { id: 104, platform: '快手', date: today, views: 9800, likes: 670, shares: 120, comments: 156 },
+      ];
+
+      aiStats = [
+        { id: 201, platform: '知乎', date: today, title: 'Python自动化脚本：批量处理Excel报表', ai: { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false } },
+        { id: 202, platform: '公众号', date: today, title: '如何用AI提升10倍工作效率', ai: { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false } },
+        { id: 203, platform: '百家号', date: today, title: '2024年AI工具盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
+      ];
+
+      saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats);
+      render(); showToast('已重置示例数据');
+    }
   });
-  tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, contentId: null, target: DAILY_TARGET });
-
-  contents = [
-    { id: 1, title: '新品开箱vlog：夏日防晒好物推荐', platform: '抖音', topic: '好物推荐/防晒', url: 'https://www.douyin.com/video/7234567890', createdAt: today },
-    { id: 2, title: '618购物清单｜闭眼入的5件数码好物', platform: '小红书', topic: '数码好物/购物清单', url: 'https://www.xiaohongshu.com/explore/abc123', createdAt: today },
-    { id: 3, title: 'Python自动化脚本：批量处理Excel报表', platform: '知乎', topic: 'Python/自动化/教程', url: 'https://zhuanlan.zhihu.com/p/123456', createdAt: today },
-    { id: 4, title: '如何用AI提升10倍工作效率', platform: '公众号', topic: 'AI工具/效率提升', url: 'https://mp.weixin.qq.com/s/xxxxx', createdAt: today },
-    { id: 5, title: '街头美食探店EP38', platform: '快手', topic: '探店/美食', url: '', createdAt: yest },
-  ];
-
-  stats = [
-    { id: 101, platform: '抖音', date: today, views: 12500, likes: 890, shares: 156, comments: 230 },
-    { id: 102, platform: '小红书', date: today, views: 8200, likes: 1200, shares: 89, comments: 175 },
-    { id: 103, platform: '视频号', date: today, views: 5600, likes: 340, shares: 67, comments: 89 },
-    { id: 104, platform: '快手', date: today, views: 9800, likes: 670, shares: 120, comments: 156 },
-  ];
-
-  aiStats = [
-    { id: 201, platform: '知乎', date: today, title: 'Python自动化脚本：批量处理Excel报表', ai: { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false } },
-    { id: 202, platform: '公众号', date: today, title: '如何用AI提升10倍工作效率', ai: { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false } },
-    { id: 203, platform: '百家号', date: today, title: '2024年AI工具盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
-  ];
-
-  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats);
-  render(); showToast('已重置示例数据');
 }
 
 // ===== INIT =====
