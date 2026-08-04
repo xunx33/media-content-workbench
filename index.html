@@ -54,109 +54,193 @@ body {
 }
 a { color: var(--accent); text-decoration: none; }
 
-/* ===== Sticky Topbar ===== */
+/* ===== Sticky Topbar (header + tabs fixed together) ===== */
 .topbar {
-  position: sticky; top: 0; z-index: 100;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   background: rgba(11, 17, 32, 0.82);
   border-bottom: 1px solid var(--border);
 }
-.header { padding: 14px 20px 10px; }
+
+.header {
+  padding: 14px 20px 10px;
+}
 .header h1 {
-  font-size: 19px; font-weight: 700; letter-spacing: 0.2px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
   background: linear-gradient(100deg, #7da7ff 0%, #b79dff 50%, #6ee7d7 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .header .subtitle { font-size: 11px; color: var(--text2); margin-top: 3px; letter-spacing: 0.3px; }
 
 /* Nav Tabs */
 .nav-tabs {
-  display: flex; background: transparent; overflow-x: auto;
-  -webkit-overflow-scrolling: touch; padding: 0 8px; position: relative;
+  display: flex;
+  background: transparent;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 8px;
+  position: relative;
 }
 .nav-tabs::-webkit-scrollbar { display: none; }
 .nav-tab {
-  flex: 0 0 auto; padding: 11px 16px; font-size: 14px; color: var(--text2);
-  cursor: pointer; white-space: nowrap; transition: color 0.25s var(--ease); user-select: none; position: relative;
+  flex: 0 0 auto;
+  padding: 11px 16px;
+  font-size: 14px;
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.25s var(--ease), background 0.25s var(--ease);
+  user-select: none;
+  position: relative;
 }
 .nav-tab:hover { color: var(--text); }
-.nav-tab.active { color: #fff; font-weight: 600; }
+.nav-tab.active {
+  color: #fff;
+  font-weight: 600;
+}
 .nav-tab.active::after {
-  content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px;
+  content: '';
+  position: absolute;
+  left: 12px; right: 12px; bottom: -1px; height: 2px;
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  border-radius: 2px; box-shadow: 0 0 12px rgba(91,140,255,0.6);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(91,140,255,0.6);
 }
 
-/* Backup bar */
+/* Backup bar (now below tabs, scrolls away) */
 .backup-bar {
-  display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto;
-  -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--border);
   background: rgba(15, 23, 42, 0.5);
 }
 .backup-bar::-webkit-scrollbar { display: none; }
 .backup-bar button {
-  padding: 6px 14px; font-size: 12px; border-radius: 20px;
-  border: 1px solid var(--border-strong); background: var(--card2);
-  color: var(--text2); cursor: pointer; white-space: nowrap; transition: all 0.2s var(--ease);
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-strong);
+  background: var(--card2);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s var(--ease);
 }
-.backup-bar button:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
+.backup-bar button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-soft);
+}
 #importFile { display: none; }
 
-/* Main */
+/* Main Content */
 .main { padding: 16px; max-width: 920px; margin: 0 auto; }
 
 /* Cards */
 .card {
-  background: var(--card); backdrop-filter: blur(14px) saturate(140%);
+  background: var(--card);
+  backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-radius: var(--radius); border: 1px solid var(--border);
-  padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow);
-  transition: border-color 0.3s var(--ease);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
-.card:hover { border-color: var(--border-strong); }
+.card:hover {
+  border-color: var(--border-strong);
+}
 .card-title {
-  font-size: 15px; font-weight: 600; margin-bottom: 14px;
-  display: flex; align-items: center; gap: 8px; color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
 }
 .card-title::before {
-  content: ''; width: 3px; height: 15px; border-radius: 3px;
+  content: '';
+  width: 3px; height: 15px;
+  border-radius: 3px;
   background: linear-gradient(180deg, var(--accent), var(--accent-2));
 }
 
-/* Section label */
+/* Section divider */
 .section-label {
-  font-size: 12px; font-weight: 600; color: var(--text2);
-  margin: 16px 0 10px; padding-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 16px 0 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 .section-label:first-child { margin-top: 0; }
 .section-label .count {
-  font-size: 11px; padding: 1px 8px; border-radius: 10px;
-  background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* Today Section */
 .today-section {
-  background: linear-gradient(135deg, rgba(91,140,255,0.12) 0%, rgba(139,92,246,0.08) 100%), var(--card);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(91,140,255,0.28); border-radius: var(--radius);
-  padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
+  background:
+    linear-gradient(135deg, rgba(91,140,255,0.12) 0%, rgba(139,92,246,0.08) 100%),
+    var(--card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(91,140,255,0.28);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 .today-section h3 { font-size: 15px; margin-bottom: 12px; color: #9ec1ff; font-weight: 600; }
 .today-list { list-style: none; }
 .today-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-  font-size: 14px; transition: background 0.2s var(--ease);
+  display: flex;
+  flex-direction: column;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 14px;
+  transition: background 0.2s var(--ease);
+}
+.today-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
 }
 .today-item:last-child { border-bottom: none; }
 .today-item .left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .platform-tag {
-  font-size: 11px; padding: 2px 9px; border-radius: 12px;
-  font-weight: 500; white-space: nowrap; letter-spacing: 0.2px;
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
 }
 .platform-tag.video { background: rgba(251,146,60,0.16); color: #fdba74; border: 1px solid rgba(251,146,60,0.2); }
 .platform-tag.article { background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.2); }
@@ -165,75 +249,150 @@ a { color: var(--accent); text-decoration: none; }
 .status-pending { color: var(--yellow); font-size: 13px; }
 .status-overdue { color: var(--red); font-size: 13px; font-weight: 600; }
 
-/* Buttons */
+/* 流程链路 */
+.chain-dots { display: inline-flex; gap: 3px; align-items: center; flex-shrink: 0; }
+.chain-hint {
+  font-size: 11px; color: var(--accent); cursor: pointer;
+  padding: 2px 8px; border-radius: 10px; background: var(--accent-soft);
+  transition: all 0.2s var(--ease); text-decoration: none; white-space: nowrap;
+}
+.chain-hint:hover { background: rgba(91,140,255,0.25); color: #9ec1ff; }
+
+/* 任务展开详情 */
+.expand-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; margin-left: 6px;
+  font-size: 10px; color: var(--text3); cursor: pointer;
+  border-radius: 5px; transition: transform 0.2s var(--ease), color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.expand-toggle:hover { color: var(--accent); background: var(--accent-soft); }
+.task-detail {
+  display: none; margin-top: 8px; padding: 10px 12px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); font-size: 12px;
+}
+.task-detail.open { display: block; }
+.task-detail-row {
+  display: flex; gap: 8px; padding: 3px 0;
+  color: var(--text2); line-height: 1.5;
+}
+.task-detail-row .detail-label {
+  flex-shrink: 0; width: 52px; color: var(--text3); font-weight: 500;
+}
+.task-detail-actions {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.task-detail-actions button {
+  font-size: 11px; padding: 4px 10px; border-radius: 6px;
+  border: none; cursor: pointer; font-weight: 500;
+  transition: all 0.2s var(--ease);
+}
+
+/* 日历页内容迷你列表 */
+.content-mini-list { display: flex; flex-direction: column; gap: 6px; }
+.content-mini-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); padding: 7px 10px;
+  font-size: 12px; cursor: pointer; transition: all 0.2s var(--ease);
+}
+.content-mini-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+.content-mini-item .content-mini-title {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--text);
+}
+.content-mini-item .content-mini-date { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+
+/* 登记内容折叠面板 */
+.content-fold {
+  margin-bottom: 14px; background: var(--card2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.content-fold-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; cursor: pointer;
+  font-size: 13px; color: var(--text); font-weight: 500;
+  transition: background 0.2s var(--ease);
+}
+.content-fold-header:hover { background: var(--accent-soft); }
+.content-fold-title { display: flex; align-items: center; gap: 8px; }
+.content-fold-arrow {
+  font-size: 10px; color: var(--text3); transition: transform 0.2s var(--ease);
+}
+.content-fold-body { padding: 0 12px 12px; }
+
+/* Buttons — 统一尺寸，状态切换不跳动 */
+.btn-done, .btn-check-done {
+  min-width: 60px;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s var(--ease);
+  box-sizing: border-box;
+  line-height: 1;
+}
 .btn-done {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white; border: none; padding: 5px 14px; border-radius: 8px;
-  font-size: 12px; cursor: pointer; font-weight: 500;
-  transition: all 0.2s var(--ease); box-shadow: 0 2px 8px rgba(91,140,255,0.3);
+  color: white;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
 }
 .btn-done:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(91,140,255,0.45); }
 .btn-done:active { transform: translateY(0); }
 
 .btn-check-done {
-  background: rgba(52,211,153,0.16); color: var(--green);
-  border: 1px solid rgba(52,211,153,0.36); padding: 3px 9px;
-  border-radius: 8px; font-size: 14px; cursor: pointer; line-height: 1;
-  transition: all 0.2s var(--ease);
+  background: rgba(52,211,153,0.16);
+  color: var(--green);
+  border: 1px solid rgba(52,211,153,0.36);
 }
-.btn-check-done:hover { background: rgba(52,211,153,0.26); transform: scale(1.05); }
+.btn-check-done:hover { background: rgba(52,211,153,0.26); border-color: var(--green); }
 
 .btn-overdue {
-  background: rgba(248,113,113,0.16); color: var(--red);
-  border: 1px solid rgba(248,113,113,0.36); padding: 4px 11px;
-  border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s var(--ease);
+  background: rgba(248,113,113,0.16);
+  color: var(--red);
+  border: 1px solid rgba(248,113,113,0.36);
+  padding: 4px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
 }
 .btn-overdue:hover { background: rgba(248,113,113,0.26); }
 
-/* FAB prompt */
-.fab-prompt {
-  position: fixed; right: 20px; bottom: calc(148px + env(safe-area-inset-bottom));
-  width: 280px; background: var(--card-solid);
-  border: 1px solid var(--border-strong); border-radius: 14px;
-  padding: 16px; z-index: 95; box-shadow: var(--shadow);
-  opacity: 0; transform: translateY(12px) scale(0.96); pointer-events: none;
-  transition: all 0.3s var(--ease);
-}
-.fab-prompt.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.fab-prompt::after {
-  content: ''; position: absolute; right: 16px; bottom: -7px;
-  width: 14px; height: 14px; background: var(--card-solid);
-  border-right: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong);
-  transform: rotate(45deg);
-}
-.fab-prompt .prompt-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-.fab-prompt .prompt-desc { font-size: 12px; color: var(--text2); margin-bottom: 14px; line-height: 1.5; }
-.fab-prompt .prompt-platform { color: var(--accent); font-weight: 600; }
-.fab-prompt .prompt-actions { display: flex; gap: 8px; }
-.fab-prompt .prompt-actions button {
-  flex: 1; padding: 9px; border: none; border-radius: 8px; font-size: 13px;
-  cursor: pointer; font-weight: 500; transition: all 0.2s var(--ease);
-}
-.fab-prompt .btn-prompt-register {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white;
-  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
-}
-.fab-prompt .btn-prompt-register:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,140,255,0.45); }
-.fab-prompt .btn-prompt-skip { background: var(--card2-solid); color: var(--text2); }
-.fab-prompt .btn-prompt-skip:hover { background: var(--border-strong); color: var(--text); }
-
-/* Platform Rows */
-.platform-rows { display: flex; flex-direction: column; gap: 8px; }
 .platform-row {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  background: var(--card2); border-radius: var(--radius-sm);
-  border: 1px solid var(--border); transition: all 0.25s var(--ease);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: all 0.25s var(--ease);
 }
-.platform-row:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.platform-row:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
 .platform-row-icon {
-  width: 38px; height: 38px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 700; color: white; flex-shrink: 0;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 .platform-row-icon.video { background: linear-gradient(135deg, #fb923c, #ef4444); }
@@ -257,7 +416,8 @@ a { color: var(--accent); text-decoration: none; }
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: white; border: none; padding: 7px 14px; border-radius: 9px;
   cursor: pointer; font-size: 12px; font-weight: 500;
-  box-shadow: 0 2px 8px rgba(91,140,255,0.3); transition: all 0.2s var(--ease);
+  box-shadow: 0 2px 8px rgba(91,140,255,0.3);
+  transition: all 0.2s var(--ease);
 }
 .btn-today:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(91,140,255,0.45); }
 
@@ -266,14 +426,23 @@ a { color: var(--accent); text-decoration: none; }
 .calendar-day {
   height: 36px; display: flex; flex-direction: column; align-items: center; justify-content: center;
   font-size: 12px; border-radius: 8px; cursor: pointer; position: relative;
-  transition: all 0.2s var(--ease); border: 1px solid transparent; color: var(--text);
+  transition: all 0.2s var(--ease);
+  border: 1px solid transparent;
+  color: var(--text);
 }
 .calendar-day:hover { background: var(--card2); border-color: var(--border-strong); }
-.calendar-day.today { color: var(--accent); font-weight: 700; border-color: rgba(91,140,255,0.5); }
+.calendar-day.today {
+  color: var(--accent);
+  font-weight: 700;
+  border-color: rgba(91,140,255,0.5);
+}
 .calendar-day.selected {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff; font-weight: 700; border-color: transparent;
-  box-shadow: 0 4px 14px rgba(91,140,255,0.4); transform: scale(1.04);
+  color: #fff;
+  font-weight: 700;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(91,140,255,0.4);
+  transform: scale(1.04);
 }
 .calendar-day.selected .dot { box-shadow: 0 0 0 1.5px rgba(255,255,255,0.7); }
 .calendar-day.other-month { opacity: 0.3; }
@@ -285,13 +454,20 @@ a { color: var(--accent); text-decoration: none; }
 
 /* Day Detail */
 .day-detail {
-  background: var(--card2); border-radius: var(--radius-sm);
-  padding: 14px; margin-top: 14px; border: 1px solid var(--border);
+  background: var(--card2);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
 }
 .day-detail h4 { font-size: 14px; margin-bottom: 10px; color: var(--accent); font-weight: 600; }
 .day-task {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; flex-direction: column;
   padding: 7px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.day-task-row {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; gap: 8px;
 }
 .day-task:last-child { border-bottom: none; }
 .day-task .task-name { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
@@ -301,10 +477,12 @@ a { color: var(--accent); text-decoration: none; }
   background: var(--card2); border-radius: var(--radius-sm); padding: 14px;
   margin-bottom: 10px; border-left: 3px solid var(--border);
   transition: all 0.25s var(--ease);
+  display: flex; gap: 14px; align-items: stretch;
 }
 .content-item:hover { transform: translateX(2px); border-left-color: var(--accent); }
 .content-item.video { border-left-color: var(--orange); }
 .content-item.article { border-left-color: var(--accent-2); }
+.content-item .content-main { flex: 1; min-width: 0; }
 .content-item .content-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; gap: 8px; }
 .content-item .content-title { font-size: 14px; font-weight: 600; }
 .content-item .content-preview {
@@ -317,49 +495,87 @@ a { color: var(--accent); text-decoration: none; }
 .content-item .content-url a:hover { text-decoration: underline; }
 .content-item .content-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .content-item .content-actions button {
-  font-size: 12px; padding: 5px 12px; border-radius: 7px; border: none;
-  cursor: pointer; transition: all 0.2s var(--ease); font-weight: 500;
+  font-size: 12px; padding: 5px 12px; border-radius: 7px; border: none; cursor: pointer;
+  transition: all 0.2s var(--ease); font-weight: 500;
 }
+
+/* 内容右侧数据栏 */
+.content-data-side {
+  flex-shrink: 0; width: 148px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  border-left: 1px solid var(--border);
+  padding-left: 12px; gap: 8px;
+}
+.content-data-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px;
+}
+.content-data-item {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 11px; color: var(--text3);
+}
+.content-data-item b { font-size: 12px; color: var(--text); font-weight: 600; }
+.content-data-empty {
+  grid-column: 1 / -1; font-size: 11px; color: var(--text3);
+  padding: 12px 0; text-align: center;
+}
+.content-data-btn-wrap { display: flex; justify-content: flex-end; }
+.content-data-btn-wrap .btn-publish { font-size: 12px; padding: 5px 14px; }
+
+@media (max-width: 560px) {
+  .content-data-side { width: 104px; padding-left: 8px; gap: 6px; }
+  .content-data-item { font-size: 10px; }
+  .content-data-item b { font-size: 11px; }
+}
+
 .btn-edit { background: var(--card-solid); color: var(--text2); border: 1px solid var(--border-strong) !important; }
 .btn-edit:hover { border-color: var(--accent) !important; color: var(--text); }
 .btn-delete { background: rgba(248,113,113,0.14); color: var(--red); }
 .btn-delete:hover { background: rgba(248,113,113,0.24); }
+/* 数据录入按钮：与编辑/删除统一风格 */
+.btn-publish {
+  background: rgba(52,211,153,0.12); color: var(--green);
+  border: 1px solid rgba(52,211,153,0.32);
+}
+.btn-publish:hover { background: rgba(52,211,153,0.2); border-color: var(--green); color: var(--green); }
 
-/* Search */
-.search-box {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 14px; padding: 10px 14px; background: var(--bg-2);
-  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
-  transition: all 0.2s var(--ease);
+/* 数据登记状态徽标 */
+.data-badge {
+  display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  background: rgba(148,163,184,0.14); color: var(--text3); margin-left: 6px; font-weight: 500;
 }
-.search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.search-box .search-icon { font-size: 16px; flex-shrink: 0; }
-.search-box input {
-  flex: 1; background: transparent; border: none; color: var(--text);
-  font-size: 16px; font-family: inherit; outline: none; min-width: 0;
+.data-badge.filled {
+  background: rgba(52,211,153,0.14); color: var(--green);
+  border: 1px solid rgba(52,211,153,0.24);
 }
-.search-box input::placeholder { color: var(--text3); }
-.search-box .search-clear {
-  background: var(--card2); border: 1px solid var(--border-strong);
-  color: var(--text2); padding: 4px 10px; border-radius: 7px;
-  font-size: 12px; cursor: pointer; transition: all 0.2s var(--ease); flex-shrink: 0;
+
+/* 文件上传区域 */
+.upload-zone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 24px 16px; text-align: center;
+  cursor: pointer; transition: all 0.25s var(--ease);
+  background: var(--bg-2);
 }
-.search-box .search-clear:hover { border-color: var(--accent); color: var(--text); }
-.search-highlight {
-  background: rgba(91,140,255,0.3); color: #fff; border-radius: 3px; padding: 0 2px;
-}
+.upload-zone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.upload-zone .upload-icon { font-size: 28px; margin-bottom: 6px; opacity: 0.6; }
+.upload-zone div { font-size: 13px; color: var(--text2); }
 
 /* Stats */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .stat-card {
-  background: var(--card2); border-radius: var(--radius-sm); padding: 16px 12px;
-  text-align: center; border: 1px solid var(--border); transition: all 0.25s var(--ease);
+  background: var(--card2);
+  border-radius: var(--radius-sm);
+  padding: 16px 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all 0.25s var(--ease);
 }
 .stat-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
 .stat-card .stat-value {
   font-size: 24px; font-weight: 700;
   background: linear-gradient(100deg, #7da7ff, #c4b5fd);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  line-height: 1.1;
 }
 .stat-card .stat-label { font-size: 11px; color: var(--text2); margin-top: 5px; letter-spacing: 0.3px; }
 
@@ -367,7 +583,8 @@ a { color: var(--accent); text-decoration: none; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .data-table th {
   text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border-strong);
-  color: var(--text2); font-weight: 600; font-size: 12px; white-space: nowrap; letter-spacing: 0.3px;
+  color: var(--text2); font-weight: 600; font-size: 12px; white-space: nowrap;
+  letter-spacing: 0.3px;
 }
 .data-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
 .data-table tr { transition: background 0.2s; }
@@ -384,8 +601,8 @@ a { color: var(--accent); text-decoration: none; }
 /* AI checklist */
 .ai-checks { display: flex; flex-wrap: wrap; gap: 8px; }
 .ai-check-item {
-  display: flex; align-items: center; gap: 6px; padding: 8px 12px;
-  border-radius: 10px; border: 1px solid var(--border-strong);
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-strong);
   background: var(--card2); cursor: pointer; user-select: none; font-size: 13px;
   transition: all 0.2s var(--ease); min-height: 38px;
 }
@@ -404,7 +621,7 @@ a { color: var(--accent); text-decoration: none; }
 .bar { width: 100%; max-width: 34px; border-radius: 6px 6px 0 0; transition: height 0.4s var(--ease); }
 .bar.video { background: linear-gradient(to top, #fb923c, #fdba74); box-shadow: 0 0 12px rgba(251,146,60,0.3); }
 .bar.article { background: linear-gradient(to top, #8b5cf6, #c4b5fd); box-shadow: 0 0 12px rgba(139,92,246,0.3); }
-.bar-label { font-size: 10px; color: var(--text2); margin-top: 5px; text-align: center; white-space: nowrap; }
+.bar-label { font-size: 9px; color: var(--text2); margin-top: 5px; text-align: center; white-space: normal; line-height: 1.25; }
 .bar-value { font-size: 10px; margin-bottom: 3px; color: var(--text); font-weight: 600; }
 
 /* Modal */
@@ -415,7 +632,9 @@ a { color: var(--accent); text-decoration: none; }
 }
 .modal-overlay.active { display: flex; animation: overlayIn 0.25s var(--ease); }
 .modal {
-  background: var(--card-solid); border-radius: var(--radius); padding: 22px;
+  background: var(--card-solid);
+  border-radius: var(--radius);
+  padding: 22px;
   width: 100%; max-width: 460px; max-height: 85vh; overflow-y: auto;
   border: 1px solid var(--border-strong); box-shadow: var(--shadow);
   animation: modalIn 0.3s var(--ease);
@@ -428,7 +647,8 @@ a { color: var(--accent); text-decoration: none; }
 .form-group input, .form-group select, .form-group textarea {
   width: 100%; padding: 11px 13px; background: var(--bg-2);
   border: 1px solid var(--border-strong); border-radius: var(--radius-xs);
-  color: var(--text); font-size: 16px; font-family: inherit; transition: all 0.2s var(--ease);
+  color: var(--text); font-size: 16px; font-family: inherit;
+  transition: all 0.2s var(--ease);
 }
 .form-group textarea { min-height: 70px; resize: vertical; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -438,17 +658,13 @@ a { color: var(--accent); text-decoration: none; }
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
 .modal-actions button {
   flex: 1; padding: 11px; border: none; border-radius: var(--radius-xs);
-  font-size: 14px; cursor: pointer; font-weight: 500; transition: all 0.2s var(--ease);
+  font-size: 14px; cursor: pointer; font-weight: 500;
+  transition: all 0.2s var(--ease);
 }
 .btn-cancel { background: var(--card2-solid); color: var(--text2); }
 .btn-cancel:hover { background: var(--border-strong); color: var(--text); }
 .btn-save { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; box-shadow: 0 2px 10px rgba(91,140,255,0.35); }
 .btn-save:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,140,255,0.5); }
-.btn-save.btn-danger { background: linear-gradient(135deg, #f87171, #ef4444); box-shadow: 0 2px 10px rgba(248,113,113,0.35); }
-.btn-save.btn-danger:hover { box-shadow: 0 4px 16px rgba(248,113,113,0.5); }
-
-/* Confirm modal */
-.confirm-text { font-size: 14px; color: var(--text2); margin-bottom: 18px; line-height: 1.6; }
 
 /* FAB */
 .fab {
@@ -473,21 +689,50 @@ a { color: var(--accent); text-decoration: none; }
 .toolbar button:hover, .toolbar select:hover { border-color: var(--accent); background: var(--accent-soft); }
 .toolbar .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white; border-color: transparent; box-shadow: 0 2px 10px rgba(91,140,255,0.3); font-weight: 500;
+  color: white; border-color: transparent;
+  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+  font-weight: 500;
 }
 .toolbar .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,140,255,0.45); }
 
-/* Filter pills */
+/* Search */
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; padding: 10px 14px; background: var(--bg-2);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  transition: all 0.2s var(--ease);
+}
+.search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search-box .search-icon { font-size: 16px; flex-shrink: 0; }
+.search-box input {
+  flex: 1; background: transparent; border: none; color: var(--text);
+  font-size: 16px; font-family: inherit; outline: none; min-width: 0;
+}
+.search-box input::placeholder { color: var(--text3); }
+.search-box .search-clear {
+  background: var(--card2); border: 1px solid var(--border-strong);
+  color: var(--text2); padding: 4px 10px; border-radius: 7px;
+  font-size: 12px; cursor: pointer; transition: all 0.2s var(--ease); flex-shrink: 0;
+}
+.search-box .search-clear:hover { border-color: var(--accent); color: var(--text); }
+.search-highlight {
+  background: rgba(91,140,255,0.3); color: #fff; border-radius: 3px; padding: 0 2px;
+}
 .filter-pills { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
 .filter-pill {
   padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer;
   border: 1px solid var(--border-strong); background: transparent; color: var(--text2);
   transition: all 0.2s var(--ease); font-weight: 500;
+  user-select: none; -webkit-user-select: none;
 }
-.filter-pill:hover { border-color: var(--accent); color: var(--text); }
+.filter-pill:hover { border-color: var(--accent); color: var(--text); transform: translateY(-1px); }
+.filter-pill:active { transform: scale(0.96); }
 .filter-pill.active {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white; border-color: transparent; box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+  color: white; border-color: transparent;
+  box-shadow: 0 3px 12px rgba(91,140,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  transform: translateY(-1px);
+  font-weight: 600;
 }
 
 /* Badge */
@@ -533,7 +778,8 @@ a { color: var(--accent); text-decoration: none; }
   background: var(--card-solid); color: white;
   padding: 11px 22px; border-radius: 24px; font-size: 13px; z-index: 2000;
   border: 1px solid var(--border-strong); box-shadow: var(--shadow);
-  opacity: 0; transition: all 0.35s var(--ease); pointer-events: none; font-weight: 500;
+  opacity: 0; transition: all 0.35s var(--ease); pointer-events: none;
+  font-weight: 500;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -543,7 +789,8 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 36px; margin-bottom: 12px; opacity: 0.4;
   width: 64px; height: 64px; border-radius: 50%;
   border: 2px dashed var(--border-strong);
-  display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
 }
 .empty-state p { font-size: 13px; }
 
@@ -553,11 +800,11 @@ a { color: var(--accent); text-decoration: none; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
+/* Confirm modal */
+.confirm-text { font-size: 14px; color: var(--text2); margin-bottom: 18px; line-height: 1.6; }
+
 /* Tab sub-sections */
-.sub-tab-bar {
-  display: flex; gap: 6px; margin-bottom: 14px; padding: 4px;
-  background: var(--card2); border-radius: var(--radius-sm); border: 1px solid var(--border);
-}
+.sub-tab-bar { display: flex; gap: 6px; margin-bottom: 14px; padding: 4px; background: var(--card2); border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .sub-tab {
   flex: 1; padding: 9px; text-align: center; font-size: 13px; cursor: pointer;
   border-radius: var(--radius-xs); border: none; background: transparent;
@@ -565,8 +812,55 @@ a { color: var(--accent); text-decoration: none; }
 }
 .sub-tab.active {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white; box-shadow: 0 2px 10px rgba(91,140,255,0.3);
+  color: white;
+  box-shadow: 0 2px 10px rgba(91,140,255,0.3);
 }
+
+/* 数据复盘页左右两栏布局 */
+.data-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.data-left, .data-right { min-width: 0; }
+@media (max-width: 900px) {
+  .data-layout { grid-template-columns: 1fr; }
+}
+
+/* 复盘记录卡片 */
+.review-item {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px;
+}
+.review-item-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.review-item-line {
+  font-size: 12px; color: var(--text2); margin-bottom: 3px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.review-history-box {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+}
+.review-history-title {
+  font-size: 13px; font-weight: 600; color: var(--text2);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.review-item-actions {
+  margin-top: 8px; padding-top: 7px;
+  border-top: 1px dashed var(--border); display: flex; justify-content: flex-end;
+}
+.btn-delete-mini {
+  background: rgba(248,113,113,0.12); color: var(--red);
+  border: 1px solid rgba(248,113,113,0.4);
+  padding: 4px 12px; border-radius: 6px; font-size: 11px;
+  cursor: pointer; transition: all 0.2s var(--ease); font-weight: 500;
+}
+.btn-delete-mini:hover { background: rgba(248,113,113,0.22); border-color: var(--red); }
+.btn-delete-mini:active { transform: scale(0.95); }
 </style>
 </head>
 <body>
@@ -597,15 +891,6 @@ a { color: var(--accent); text-decoration: none; }
 
 <button class="fab" id="fabBtn" onclick="openAddModal()">+</button>
 
-<div class="fab-prompt" id="fabPrompt">
-  <div class="prompt-title">登记发布内容</div>
-  <div class="prompt-desc"><span class="prompt-platform" id="promptPlatform"></span> 已标记完成，是否登记内容标题、链接等信息？</div>
-  <div class="prompt-actions">
-    <button class="btn-prompt-skip" onclick="dismissFabPrompt()">取消</button>
-    <button class="btn-prompt-register" id="promptRegisterBtn">登记</button>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -619,6 +904,7 @@ const ARTICLE_PLATFORMS = ['百家号', '公众号', '知乎', '企鹅号', '搜
 const ALL_PLATFORMS = [...VIDEO_PLATFORMS, ...ARTICLE_PLATFORMS];
 const PLATFORM_SHORT = { '抖音':'抖','快手':'快','小红书':'红','视频号':'视','百家号':'百','公众号':'公','知乎':'知','企鹅号':'企','搜狐号':'搜' };
 const AI_ENGINES = ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米'];
+const AI_ENGINES_SHORT = { 'DeepSeek': 'DS', '豆包': '豆包', '千问': '千问', '文心': '文心', '元宝': '元宝', '纳米': '纳米' };
 const DAILY_TARGET = 1;
 
 const STORAGE_KEY = 'wb_content_workbench_v2_';
@@ -628,8 +914,9 @@ function saveData(key, val) { localStorage.setItem(STORAGE_KEY + key, JSON.strin
 
 let tasks = loadData('tasks');
 let contents = loadData('contents');
-let stats = loadData('stats');
-let aiStats = loadData('aiStats');
+let stats = loadData('stats');       // video stats: views/likes/shares/comments
+let aiStats = loadData('aiStats');   // article AI inclusion stats
+let reviews = loadData('reviews');   // 周/月复盘记录
 
 function getToday() {
   const d = new Date();
@@ -638,37 +925,95 @@ function getToday() {
 function isVideo(p) { return VIDEO_PLATFORMS.includes(p); }
 function isArticle(p) { return ARTICLE_PLATFORMS.includes(p); }
 
+// Ensure daily tasks: each platform 1 task per day.
+// Also backfill all days from start of current month up to today so monthly stats are meaningful.
 function ensureDailyTasks() {
   const today = new Date();
   const todayStr = getToday();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   let changed = false;
+
+  // Backfill: month start → today (so 月总量 reflects actual month progress)
   for (let d = new Date(monthStart); d <= today; d.setDate(d.getDate() + 1)) {
     const dateStr = getDayStr(d);
     ALL_PLATFORMS.forEach(p => {
       if (!tasks.find(t => t.date === dateStr && t.platform === p)) {
-        tasks.push({ id: Date.now() + Math.random(), date: dateStr, platform: p, type: isVideo(p) ? 'video' : 'article', done: false, contentId: null, target: DAILY_TARGET });
+        tasks.push({
+          id: Date.now() + Math.random(),
+          date: dateStr,
+          platform: p,
+          type: isVideo(p) ? 'video' : 'article',
+          done: false,
+          linked: false,
+          recorded: false,
+          contentId: null,
+          target: DAILY_TARGET
+        });
         changed = true;
       }
     });
   }
-  if (changed) saveData('tasks', tasks);
+
+  // 兼容旧数据：旧版 done=true 的任务，自动补上 linked/recorded 字段
+  let migrated = false;
+  tasks.forEach(t => {
+    if (t.linked === undefined) { t.linked = t.done || false; migrated = true; }
+    if (t.recorded === undefined) { t.recorded = false; migrated = true; }
+    if (t.contentId === undefined) { t.contentId = null; migrated = true; }
+  });
+  if (changed || migrated) saveData('tasks', tasks);
 }
 
 function getDayStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
+// 数据自动迁移：给旧版 stats/aiStats 补 contentId + title，避免「未关联」
+function migrateStatsData() {
+  let migrated = false;
+  // stats：按 platform+date 匹配内容，补 contentId/title/completionRate/favorites
+  stats.forEach(s => {
+    if (s.contentId === undefined || s.title === undefined) {
+      const c = contents.find(x => x.platform === s.platform && x.createdAt === s.date);
+      if (c) {
+        if (s.contentId === undefined) s.contentId = c.id;
+        if (s.title === undefined) s.title = c.title;
+        migrated = true;
+      }
+    }
+    if (s.completionRate === undefined) { s.completionRate = null; migrated = true; }
+    if (s.favorites === undefined) { s.favorites = 0; migrated = true; }
+  });
+  // aiStats：按 platform+date 匹配内容，补 contentId
+  aiStats.forEach(s => {
+    if (s.contentId === undefined || s.title === undefined) {
+      const c = contents.find(x => x.platform === s.platform && x.createdAt === s.date);
+      if (c) {
+        if (s.contentId === undefined) s.contentId = c.id;
+        if (s.title === undefined) s.title = c.title;
+        migrated = true;
+      }
+    }
+  });
+  if (migrated) {
+    saveData('stats', stats);
+    saveData('aiStats', aiStats);
+  }
+}
+
 ensureDailyTasks();
+migrateStatsData();
 
 // ===== STATE =====
 let currentTab = 'today';
 let currentMonth = new Date();
 let selectedDate = null;
-let dataSubTab = 'video';
+let dataSubTab = 'video'; // 'video' or 'article'
 let editId = null;
 let overviewMonth = new Date();
 let searchKeyword = '';
+let contentFilterType = '';   // '' | 'today' | 'video' | 'article'
+let contentFoldOpen = true;   // 内容登记列表折叠状态
 
 function render() {
   ensureDailyTasks();
@@ -680,6 +1025,7 @@ function render() {
     data: renderData
   };
   document.getElementById('mainContent').innerHTML = html[currentTab]();
+  applyContentFold();
 }
 
 // ===== TODAY TAB =====
@@ -691,22 +1037,30 @@ function renderToday() {
 
   let html = '<div class="today-section"><h3>今日待办</h3>';
 
+  // Today - video
   html += '<div style="font-size:13px;color:#fdba74;margin-bottom:6px;font-weight:600;">短视频平台（每日各1条）</div><ul class="today-list">';
   todayVideo.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
-    html += `<li class="today-item">
-      <span class="left">${t.done ? '<span class="status-done">&#10003;</span>' : '<span class="status-pending">&#9675;</span>'} <span class="platform-tag video">${t.platform}</span>${content ? ' ' + content.title : ''}</span>
-      ${t.done ? `<button class="btn-check-done" onclick="markDone('${t.id}')" title="点击取消">&#10003;</button>` : `<button class="btn-done" onclick="markDone('${t.id}')">发布</button>`}
+    html += `<li class="today-item ${content ? 'has-detail' : ''}">
+      <div class="today-item-row">
+        <span class="left">${renderChainDots(t)} <span class="platform-tag video">${t.platform}</span>${content ? ' ' + content.title : ''} ${renderChainHint(t)}${content ? `<span class="expand-toggle" onclick="toggleTaskDetail(this)">&#9660;</span>` : ''}</span>
+        ${renderTaskButton(t)}
+      </div>
+      ${content ? renderTaskDetail(content, t) : ''}
     </li>`;
   });
   html += '</ul>';
 
+  // Today - article
   html += '<div style="font-size:13px;color:#c4b5fd;margin:10px 0 6px;font-weight:600;">文书平台（每日各1条）</div><ul class="today-list">';
   todayArticle.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
-    html += `<li class="today-item">
-      <span class="left">${t.done ? '<span class="status-done">&#10003;</span>' : '<span class="status-pending">&#9675;</span>'} <span class="platform-tag article">${t.platform}</span>${content ? ' ' + content.title : ''}</span>
-      ${t.done ? `<button class="btn-check-done" onclick="markDone('${t.id}')" title="点击取消">&#10003;</button>` : `<button class="btn-done" onclick="markDone('${t.id}')">发布</button>`}
+    html += `<li class="today-item ${content ? 'has-detail' : ''}">
+      <div class="today-item-row">
+        <span class="left">${renderChainDots(t)} <span class="platform-tag article">${t.platform}</span>${content ? ' ' + content.title : ''} ${renderChainHint(t)}${content ? `<span class="expand-toggle" onclick="toggleTaskDetail(this)">&#9660;</span>` : ''}</span>
+        ${renderTaskButton(t)}
+      </div>
+      ${content ? renderTaskDetail(content, t) : ''}
     </li>`;
   });
   html += '</ul>';
@@ -719,6 +1073,7 @@ function renderToday() {
   }
   html += '</div>';
 
+  // Daily overview
   html += '<div class="card"><div class="card-title">本日发布概览</div>';
   const tVideo = todayTasks.filter(t => t.type === 'video');
   const tArticle = todayTasks.filter(t => t.type === 'article');
@@ -731,45 +1086,134 @@ function renderToday() {
     <div class="stat-card"><div class="stat-value">${aDone}/${aTotal}</div><div class="stat-label">文书</div></div>
     <div class="stat-card"><div class="stat-value">${doneCount}</div><div class="stat-label">今日完成</div></div>
     <div class="stat-card"><div class="stat-value">${todayTasks.length - doneCount}</div><div class="stat-label">今日待办</div></div>
-  </div></div>';
+  </div></div>`;
 
   return html;
+}
+
+// 任务展开详情：显示该平台对应登记的完整信息 + 数据摘要 + 操作入口
+function renderTaskDetail(content, t) {
+  let html = `<div class="task-detail">
+    <div class="task-detail-row"><span class="detail-label">标题</span><span>${content.title}</span></div>
+    ${content.topic ? `<div class="task-detail-row"><span class="detail-label">选题</span><span>${content.topic}</span></div>` : ''}
+    ${content.url ? `<div class="task-detail-row"><span class="detail-label">链接</span><a href="${content.url}" target="_blank" style="color:#7da7ff;word-break:break-all;">${content.url}</a></div>` : ''}
+    <div class="task-detail-row"><span class="detail-label">日期</span><span>${content.createdAt || ''}</span></div>`;
+
+  // 数据摘要（视频 / AI收录，按平台动态显示）
+  const type = isVideo(t.platform) ? 'video' : 'article';
+  if (type === 'video') {
+    const s = stats.find(x => x.contentId == content.id || x.contentId == Number(content.id));
+    if (s) {
+      const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
+      const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
+      // 第二项：小红书=人均观看，其他=完播率
+      const secondItem = t.platform === '小红书' ? '人均观看' + avgWatch : '完播' + completion;
+      // 收藏项：视频号=推荐，其他=收藏
+      const favItem = t.platform === '视频号' ? '推荐' + formatNum(s.recommend) : '收藏' + formatNum(s.favorites);
+      html += `<div class="task-detail-row"><span class="detail-label">数据</span><span>播放${formatNum(s.views)} · ${secondItem} · 点赞${formatNum(s.likes)} · 评论${formatNum(s.comments)} · ${favItem} · 分享${formatNum(s.shares)} · 涨粉${formatNum(s.followers)}</span></div>`;
+    }
+  } else {
+    const s = aiStats.find(x => x.contentId == content.id || x.contentId == Number(content.id));
+    if (s) {
+      const yes = AI_ENGINES.filter(e => s.ai && s.ai[e]);
+      html += `<div class="task-detail-row"><span class="detail-label">AI收录</span><span>${yes.length > 0 ? yes.join('、') : '暂无收录'}</span></div>`;
+    }
+  }
+
+  // 操作入口：数据录入 / 编辑 / 删除
+  html += `<div class="task-detail-actions">
+    <button class="btn-publish" onclick="openDataModal('${content.id}')">数据录入</button>
+    <button class="btn-edit" onclick="editContent('${content.id}')">编辑</button>
+    <button class="btn-delete" onclick="deleteContent('${content.id}')">删除</button>
+  </div>`;
+  html += '</div>';
+  return html;
+}
+
+// 展开/收起任务详情
+function toggleTaskDetail(arrowEl) {
+  // 兼容两种容器：今日待办 li.today-item / 日历 div.day-task
+  const container = arrowEl.closest('.today-item') || arrowEl.closest('.day-task');
+  if (!container) return;
+  const detail = container.querySelector('.task-detail');
+  if (!detail) return;
+  const isOpen = detail.classList.contains('open');
+  if (isOpen) {
+    detail.classList.remove('open');
+    arrowEl.style.transform = 'rotate(0deg)';
+  } else {
+    detail.classList.add('open');
+    arrowEl.style.transform = 'rotate(180deg)';
+  }
 }
 
 function markDone(id) {
   const t = tasks.find(x => x.id == id || x.id == Number(id));
   if (t) {
-    t.done = !t.done; saveData('tasks', tasks); render();
+    t.done = !t.done;
+    // 撤销完成不解除登记关系：只要还登记着内容，就不显示「登记链接」
+    saveData('tasks', tasks); render();
     showToast(t.done ? '已标记完成' : '已撤销');
-    if (t.done) showFabPrompt(t.platform);
   }
 }
 
-// ===== FAB PROMPT =====
-let pendingPromptPlatform = null;
-function showFabPrompt(platform) {
-  pendingPromptPlatform = platform;
-  document.getElementById('promptPlatform').textContent = platform;
-  document.getElementById('fabPrompt').classList.add('show');
+// ===== 流程链路：发布 → 登记链接 =====
+function renderChainDots(t) {
+  const step1 = t.done;
+  const step2 = t.done && t.linked;
+  const dot = (active, color) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${active ? color : 'rgba(148,163,184,0.3)'};box-shadow:${active ? '0 0 4px ' + color : 'none'};"></span>`;
+  return `<span class="chain-dots" title="完成/登记链接">${dot(step1, 'var(--green)')}${dot(step2, 'var(--accent)')}</span>`;
 }
-function dismissFabPrompt() {
-  document.getElementById('fabPrompt').classList.remove('show');
-  pendingPromptPlatform = null;
-}
-function registerFromPrompt() {
-  const platform = pendingPromptPlatform;
-  dismissFabPrompt();
-  openAddModal(platform);
-}
-document.getElementById('promptRegisterBtn').addEventListener('click', registerFromPrompt);
-document.addEventListener('click', function(e) {
-  if (!e.target.isConnected) return;
-  const prompt = document.getElementById('fabPrompt');
-  const fab = document.getElementById('fabBtn');
-  if (!prompt.contains(e.target) && !fab.contains(e.target) && prompt.classList.contains('show')) {
-    dismissFabPrompt();
+
+// 链路引导提示：已发布但未登记链接时显示轻量文字链接
+function renderChainHint(t) {
+  if (t.done && !t.linked) {
+    return `<a class="chain-hint" onclick="goRegisterLink('${t.id}')">登记链接</a>`;
   }
-});
+  return '';
+}
+
+// 主按钮统一：未完成="完成"，已完成=绿色对勾（点击可撤销）
+function renderTaskButton(t) {
+  if (t.done) {
+    return `<button class="btn-check-done" onclick="markDone('${t.id}')" title="点击取消">&#10003;</button>`;
+  }
+  return `<button class="btn-done" onclick="markDone('${t.id}')">完成</button>`;
+}
+
+function goRegisterLink(id) {
+  const t = tasks.find(x => x.id == id || x.id == Number(id));
+  if (t) openAddModal(t.platform, t.id);
+}
+
+function goRecordData(id) {
+  const t = tasks.find(x => x.id == id || x.id == Number(id));
+  if (!t) return;
+  // 跳转到数据复盘页，并预填平台/日期
+  currentTab = 'data';
+  dataSubTab = isVideo(t.platform) ? 'video' : 'article';
+  document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active'));
+  document.querySelector('.nav-tab[data-tab="data"]').classList.add('active');
+  setTimeout(() => {
+    const platformSel = document.getElementById(isVideo(t.platform) ? 'statPlatform' : 'aiPlatform');
+    const dateSel = document.getElementById(isVideo(t.platform) ? 'statDate' : 'aiDate');
+    if (platformSel) platformSel.value = t.platform;
+    if (dateSel) dateSel.value = t.date;
+    showToast('请为 ' + t.platform + ' 补录数据');
+  }, 50);
+  render();
+}
+
+// 登记内容成功后，对应任务自动完成并标记 linked（登记内容 = 该平台当日已发布）
+function linkTaskToContent(platform, date, contentId) {
+  const t = tasks.find(x => x.date === date && x.platform === platform);
+  if (t) {
+    if (!t.done) { t.done = true; }
+    t.linked = true;
+    if (contentId) t.contentId = contentId;
+    saveData('tasks', tasks);
+  }
+}
 
 // ===== CALENDAR TAB =====
 function renderCalendar() {
@@ -777,14 +1221,16 @@ function renderCalendar() {
   const month = currentMonth.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
   const todayStr = getToday();
 
   let html = `<div class="card"><div class="calendar-header"><div class="calendar-nav">
     <button onclick="changeMonth(-1)">&#8249;</button>
     <span class="calendar-month">${year}年${month+1}月</span>
     <button onclick="changeMonth(1)">&#8250;</button>
-  </div><button class="btn-today" onclick="goToday()">今天</button></div>
-  <div class="calendar-grid">
+  </div><button class="btn-today" onclick="goToday()">今天</button></div>`;
+
+  html += `<div class="calendar-grid">
     <div class="day-header">日</div><div class="day-header">一</div><div class="day-header">二</div><div class="day-header">三</div><div class="day-header">四</div><div class="day-header">五</div><div class="day-header">六</div>`;
 
   const prevMonthDays = new Date(year, month, 0).getDate();
@@ -822,22 +1268,26 @@ function renderCalendar() {
         html += '<div style="font-size:12px;color:#fdba74;margin-bottom:4px;font-weight:600;">短视频平台</div>';
         dv.forEach(t => {
           const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
-          if (t.done) {
-            html += `<div class="day-task"><span class="task-name"><span class="status-done">&#10003;</span> <span class="platform-tag video">${t.platform}</span>${content ? ' ' + content.title : ''}</span><button class="btn-check-done" onclick="markDone('${t.id}')" title="点击取消">&#10003;</button></div>`;
-          } else {
-            html += `<div class="day-task"><span class="task-name"><span class="status-pending">&#9675;</span> <span class="platform-tag video">${t.platform}</span>${content ? ' ' + content.title : ''}</span>${isPast ? `<button class="btn-overdue" onclick="markDone('${t.id}')">未完成</button>` : `<button class="btn-done" onclick="markDone('${t.id}')">完成</button>`}</div>`;
-          }
+          html += `<div class="day-task ${content ? 'has-detail' : ''}">
+            <div class="day-task-row">
+              <span class="task-name">${renderChainDots(t)} <span class="platform-tag video">${t.platform}</span>${content ? ' ' + content.title : ''} ${renderChainHint(t)}${content ? `<span class="expand-toggle" onclick="toggleTaskDetail(this)">&#9660;</span>` : ''}</span>
+              ${renderTaskButton(t)}
+            </div>
+            ${content ? renderTaskDetail(content, t) : ''}
+          </div>`;
         });
       }
       if (da.length > 0) {
         html += '<div style="font-size:12px;color:#c4b5fd;margin:8px 0 4px;font-weight:600;">文书平台</div>';
         da.forEach(t => {
           const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
-          if (t.done) {
-            html += `<div class="day-task"><span class="task-name"><span class="status-done">&#10003;</span> <span class="platform-tag article">${t.platform}</span>${content ? ' ' + content.title : ''}</span><button class="btn-check-done" onclick="markDone('${t.id}')" title="点击取消">&#10003;</button></div>`;
-          } else {
-            html += `<div class="day-task"><span class="task-name"><span class="status-pending">&#9675;</span> <span class="platform-tag article">${t.platform}</span>${content ? ' ' + content.title : ''}</span>${isPast ? `<button class="btn-overdue" onclick="markDone('${t.id}')">未完成</button>` : `<button class="btn-done" onclick="markDone('${t.id}')">完成</button>`}</div>`;
-          }
+          html += `<div class="day-task ${content ? 'has-detail' : ''}">
+            <div class="day-task-row">
+              <span class="task-name">${renderChainDots(t)} <span class="platform-tag article">${t.platform}</span>${content ? ' ' + content.title : ''} ${renderChainHint(t)}${content ? `<span class="expand-toggle" onclick="toggleTaskDetail(this)">&#9660;</span>` : ''}</span>
+              ${renderTaskButton(t)}
+            </div>
+            ${content ? renderTaskDetail(content, t) : ''}
+          </div>`;
         });
       }
     }
@@ -849,6 +1299,18 @@ function renderCalendar() {
 function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth() + delta); render(); }
 function goToday() { currentMonth = new Date(); selectedDate = getToday(); render(); }
 function selectDay(date) { selectedDate = date; render(); }
+
+// 折叠/展开登记内容列表（状态存 contentFoldOpen，render 后自动应用）
+function toggleContentFold() {
+  contentFoldOpen = !contentFoldOpen;
+  applyContentFold();
+}
+function applyContentFold() {
+  const body = document.getElementById('contentList');
+  const arrow = document.getElementById('foldArrow');
+  if (body) body.style.display = contentFoldOpen ? 'block' : 'none';
+  if (arrow) arrow.innerHTML = contentFoldOpen ? '&#9650;' : '&#9660;';
+}
 
 // ===== OVERVIEW TAB =====
 function renderOverview() {
@@ -863,22 +1325,30 @@ function renderOverview() {
     <button onclick="changeOverviewMonth(1)">&#8250;</button>
   </div><button class="btn-today" onclick="goOverviewThisMonth()">本月</button></div>`;
 
+  // 总览统计
   const videoTasks = monthTasks.filter(t => t.type === 'video');
   const articleTasks = monthTasks.filter(t => t.type === 'article');
   const vDone = videoTasks.filter(t => t.done).length;
   const aDone = articleTasks.filter(t => t.done).length;
   const totalDone = vDone + aDone;
-  const totalAll = monthTasks.length;
-  const rate = totalAll > 0 ? Math.round(totalDone/totalAll*100) : 0;
-  const rateColor = rate >= 80 ? 'var(--green)' : rate >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+  // 月视频总播放（当月所有视频数据播放量之和）
+  const monthVideoStats = stats.filter(s => s.date.startsWith(monthStr) && isVideo(s.platform));
+  const monthViews = monthVideoStats.reduce((sum, s) => sum + (s.views || 0), 0);
+  // 月AI总收录数（当月所有文书AI收录为"是"的引擎数之和）
+  const monthAiStats = aiStats.filter(s => s.date.startsWith(monthStr));
+  let aiTotal = 0;
+  monthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) aiTotal++; }); });
 
   html += `<div class="stats-grid">
     <div class="stat-card"><div class="stat-value">${totalDone}</div><div class="stat-label">本月已发布</div></div>
     <div class="stat-card"><div class="stat-value">${vDone}</div><div class="stat-label">短视频条数</div></div>
     <div class="stat-card"><div class="stat-value">${aDone}</div><div class="stat-label">文书条数</div></div>
-    <div class="stat-card"><div class="stat-value" style="color:${rateColor};">${rate}%</div><div class="stat-label">完成率</div></div>
+    <div class="stat-card"><div class="stat-value">${formatNum(monthViews)}</div><div class="stat-label">月视频总播放</div></div>
+    <div class="stat-card"><div class="stat-value">${aiTotal}</div><div class="stat-label">AI总收录数</div></div>
   </div></div>`;
 
+  // 各平台对比柱状图
   html += '<div class="card"><div class="card-title">各平台本月发布条数对比</div>';
   const platformCounts = {};
   ALL_PLATFORMS.forEach(p => platformCounts[p] = { done: 0, total: 0 });
@@ -894,10 +1364,11 @@ function renderOverview() {
     const v = platformCounts[p].done;
     const h = Math.round(v / maxCount * 100);
     const barClass = isVideo(p) ? 'video' : 'article';
-    html += `<div class="bar-col"><div class="bar-value">${v}</div><div class="bar ${barClass}" style="height:${Math.max(h,4)}%"></div><div class="bar-label">${PLATFORM_SHORT[p]}</div></div>`;
+    html += `<div class="bar-col"><div class="bar-value">${v}</div><div class="bar ${barClass}" style="height:${Math.max(h,4)}%"></div><div class="bar-label">${p}</div></div>`;
   });
   html += '</div></div>';
 
+  // 各平台明细 + 进度条
   html += '<div class="card"><div class="card-title">各平台发布明细</div>';
   html += '<div class="section-label"><span style="color:#fdba74;">短视频平台</span><span class="count">' + VIDEO_PLATFORMS.length + '</span></div>';
   html += '<div class="platform-rows">';
@@ -940,33 +1411,538 @@ function renderOverview() {
 function changeOverviewMonth(delta) { overviewMonth.setMonth(overviewMonth.getMonth() + delta); render(); }
 function goOverviewThisMonth() { overviewMonth = new Date(); render(); }
 
-// ===== CONTENT REGISTRATION TAB =====
+// ===== CONTENT REGISTRATION TAB（内容登记 + 解析表格）=====
 function renderContent() {
   let html = `<div class="card"><div class="card-title">内容登记 <span class="badge">${contents.length}条</span></div>`;
-
-  // Search box
   html += `<div class="search-box">
     <span class="search-icon">&#128269;</span>
     <input type="text" id="searchInput" placeholder="搜索标题/选题/平台/链接..." value="${searchKeyword}" oninput="handleSearch(this.value)">
     ${searchKeyword ? `<button class="search-clear" onclick="clearSearch()">清除</button>` : ''}
   </div>`;
-
   html += `<div class="filter-pills">
-    <span class="filter-pill active" onclick="filterContent('all',this)">全部</span>
-    <span class="filter-pill" onclick="filterContent('today',this)">今日</span>
-    <span class="filter-pill" onclick="filterContent('video',this)">短视频</span>
-    <span class="filter-pill" onclick="filterContent('article',this)">文书</span>
+    <span class="filter-pill ${!contentFilterType ? 'active' : ''}" onclick="filterContent('all',this)">全部</span>
+    <span class="filter-pill ${contentFilterType === 'today' ? 'active' : ''}" onclick="filterContent('today',this)">今日</span>
+    <span class="filter-pill ${contentFilterType === 'video' ? 'active' : ''}" onclick="filterContent('video',this)">短视频</span>
+    <span class="filter-pill ${contentFilterType === 'article' ? 'active' : ''}" onclick="filterContent('article',this)">文书</span>
   </div>`;
 
+  // 列表折叠区（可收起/展开）
+  html += `<div class="content-fold" id="contentFold">
+    <div class="content-fold-header" onclick="toggleContentFold()">
+      <span class="content-fold-title">📋 登记列表 <span class="badge">${contents.length}条</span></span>
+      <span class="content-fold-arrow" id="foldArrow">&#9650;</span>
+    </div>
+    <div id="contentList" class="content-fold-body">`;
   const sorted = getFilteredContents();
-  html += '<div id="contentList">';
-  if (sorted.length === 0) {
-    html += `<div class="empty-state"><div class="empty-icon">${searchKeyword ? '&#128270;' : '+'}</div><p>${searchKeyword ? '未找到匹配内容' : '暂无登记记录，点击右下角 + 号登记'}</p></div>`;
-  } else {
-    sorted.forEach(c => html += renderContentItem(c));
-  }
-  html += '</div></div>';
+  if (sorted.length === 0) html += `<div class="empty-state"><div class="empty-icon">${searchKeyword ? '&#128270;' : '+'}</div><p>${searchKeyword ? '未找到匹配内容' : '暂无登记记录，点击右下角 + 号登记'}</p></div>`;
+  else sorted.forEach(c => html += renderContentItem(c));
+  html += '</div></div></div>';
+
+  // 解析表格模块：解析平台导出的数据表，并入登记内容数据
+  html += renderTableParser();
+
   return html;
+}
+
+// ===== 数据表格解析模块（仅短视频平台）=====
+function renderTableParser() {
+  const videoCount = stats.length;
+  let html = `<div class="card"><div class="card-title">解析数据表格 <span class="badge">视频数据 ${videoCount}条</span></div>`;
+  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:10px;">先选择<b>平台</b>，再上传该平台导出的数据表文件（支持 <b>.xlsx</b> / <b>.csv</b> / <b>.tsv</b> / <b>.txt</b>），系统按该平台的表头规则自动识别，并入对应登记内容。有数据的字段自动填充，没有的留空。</p>`;
+
+  // 平台选择（仅 4 个短视频平台）
+  html += `<div class="form-group"><label>数据表所属平台</label><select id="parserPlatform" onchange="updateParserHelp()">
+    ${VIDEO_PLATFORMS.map(p => `<option value="${p}">${p}</option>`).join('')}
+  </select></div>`;
+
+  // 格式说明（随平台切换）
+  html += `<div class="form-group" id="parserHelp" style="font-size:12px;color:var(--text3);line-height:1.7;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 12px;"></div>`;
+
+  // 文件上传
+  html += `<div class="form-group"><label>上传表格文件</label>
+    <div class="upload-zone" id="parserUploadZone" onclick="document.getElementById('parserFile').click()">
+      <div class="upload-icon">&#128196;</div>
+      <div>点击选择文件，或拖拽到此处</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">支持 .xlsx / .csv / .tsv / .txt</div>
+    </div>
+    <input type="file" id="parserFile" accept=".xlsx,.csv,.tsv,.txt,text/plain" style="display:none;" onchange="handleParserFile(this.files[0])">
+  </div>`;
+  html += `<div class="form-group" id="parserPreview" style="display:none;font-size:12px;color:var(--text2);background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 12px;"></div>`;
+  html += '<div id="parserResult" style="margin-top:8px;"></div>';
+  html += '</div>';
+
+  // 拖拽支持 + 初始填充帮助说明
+  setTimeout(() => {
+    const zone = document.getElementById('parserUploadZone');
+    if (zone) {
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+      zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border-strong)'; });
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.style.borderColor = 'var(--border-strong)';
+        if (e.dataTransfer.files.length > 0) handleParserFile(e.dataTransfer.files[0]);
+      });
+    }
+    // 初始填充默认平台（抖音）的表头说明
+    updateParserHelp();
+  }, 100);
+  return html;
+}
+
+function updateParserHelp() {
+  const platform = document.getElementById('parserPlatform').value;
+  const help = document.getElementById('parserHelp');
+  // 各平台表头说明（随选择的平台高亮当前项）
+  const headers = {
+    '抖音': '作品名称 | 发布时间 | 播放量 | 完播率(0.35) | 点赞量 | 评论量 | 收藏量 | 分享量',
+    '快手': '作品 | 发布时间 | 播放量 | 完播率(20.6%) | 评论量 | 点赞量 | 收藏量',
+    '小红书': '笔记标题 | 首次发布时间 | 观看量 | 点赞 | 评论 | 收藏 | 涨粉 | 分享 | 人均观看时长',
+    '视频号': '视频描述 | 发布时间 | 播放量 | 完播率 | 喜欢 | 评论量 | 关注量 | 分享量 | 推荐'
+  };
+  help.innerHTML = `<b style="color:var(--text2);">当前平台：${platform}</b> — 上传该平台导出的数据表，系统按以下列名自动识别：<br><br>
+    ${Object.keys(headers).map(p => `
+      <div style="margin-bottom:4px;${p === platform ? 'background:var(--accent-soft);border-radius:6px;padding:3px 6px;' : ''}">
+        <b style="color:${p === platform ? 'var(--accent)' : 'var(--text2)'};">${p}：</b><code>${headers[p]}</code>
+      </div>`).join('')}
+    <b style="color:var(--text2);">说明：</b>完播率支持 0.35 / 20.6% / 35.6 三种格式，"--" 视为空；发布时间自动截取日期部分；小红书无人均观看时自动留空，视频号无收藏时记录「推荐」数。`;
+}
+
+// 处理上传文件（仅短视频平台数据表）
+async function handleParserFile(file) {
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  const preview = document.getElementById('parserPreview');
+  const type = 'video';   // 解析器仅支持短视频数据
+  // 平台来自用户选择（解析器顶部下拉）
+  const platform = document.getElementById('parserPlatform').value;
+  if (!platform) { showToast('请先选择数据表所属平台'); return; }
+
+  try {
+    let rows;
+    if (name.endsWith('.xlsx')) {
+      preview.style.display = 'block';
+      preview.innerHTML = '⏳ 正在解析 xlsx…';
+      const buf = await file.arrayBuffer();
+      rows = await parseXlsx(buf);
+      if (rows.length === 0) { showToast('xlsx 未解析到数据'); return; }
+    } else {
+      const text = await file.text();
+      rows = parseDelimitedText(text);
+      if (rows.length === 0) { showToast('文件未解析到数据'); return; }
+    }
+
+    // 预览
+    preview.style.display = 'block';
+    preview.innerHTML = `📄 [${platform}] ${file.name}：解析出 <b>${rows.length - 1}</b> 行数据，表头：<code style="font-size:11px;">${rows[0].slice(0,8).join(' / ')}</code>`;
+
+    const result = parseTableRows(rows, type, platform);
+    showParserResult(result, type);
+  } catch (err) {
+    console.error(err);
+    showToast('解析失败：' + (err.message || '未知错误'));
+  }
+}
+
+// 解析分隔文本（csv/tsv/txt）
+function parseDelimitedText(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return [];
+  const headerLine = lines[0];
+  let delimiter = '\t';
+  if (headerLine.includes(',')) delimiter = ',';
+  else if (headerLine.includes(';')) delimiter = ';';
+  return lines.map(line => parseRow(line, delimiter));
+}
+
+// 解析一行（支持引号包裹）
+function parseRow(line, delimiter) {
+  const cells = [];
+  let current = '';
+  let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; continue; }
+    if (ch === delimiter && !inQuote) { cells.push(current.trim()); current = ''; continue; }
+    current += ch;
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+// 解析 xlsx（极简：zip 解压 + sharedStrings + sheet XML）
+async function parseXlsx(buf) {
+  const files = await unzipFiles(buf);
+  // 找 sharedStrings 和第一个 sheet
+  let sharedStrings = [];
+  if (files['xl/sharedStrings.xml']) {
+    const ssXml = new TextDecoder().decode(files['xl/sharedStrings.xml']);
+    sharedStrings = parseSharedStrings(ssXml);
+  }
+  const sheetPath = Object.keys(files).find(k => /^xl\/worksheets\/sheet\d+\.xml$/.test(k));
+  if (!sheetPath) throw new Error('未找到工作表');
+  const sheetXml = new TextDecoder().decode(files[sheetPath]);
+  return parseSheetXml(sheetXml, sharedStrings);
+}
+
+// zip 解压（仅支持 deflate-raw 与 store）
+async function unzipFiles(buf) {
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(buf);
+  // 找 EOCD
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= 0; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('无效的 xlsx 文件（未找到 zip 目录）');
+  const entryCount = dv.getUint16(eocd + 10, true);
+  const cdOffset = dv.getUint32(eocd + 16, true);
+  const files = {};
+  let pos = cdOffset;
+  for (let n = 0; n < entryCount; n++) {
+    if (dv.getUint32(pos, true) !== 0x02014b50) break;
+    const method = dv.getUint16(pos + 10, true);
+    const compSize = dv.getUint32(pos + 20, true);
+    const uncompSize = dv.getUint32(pos + 24, true);
+    const nameLen = dv.getUint16(pos + 28, true);
+    const extraLen = dv.getUint16(pos + 30, true);
+    const commentLen = dv.getUint16(pos + 32, true);
+    const localOffset = dv.getUint32(pos + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(pos + 46, pos + 46 + nameLen));
+    // 读本地文件头获取数据起始位置
+    if (dv.getUint32(localOffset, true) === 0x04034b50) {
+      const localNameLen = dv.getUint16(localOffset + 26, true);
+      const localExtraLen = dv.getUint16(localOffset + 28, true);
+      const dataStart = localOffset + 30 + localNameLen + localExtraLen;
+      const compData = u8.subarray(dataStart, dataStart + compSize);
+      if (method === 0) {
+        files[name] = compData;
+      } else if (method === 8) {
+        files[name] = await inflateRaw(compData, uncompSize);
+      }
+    }
+    pos += 46 + nameLen + extraLen + commentLen;
+  }
+  return files;
+}
+
+// deflate-raw 解压（浏览器原生）
+async function inflateRaw(compData, expectedSize) {
+  if (typeof DecompressionStream !== 'undefined') {
+    const ds = new DecompressionStream('deflate-raw');
+    const stream = new Blob([compData]).stream().pipeThrough(ds);
+    const result = await new Response(stream).arrayBuffer();
+    return new Uint8Array(result);
+  }
+  throw new Error('当前浏览器不支持 xlsx 解压，请用 CSV 格式');
+}
+
+function parseSharedStrings(xml) {
+  const strings = [];
+  const siRegex = /<si[^>]*>([\s\S]*?)<\/si>/g;
+  let m;
+  while ((m = siRegex.exec(xml)) !== null) {
+    const inner = m[1];
+    // 拼接所有 <t> 文本
+    const tRegex = /<t[^>]*>([\s\S]*?)<\/t>/g;
+    let text = '';
+    let tm;
+    while ((tm = tRegex.exec(inner)) !== null) {
+      text += decodeXml(tm[1]);
+    }
+    strings.push(text);
+  }
+  return strings;
+}
+
+function decodeXml(s) {
+  return s
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+function parseSheetXml(xml, sharedStrings) {
+  const rows = [];
+  const rowRegex = /<row[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g;
+  let rm;
+  while ((rm = rowRegex.exec(xml)) !== null) {
+    const cells = [];
+    const cellRegex = /<c[^>]*r="([A-Z]+)\d+"[^>]*>([\s\S]*?)<\/c>/g;
+    let cm;
+    // 收集 (列字母, 值)
+    const cellMap = {};
+    while ((cm = cellRegex.exec(rm[2])) !== null) {
+      const colLetter = cm[1];
+      const inner = cm[2];
+      const tMatch = cm[0].match(/t="([^"]+)"/);
+      const t = tMatch ? tMatch[1] : '';
+      const vMatch = inner.match(/<v>([\s\S]*?)<\/v>/);
+      const isMatch = inner.match(/<is>[\s\S]*?<t[^>]*>([\s\S]*?)<\/t>/);
+      let val = '';
+      if (t === 's' && vMatch) val = sharedStrings[parseInt(vMatch[1])] || '';
+      else if (t === 'inlineStr' && isMatch) val = decodeXml(isMatch[1]);
+      else if (vMatch) val = decodeXml(vMatch[1]);
+      cellMap[colLetter] = val;
+    }
+    // 按列字母顺序排列（A, B, ..., AA, ...）
+    const letters = Object.keys(cellMap).sort((a, b) => colToNum(a) - colToNum(b));
+    const maxCol = letters.length > 0 ? colToNum(letters[letters.length - 1]) : 0;
+    for (let i = 1; i <= maxCol; i++) {
+      const colStr = numToCol(i);
+      cells.push(cellMap[colStr] !== undefined ? cellMap[colStr] : '');
+    }
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function colToNum(letters) {
+  let num = 0;
+  for (let i = 0; i < letters.length; i++) num = num * 26 + (letters.charCodeAt(i) - 64);
+  return num;
+}
+function numToCol(n) {
+  let s = '';
+  while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+
+// ===== 平台表头配置（每个平台独立的列名规则）=====
+// 每个字段的识别词按优先级排列，命中第一个即止
+const PLATFORM_HEADERS = {
+  '抖音': {
+    date: ['发布时间', '日期', '时间', 'date'],
+    title: ['作品名称', '作品标题', '标题', '作品', 'title'],
+    views: ['播放量', '播放数', '播放', 'views', 'view'],
+    completion: ['完播率', '完播', 'completion'],
+    likes: ['点赞量', '点赞数', '点赞', 'likes', 'like'],
+    comments: ['评论量', '评论数', '评论', 'comments', 'comment'],
+    favorites: ['收藏量', '收藏数', '收藏', 'favorites', 'favorite'],
+    shares: ['分享量', '分享数', '分享', '转发', 'shares', 'share'],
+    followers: ['粉丝增量', '涨粉量', '涨粉', '粉丝增长']
+  },
+  '快手': {
+    date: ['发布时间', '日期', '时间', 'date'],
+    title: ['作品名称', '作品', '标题', 'title'],
+    views: ['播放量', '播放数', '播放', 'views', 'view'],
+    completion: ['完播率', '完播', 'completion'],
+    likes: ['点赞量', '点赞数', '点赞', 'likes', 'like'],
+    comments: ['评论量', '评论数', '评论', 'comments', 'comment'],
+    favorites: ['收藏量', '收藏数', '收藏', 'favorites', 'favorite'],
+    shares: ['分享量', '分享数', '分享', '转发', 'shares', 'share'],
+    followers: ['涨粉量', '涨粉', '粉丝增量', '粉丝增长']
+  },
+  '小红书': {
+    headerRow: 2,   // 表头在第2行（第1行是提示语）
+    date: ['首次发布时间', '发布时间', '日期', '时间', 'date'],
+    title: ['笔记标题', '作品名称', '作品', '标题', 'title'],
+    views: ['观看量', '浏览量', '播放量', '播放', 'views', 'view'],
+    completion: ['完播率', '完播', 'completion'],
+    avgWatch: ['人均观看时长', '人均播放时长', 'avgwatchduration', 'avgwatch'],
+    likes: ['点赞', '赞', '喜欢', 'likes', 'like'],
+    comments: ['评论', '评论量', '评论数', 'comments', 'comment'],
+    favorites: ['收藏', '收藏量', '收藏数', 'favorites', 'favorite'],
+    shares: ['分享', '转发', '分享量', 'shares', 'share'],
+    followers: ['涨粉', '涨粉量', '粉丝增量', '粉丝增长']
+  },
+  '视频号': {
+    date: ['发布时间', '日期', '时间', 'date'],
+    title: ['视频描述', '作品名称', '作品', '标题', 'title'],
+    views: ['播放量', '播放数', '播放', 'views', 'view'],
+    completion: ['完播率', '完播', 'completion'],
+    recommend: ['推荐', '推荐量', '推荐数', 'recommend'],
+    likes: ['喜欢', '点赞', '赞', 'likes', 'like'],
+    comments: ['评论量', '评论数', '评论', 'comments', 'comment'],
+    favorites: ['收藏量', '收藏数', '收藏', 'favorites', 'favorite'],
+    shares: ['分享量', '分享数', '分享', '转发', 'shares', 'share'],
+    followers: ['关注量', '涨粉', '涨粉量', '粉丝增量', '粉丝增长']
+  }
+};
+
+// 文书平台统一表头（AI收录）
+const ARTICLE_HEADERS = {
+  date: ['发布时间', '日期', '时间', 'date'],
+  title: ['作品名称', '文章标题', '标题', '作品', 'title'],
+  ai: ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米']
+};
+
+// 统一解析行数据
+function parseTableRows(rows, type, platform) {
+  if (rows.length < 2) { showToast('数据至少需要表头+一行数据'); return null; }
+
+  // 根据平台选择对应的表头规则
+  const rules = type === 'video'
+    ? (PLATFORM_HEADERS[platform] || PLATFORM_HEADERS['抖音'])
+    : ARTICLE_HEADERS;
+
+  // 表头行偏移：部分平台（如小红书）第1行是提示语，表头在第2行
+  const headerRowIdx = (rules.headerRow || 1) - 1;
+  if (rows.length <= headerRowIdx) { showToast('数据行不足，未找到表头'); return null; }
+  const header = rows[headerRowIdx].map(h => String(h).toLowerCase().replace(/[\s_\-]+/g, ''));
+
+  // 识别列：优先精确匹配，其次包含匹配（避免"平均播放时长"误命中"播放"）
+  const findCol = (names) => {
+    for (const n of names) {
+      const exact = header.indexOf(n);
+      if (exact >= 0) return exact;
+    }
+    return header.findIndex(h => names.some(n => h.includes(n)));
+  };
+  const colDate = findCol(rules.date);
+  const colTitle = findCol(rules.title);
+  const colViews = findCol(rules.views || ['播放']);
+  const colCompletion = findCol(rules.completion || ['完播']);
+  const colAvgWatch = findCol(rules.avgWatch || ['人均观看']);
+  const colRecommend = findCol(rules.recommend || ['推荐']);
+  const colLikes = findCol(rules.likes || ['点赞']);
+  const colComments = findCol(rules.comments || ['评论']);
+  const colFavorites = findCol(rules.favorites || ['收藏']);
+  const colShares = findCol(rules.shares || ['分享']);
+  const colFollowers = findCol(rules.followers || ['涨粉', '粉丝']);
+  const aiCols = {};
+  if (type === 'article') {
+    AI_ENGINES.forEach(ai => {
+      const idx = findCol([ai.toLowerCase(), ai]);
+      if (idx >= 0) aiCols[ai] = idx;
+    });
+  }
+
+  if (colDate < 0) { showToast('未找到日期/时间列，请检查表头'); return null; }
+  if (type === 'article' && Object.keys(aiCols).length === 0) { showToast('未找到AI引擎列（DeepSeek/豆包/千问/文心/元宝/纳米）'); return null; }
+
+  // 数据从表头行之后开始
+  const dataStart = headerRowIdx + 1;
+  // 解析数据行（平台来自用户选择，不依赖表内平台列或文件名）
+  let parsedCount = 0;
+  const results = [];
+  for (let i = dataStart; i < rows.length; i++) {
+    const cells = rows[i];
+    const date = colDate >= 0 ? cells[colDate] : '';
+    const normDate = normalizeDate(date);
+    if (!normDate || !platform) continue;
+
+    if (type === 'video') {
+      const title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
+      const views = colViews >= 0 ? parseIntNum(cells[colViews]) : 0;
+      const completion = colCompletion >= 0 ? parseCompletion(cells[colCompletion]) : null;
+      // 小红书：人均观看时长（秒）；视频号：推荐数
+      const avgWatch = colAvgWatch >= 0 ? parseAvgWatch(cells[colAvgWatch]) : null;
+      const recommend = colRecommend >= 0 ? parseIntNum(cells[colRecommend]) : 0;
+      const likes = colLikes >= 0 ? parseIntNum(cells[colLikes]) : 0;
+      const comments = colComments >= 0 ? parseIntNum(cells[colComments]) : 0;
+      const favorites = colFavorites >= 0 ? parseIntNum(cells[colFavorites]) : 0;
+      const shares = colShares >= 0 ? parseIntNum(cells[colShares]) : 0;
+      const followers = colFollowers >= 0 ? parseIntNum(cells[colFollowers]) : 0;
+
+      const content = contents.find(c => c.platform === platform && c.createdAt === normDate);
+      if (content) {
+        const existing = stats.find(s => s.platform === platform && s.date === normDate);
+        const newStat = { platform, date: normDate, title: title || content.title, views, completionRate: completion, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: content.id };
+        if (existing) Object.assign(existing, newStat);
+        else stats.push({ id: Date.now() + Math.random(), ...newStat });
+        parsedCount++;
+        let summary = `播放${formatNum(views)}`;
+        if (completion !== null) summary += ` 完播${completion}%`;
+        if (avgWatch !== null) summary += ` 人均观看${avgWatch}s`;
+        if (recommend > 0) summary += ` 推荐${recommend}`;
+        results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${summary} 已并入「${content.title}」</div>`);
+      } else {
+        results.push(`<div style="font-size:12px;color:var(--yellow);">⚠ ${normDate} ${platform} 无匹配登记内容，跳过</div>`);
+      }
+    } else {
+      const ai = {};
+      AI_ENGINES.forEach(eng => {
+        const idx = aiCols[eng];
+        const v = idx >= 0 ? cells[idx] : '';
+        ai[eng] = isYesValue(v);
+      });
+      const content = contents.find(c => c.platform === platform && c.createdAt === normDate);
+      if (content) {
+        const existing = aiStats.find(s => s.platform === platform && s.date === normDate);
+        if (existing) { existing.ai = ai; }
+        else aiStats.push({ id: Date.now() + Math.random(), platform, date: normDate, title: content.title, ai, contentId: content.id });
+        parsedCount++;
+        const yesCount = AI_ENGINES.filter(e => ai[e]).length;
+        results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} AI收录${yesCount}/6 已并入「${content.title}」</div>`);
+      } else {
+        results.push(`<div style="font-size:12px;color:var(--yellow);">⚠ ${normDate} ${platform} 无匹配登记内容，跳过</div>`);
+      }
+    }
+  }
+
+  saveData('stats', stats);
+  saveData('aiStats', aiStats);
+  return { parsedCount, results };
+}
+
+function showParserResult(result, type) {
+  const resultDiv = document.getElementById('parserResult');
+  if (!result) return;
+  if (result.parsedCount > 0) {
+    resultDiv.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">✅ 成功并入 ${result.parsedCount} 条数据</div>${result.results.join('')}`;
+    showToast(`解析完成，并入 ${result.parsedCount} 条数据`);
+    render();
+  } else {
+    resultDiv.innerHTML = `<div style="font-size:13px;color:var(--red);">❌ 没有匹配到已登记内容，请先在内容登记中登记对应平台和日期的内容</div>`;
+    showToast('解析失败：无匹配内容');
+  }
+}
+
+// 归一化日期为 YYYY-MM-DD
+function normalizeDate(s) {
+  if (!s) return '';
+  s = String(s).trim();
+  // 带时间戳的日期：YYYY-MM-DD HH:MM:SS / YYYY/MM/DD HH:MM / YYYY-MM-DDTHH:MM
+  s = s.replace(/[T\s].*$/, '');
+  // 已经是 YYYY-MM-DD
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
+    const [y, m, d] = s.split('-');
+    return `${y}-${String(parseInt(m)).padStart(2,'0')}-${String(parseInt(d)).padStart(2,'0')}`;
+  }
+  // YYYY/MM/DD 或 YYYY.MM.DD
+  let m = s.match(/(\d{4})[\/.年](\d{1,2})[\/.月](\d{1,2})日?/);
+  if (m) return `${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+  // MM/DD/YYYY
+  m = s.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+  if (m) return `${m[3]}-${String(parseInt(m[1])).padStart(2,'0')}-${String(parseInt(m[2])).padStart(2,'0')}`;
+  return '';
+}
+
+function parseIntNum(v) {
+  if (v === undefined || v === null) return 0;
+  return parseInt(String(v).replace(/[^\d]/g, '')) || 0;
+}
+
+// 完播率解析：支持 35.6%、0.356、35.6 等
+function parseCompletion(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  if (s.includes('%')) {
+    return Math.round(parseFloat(s.replace('%', '')) * 10) / 10;
+  }
+  const num = parseFloat(s);
+  if (isNaN(num)) return null;
+  // 0-1 之间视为小数（0.356 → 35.6%），否则视为百分比
+  if (num > 0 && num <= 1) return Math.round(num * 1000) / 10;
+  return Math.round(num * 10) / 10;
+}
+
+// 人均观看时长解析：支持 "12"、"7.03秒"、"9.2s" 等
+function parseAvgWatch(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const s = String(v).trim();
+  if (!s) return null;
+  const num = parseFloat(s.replace(/[^0-9.]/g, ''));
+  if (isNaN(num)) return null;
+  return Math.round(num * 10) / 10;
+}
+
+function isYesValue(v) {
+  if (v === undefined || v === null) return false;
+  const s = String(v).trim().toLowerCase();
+  if (!s) return false;
+  return ['是', '1', 'true', 'y', 'yes', '√', '✓', '✔', '有', '已'].includes(s);
 }
 
 function getFilteredContents() {
@@ -984,14 +1960,10 @@ function getFilteredContents() {
     );
   }
 
-  // Apply filter pill
-  const activePill = document.querySelector('#mainContent .filter-pill.active');
-  if (activePill) {
-    const filter = activePill.textContent.trim();
-    if (filter === '今日') filtered = filtered.filter(c => c.createdAt === today);
-    else if (filter === '短视频') filtered = filtered.filter(c => isVideo(c.platform));
-    else if (filter === '文书') filtered = filtered.filter(c => isArticle(c.platform));
-  }
+  // Apply filter type
+  if (contentFilterType === 'today') filtered = filtered.filter(c => c.createdAt === today);
+  else if (contentFilterType === 'video') filtered = filtered.filter(c => isVideo(c.platform));
+  else if (contentFilterType === 'article') filtered = filtered.filter(c => isArticle(c.platform));
 
   filtered.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
   return filtered;
@@ -999,16 +1971,14 @@ function getFilteredContents() {
 
 function handleSearch(value) {
   searchKeyword = value.trim();
-  // Debounce
   clearTimeout(window._searchTimer);
-  window._searchTimer = setTimeout(() => {
-    render();
-  }, 200);
+  window._searchTimer = setTimeout(() => render(), 200);
 }
 
 function clearSearch() {
   searchKeyword = '';
-  document.getElementById('searchInput').value = '';
+  const input = document.getElementById('searchInput');
+  if (input) input.value = '';
   render();
 }
 
@@ -1026,98 +1996,393 @@ function renderContentItem(c) {
   const topicHtml = c.topic ? highlightText(c.topic, kw) : '';
   const platformHtml = highlightText(c.platform, kw);
 
-  let html = `<div class="content-item ${type}">
-    <div class="content-header">
+  // 已登记的数据（右侧数据栏，按平台动态显示）
+  let dataHtml = '';
+  let hasData = false;
+  if (type === 'video') {
+    const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+    if (s) {
+      hasData = true;
+      const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
+      const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
+      // 第二行：小红书=人均观看时长，其他=完播率
+      const secondLine = c.platform === '小红书'
+        ? `<div class="content-data-item"><span>人均观看</span><b>${avgWatch}</b></div>`
+        : `<div class="content-data-item"><span>完播</span><b>${completion}</b></div>`;
+      // 第三行（收藏位）：视频号=推荐，其他=收藏
+      const favLine = c.platform === '视频号'
+        ? `<div class="content-data-item"><span>推荐</span><b>${formatNum(s.recommend)}</b></div>`
+        : `<div class="content-data-item"><span>收藏</span><b>${formatNum(s.favorites)}</b></div>`;
+      dataHtml = `<div class="content-data-item"><span>播放</span><b>${formatNum(s.views)}</b></div>
+        ${secondLine}
+        <div class="content-data-item"><span>点赞</span><b>${formatNum(s.likes)}</b></div>
+        <div class="content-data-item"><span>评论</span><b>${formatNum(s.comments)}</b></div>
+        ${favLine}
+        <div class="content-data-item"><span>分享</span><b>${formatNum(s.shares)}</b></div>
+        <div class="content-data-item"><span>涨粉</span><b>${formatNum(s.followers)}</b></div>`;
+    }
+  } else {
+    const s = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+    if (s) {
+      hasData = true;
+      const yes = AI_ENGINES.filter(e => s.ai && s.ai[e]);
+      dataHtml = AI_ENGINES.map(ai => {
+        const ok = yes.includes(ai);
+        return `<div class="content-data-item"><span>${ai}</span><b style="color:${ok ? 'var(--green)' : 'var(--text3)'};">${ok ? '✓' : '—'}</b></div>`;
+      }).join('');
+    }
+  }
+
+  // 左侧信息栏
+  let leftHtml = `<div class="content-header">
       <span class="content-title">${titleHtml}</span>
       <span class="platform-tag ${type}">${platformHtml}</span>
     </div>`;
   if (c.topic) {
-    html += `<div class="content-preview"><span style="color:var(--text2);">选题：</span>${topicHtml}</div>`;
+    leftHtml += `<div class="content-preview"><span style="color:var(--text2);">选题：</span>${topicHtml}</div>`;
   }
   if (c.url) {
     const urlHtml = highlightText(c.url, kw);
-    html += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${c.url}" target="_blank">${c.url.length > 50 ? urlHtml.slice(0,50)+'...' : urlHtml}</a></div>`;
+    leftHtml += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${c.url}" target="_blank">${c.url.length > 50 ? urlHtml.slice(0,50)+'...' : urlHtml}</a></div>`;
   }
-  html += `<div class="content-meta">${c.createdAt || ''}</div>`;
-  html += `<div class="content-actions">
+  leftHtml += `<div class="content-meta">${c.createdAt || ''}</div>`;
+  leftHtml += `<div class="content-actions">
     <button class="btn-edit" onclick="editContent('${c.id}')">编辑</button>
     <button class="btn-delete" onclick="deleteContent('${c.id}')">删除</button>
-  </div></div>`;
-  return html;
+  </div>`;
+
+  // 右侧数据栏（数据展示 + 右下角数据录入按钮）
+  const rightHtml = `<div class="content-data-side ${hasData ? 'has-data' : ''}">
+    <div class="content-data-grid">
+      ${hasData ? dataHtml : '<div class="content-data-empty">暂无数据</div>'}
+    </div>
+    <div class="content-data-btn-wrap">
+      <button class="btn-publish" onclick="openDataModal('${c.id}')">数据录入</button>
+    </div>
+  </div>`;
+
+  return `<div class="content-item ${type}">
+    <div class="content-main">${leftHtml}</div>
+    ${rightHtml}
+  </div>`;
+}
+
+// ===== 单条数据录入弹窗（挂在登记内容上）=====
+function openDataModal(contentId) {
+  const c = contents.find(x => x.id == contentId || x.id == Number(contentId));
+  if (!c) return;
+  const type = isVideo(c.platform) ? 'video' : 'article';
+  pendingDataContentId = c.id;
+  document.getElementById('modalContent').innerHTML = type === 'video'
+    ? renderVideoDataModal(c)
+    : renderAiDataModal(c);
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function renderVideoDataModal(c) {
+  const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+  const pf = c.platform;
+  // 按平台动态选择第二行字段：抖音/快手/视频号=完播率，小红书=人均观看时长
+  const secondField = pf === '小红书'
+    ? `<div class="form-group"><label>人均观看时长(秒)</label><input type="number" id="statAvgWatch" value="${s && s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch : ''}" min="0" step="0.1"></div>`
+    : `<div class="form-group"><label>完播率(%)</label><input type="number" id="statCompletion" value="${s && s.completionRate !== null && s.completionRate !== undefined ? s.completionRate : ''}" min="0" max="100" step="0.1"></div>`;
+  // 第三行：视频号显示「推荐」替代「收藏」
+  const thirdRow = pf === '视频号'
+    ? `<div class="form-row">
+        <div class="form-group"><label>推荐</label><input type="number" id="statRecommend" value="${s ? s.recommend : ''}" min="0"></div>
+        <div class="form-group"><label>分享</label><input type="number" id="statShares" value="${s ? s.shares : ''}" min="0"></div>
+      </div>`
+    : `<div class="form-row">
+        <div class="form-group"><label>收藏</label><input type="number" id="statFavorites" value="${s ? s.favorites : ''}" min="0"></div>
+        <div class="form-group"><label>分享</label><input type="number" id="statShares" value="${s ? s.shares : ''}" min="0"></div>
+      </div>`;
+  return `<h3>${pf}数据录入</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag video">${pf}</span> ${c.title}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
+    <div class="form-group"><label>作品标题/描述（可选）</label><input type="text" id="statTitle" value="${s && s.title ? s.title : ''}" placeholder="与登记内容一致时留空即可"></div>
+    <div class="form-row">
+      <div class="form-group"><label>播放量</label><input type="number" id="statViews" value="${s ? s.views : ''}" min="0"></div>
+      ${secondField}
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>点赞</label><input type="number" id="statLikes" value="${s ? s.likes : ''}" min="0"></div>
+      <div class="form-group"><label>评论</label><input type="number" id="statComments" value="${s ? s.comments : ''}" min="0"></div>
+    </div>
+    ${thirdRow}
+    <div class="form-row">
+      <div class="form-group"><label>涨粉</label><input type="number" id="statFollowers" value="${s ? s.followers : ''}" min="0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save btn-danger" style="flex:0.6;" onclick="clearContentData()">清空</button>
+      <button class="btn-save" onclick="saveContentData()">保存数据</button>
+    </div>`;
+}
+
+function renderAiDataModal(c) {
+  const s = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+  const savedAi = (s && s.ai) || {};
+  return `<h3>文书AI收录录入</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag article">${c.platform}</span> ${c.title}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
+    <div class="form-group"><label>AI 收录情况（勾选已收录）</label>
+      <div class="ai-checks" id="aiChecks">
+        ${AI_ENGINES.map(eng => `<div class="ai-check-item ${savedAi[eng] ? 'checked' : ''}" data-ai="${eng}" onclick="toggleAiCheck(this)"><div class="check-box">${savedAi[eng] ? '&#10003;' : ''}</div><span>${eng}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save btn-danger" style="flex:0.6;" onclick="clearContentData()">清空</button>
+      <button class="btn-save" onclick="saveContentData()">保存数据</button>
+    </div>`;
+}
+
+let pendingDataContentId = null;
+
+// 清空当前弹窗的数据录入内容（不保存）
+function clearContentData() {
+  const c = contents.find(x => x.id == pendingDataContentId || x.id == Number(pendingDataContentId));
+  if (!c) return;
+  const type = isVideo(c.platform) ? 'video' : 'article';
+  if (type === 'video') {
+    ['statTitle', 'statViews', 'statCompletion', 'statAvgWatch', 'statLikes', 'statComments', 'statFavorites', 'statRecommend', 'statShares', 'statFollowers'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  } else {
+    document.querySelectorAll('#aiChecks .ai-check-item').forEach(el => {
+      el.classList.remove('checked');
+      el.querySelector('.check-box').innerHTML = '';
+    });
+  }
+  showToast('已清空，点击保存后生效');
+}
+
+function saveContentData() {
+  const c = contents.find(x => x.id == pendingDataContentId || x.id == Number(pendingDataContentId));
+  if (!c) { showToast('内容不存在'); return; }
+  const type = isVideo(c.platform) ? 'video' : 'article';
+  if (type === 'video') {
+    const title = (document.getElementById('statTitle').value || '').trim() || c.title;
+    const views = parseInt(document.getElementById('statViews').value) || 0;
+    const completionInput = document.getElementById('statCompletion').value;
+    const completionRate = completionInput !== '' ? parseFloat(completionInput) : null;
+    const avgWatchInput = document.getElementById('statAvgWatch').value;
+    const avgWatch = avgWatchInput !== '' ? parseFloat(avgWatchInput) : null;
+    const recommend = parseInt(document.getElementById('statRecommend').value) || 0;
+    const likes = parseInt(document.getElementById('statLikes').value) || 0;
+    const comments = parseInt(document.getElementById('statComments').value) || 0;
+    const favorites = parseInt(document.getElementById('statFavorites').value) || 0;
+    const shares = parseInt(document.getElementById('statShares').value) || 0;
+    const followers = parseInt(document.getElementById('statFollowers').value) || 0;
+    const existing = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+    const statData = { platform: c.platform, date: c.createdAt, title, views, completionRate, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: c.id };
+    if (existing) Object.assign(existing, statData);
+    else stats.push({ id: Date.now() + Math.random(), ...statData });
+    saveData('stats', stats);
+    markTaskRecorded(c.platform, c.createdAt);
+  } else {
+    const ai = {};
+    document.querySelectorAll('#aiChecks .ai-check-item').forEach(el => {
+      ai[el.dataset.ai] = el.classList.contains('checked');
+    });
+    const existing = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+    if (existing) { existing.ai = ai; existing.contentId = c.id; }
+    else aiStats.push({ id: Date.now() + Math.random(), platform: c.platform, date: c.createdAt, title: c.title, ai, contentId: c.id });
+    saveData('aiStats', aiStats);
+    markTaskRecorded(c.platform, c.createdAt);
+  }
+  pendingDataContentId = null;
+  closeModal(); render();
+  showToast('数据已保存');
 }
 
 function filterContent(filter, el) {
-  document.querySelectorAll('#mainContent .filter-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  const sorted = getFilteredContents();
-  document.getElementById('contentList').innerHTML = sorted.length === 0
-    ? `<div class="empty-state"><div class="empty-icon">${searchKeyword ? '&#128270;' : '+'}</div><p>${searchKeyword ? '未找到匹配内容' : '暂无匹配记录'}</p></div>`
-    : sorted.map(c => renderContentItem(c)).join('');
+  contentFilterType = filter === 'all' ? '' : filter;
+  render();
 }
 
 function deleteContent(id) {
   showConfirm({
     title: '确认删除',
-    desc: '确定删除这条记录吗？删除后不可恢复。',
+    desc: '确定删除这条记录吗？删除后不可恢复。<br><br><span style="color:var(--text3);">关联的发布任务将回到「未登记」状态，可重新登记。</span>',
     danger: true,
     onOk: () => {
-      contents = contents.filter(c => c.id != id && c.id != Number(id));
-      saveData('contents', contents); render(); showToast('已删除');
+      const numId = Number(id);
+      contents = contents.filter(c => c.id != id && c.id != numId);
+      // 解除任务关联：linked 重置，contentId 清空（任务保留完成状态，重新显示「登记链接」）
+      let taskChanged = false;
+      tasks.forEach(t => {
+        if (t.contentId !== null && t.contentId !== undefined && (t.contentId == id || t.contentId == numId)) {
+          t.contentId = null;
+          t.linked = false;
+          taskChanged = true;
+        }
+      });
+      if (taskChanged) saveData('tasks', tasks);
+      // 同步清理关联的视频数据 / AI收录数据
+      stats = stats.filter(s => !(s.contentId == id || s.contentId == numId));
+      aiStats = aiStats.filter(s => !(s.contentId == id || s.contentId == numId));
+      saveData('stats', stats); saveData('aiStats', aiStats);
+      saveData('contents', contents); render(); showToast('已删除，任务已回到未登记状态');
     }
   });
 }
 
-// ===== UNIFIED CONFIRM =====
-function showConfirm({ title, desc, danger = false, onOk }) {
-  document.getElementById('modalContent').innerHTML = `
-    <h3>${title}</h3>
-    <p class="confirm-text">${desc}</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save ${danger ? 'btn-danger' : ''}" id="confirmOkBtn">${danger ? '确认删除' : '确认'}</button>
-    </div>`;
-  document.getElementById('modalOverlay').classList.add('active');
-  document.getElementById('confirmOkBtn').onclick = () => {
-    closeModal();
-    if (onOk) onOk();
-  };
-}
-
-// ===== DATA TAB =====
+// ===== DATA TAB（周/月复盘视图）=====
 function renderData() {
   const thisMonth = getToday().slice(0, 7);
   let html = '';
 
+  // Sub-tabs
   html += `<div class="sub-tab-bar">
-    <div class="sub-tab ${dataSubTab==='video'?'active':''}" onclick="switchDataTab('video')">短视频数据（浏览/互动）</div>
-    <div class="sub-tab ${dataSubTab==='article'?'active':''}" onclick="switchDataTab('article')">文书数据（AI收录）</div>
+    <div class="sub-tab ${dataSubTab==='video'?'active':''}" onclick="switchDataTab('video')">短视频数据</div>
+    <div class="sub-tab ${dataSubTab==='article'?'active':''}" onclick="switchDataTab('article')">文书AI收录</div>
   </div>`;
 
+  // 左右两栏：左=统计图表，右=复盘登记
+  html += '<div class="data-layout">';
+  html += '<div class="data-left">';
   if (dataSubTab === 'video') {
     html += renderVideoData(thisMonth);
   } else {
     html += renderArticleData(thisMonth);
   }
+  html += '</div>';
+  html += '<div class="data-right">';
+  html += renderReviewPanel();
+  html += '</div>';
+  html += '</div>';
+
   return html;
 }
 
 function switchDataTab(tab) { dataSubTab = tab; render(); }
 
+// --- 复盘数据登记面板 ---
+function renderReviewPanel() {
+  // 跟随上方子Tab：短视频数据 ↔ 文书AI收录
+  const type = dataSubTab; // 'video' | 'article'
+  const isVideo = type === 'video';
+  let html = `<div class="card"><div class="card-title">${isVideo ? '短视频' : '文书'}复盘登记</div>`;
+
+  html += `<div class="form-group"><label>复盘周期</label><select id="reviewPeriod">
+    <option value="week">本周复盘</option>
+    <option value="month">本月复盘</option>
+  </select></div>`;
+  html += `<div class="form-group"><label>复盘日期</label><input type="date" id="reviewDate" value="${getToday()}"></div>`;
+  html += `<div class="form-group"><label>亮点内容 / 做得好的</label><textarea id="reviewHighlights" placeholder="播放/互动表现好的内容、平台、选题…"></textarea></div>`;
+  html += `<div class="form-group"><label>问题与不足</label><textarea id="reviewProblems" placeholder="数据不理想的地方、待改进项…"></textarea></div>`;
+  // 按类型区分：短视频=数据表现小结，文书=AI收录筛查
+  if (isVideo) {
+    html += `<div class="form-group"><label>数据表现小结</label><textarea id="reviewMetrics" placeholder="播放量/完播率/互动情况总结…"></textarea></div>`;
+  } else {
+    html += `<div class="form-group"><label>AI收录筛查情况</label><textarea id="reviewAi" placeholder="DeepSeek/豆包/千问/文心/元宝/纳米 收录情况小结…"></textarea></div>`;
+  }
+  html += `<div class="form-group"><label>下期计划</label><textarea id="reviewPlans" placeholder="下周/月计划做什么…"></textarea></div>`;
+  html += `<div class="toolbar" style="margin-top:8px;">
+    <button class="btn-primary" onclick="saveReview()">保存复盘</button>
+  </div>`;
+
+  // 历史复盘列表（只显示当前类型的记录）
+  const sortedReviews = [...reviews]
+    .filter(r => (r.type || 'video') === type)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  html += '<div style="margin-top:16px;">';
+  html += `<div class="review-history-box">
+    <div class="review-history-title">📋 ${isVideo ? '短视频' : '文书'}复盘记录 <span class="badge">${sortedReviews.length}条</span></div>
+    <div class="review-history-list">`;
+  if (sortedReviews.length === 0) {
+    html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无复盘记录</p>';
+  } else {
+    sortedReviews.forEach(r => {
+      const typeTag = isVideo ? 'video' : 'article';
+      const typeLabel = isVideo ? '短视频' : '文书';
+      html += `<div class="review-item">
+        <div class="review-item-head">
+          <span class="platform-tag ${typeTag}">${typeLabel}·${formatReviewRange(r.period, r.date)}</span>
+          <span style="font-size:11px;color:var(--text3);">${r.date}</span>
+        </div>
+        ${r.highlights ? `<div class="review-item-line"><span style="color:var(--green);">亮点：</span>${r.highlights}</div>` : ''}
+        ${r.metrics ? `<div class="review-item-line"><span style="color:var(--teal);">数据：</span>${r.metrics}</div>` : ''}
+        ${r.ai ? `<div class="review-item-line"><span style="color:var(--accent);">AI收录：</span>${r.ai}</div>` : ''}
+        ${r.problems ? `<div class="review-item-line"><span style="color:var(--red);">问题：</span>${r.problems}</div>` : ''}
+        ${r.plans ? `<div class="review-item-line"><span style="color:var(--purple);">计划：</span>${r.plans}</div>` : ''}
+        <div class="review-item-actions"><button class="btn-delete-mini" onclick="deleteReview('${r.id}')">删除</button></div>
+      </div>`;
+    });
+  }
+  html += '</div></div></div>';
+  return html;
+}
+
+function saveReview() {
+  const type = dataSubTab; // 跟随上方子Tab
+  const period = document.getElementById('reviewPeriod').value;
+  const date = document.getElementById('reviewDate').value || getToday();
+  const highlights = document.getElementById('reviewHighlights').value.trim();
+  const problems = document.getElementById('reviewProblems').value.trim();
+  const aiEl = document.getElementById('reviewAi');
+  const ai = aiEl ? aiEl.value.trim() : '';
+  const metricsEl = document.getElementById('reviewMetrics');
+  const metrics = metricsEl ? metricsEl.value.trim() : '';
+  const plans = document.getElementById('reviewPlans').value.trim();
+  if (!highlights && !problems && !ai && !metrics && !plans) { showToast('请至少填写一项内容'); return; }
+  // 同日同周期同类型覆盖
+  const existing = reviews.find(r => r.date === date && r.period === period && r.type === type);
+  if (existing) { existing.highlights = highlights; existing.problems = problems; existing.ai = ai; existing.metrics = metrics; existing.plans = plans; }
+  else reviews.push({ id: Date.now(), type, period, date, highlights, problems, ai, metrics, plans });
+  saveData('reviews', reviews); render(); showToast('复盘已保存');
+}
+
+function deleteReview(id) {
+  showConfirm({
+    title: '确认删除',
+    desc: '确定删除这条复盘记录吗？',
+    danger: true,
+    onOk: () => {
+      reviews = reviews.filter(r => r.id != id && r.id != Number(id));
+      saveData('reviews', reviews); render(); showToast('已删除');
+    }
+  });
+}
+
+// 复盘时间段标签：周→所在周周一~周日，月→当月1号~月末
+function formatReviewRange(period, dateStr) {
+  if (!dateStr) return period === 'month' ? '本月' : '本周';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return period === 'month' ? '本月' : '本周';
+  if (period === 'month') {
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return '本月·' + getDayStr(start) + ' ~ ' + getDayStr(end);
+  }
+  // 周：所在周的周一到周日
+  const diffToMon = (d.getDay() + 6) % 7;
+  const start = new Date(d); start.setDate(d.getDate() - diffToMon);
+  const end = new Date(start); end.setDate(start.getDate() + 6);
+  return '本周·' + getDayStr(start) + ' ~ ' + getDayStr(end);
+}
+
+// --- Video data（仅统计展示）---
 function renderVideoData(thisMonth) {
   const monthStats = stats.filter(s => s.date.startsWith(thisMonth) && isVideo(s.platform));
+  const totalCount = monthStats.length;  // 总发布数（数据录入条数）
   const totalViews = monthStats.reduce((sum, s) => sum + (s.views || 0), 0);
   const totalLikes = monthStats.reduce((sum, s) => sum + (s.likes || 0), 0);
-  const totalShares = monthStats.reduce((sum, s) => sum + (s.shares || 0), 0);
   const totalComments = monthStats.reduce((sum, s) => sum + (s.comments || 0), 0);
+  const totalFavorites = monthStats.reduce((sum, s) => sum + (s.favorites || 0), 0);
+  const totalFollowers = monthStats.reduce((sum, s) => sum + (s.followers || 0), 0);
 
   let html = `<div class="card"><div class="card-title">短视频平台本月数据</div>
     <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${totalCount}</div><div class="stat-label">总发布数</div></div>
       <div class="stat-card"><div class="stat-value">${formatNum(totalViews)}</div><div class="stat-label">总播放量</div></div>
       <div class="stat-card"><div class="stat-value">${formatNum(totalLikes)}</div><div class="stat-label">总点赞</div></div>
-      <div class="stat-card"><div class="stat-value">${formatNum(totalShares)}</div><div class="stat-label">总分享</div></div>
       <div class="stat-card"><div class="stat-value">${formatNum(totalComments)}</div><div class="stat-label">总评论</div></div>
+      <div class="stat-card"><div class="stat-value">${formatNum(totalFavorites)}</div><div class="stat-label">总收藏</div></div>
+      <div class="stat-card"><div class="stat-value">${formatNum(totalFollowers)}</div><div class="stat-label">总涨粉</div></div>
     </div></div>`;
 
+  // Bar chart
   html += '<div class="card"><div class="card-title">各平台播放量对比</div>';
   const platformViews = {};
   VIDEO_PLATFORMS.forEach(p => platformViews[p] = 0);
@@ -1131,33 +2396,28 @@ function renderVideoData(thisMonth) {
   });
   html += '</div></div>';
 
-  html += `<div class="card"><div class="card-title">录入视频数据</div>
-    <div class="form-row">
-      <div class="form-group"><label>平台</label><select id="statPlatform">
-        ${VIDEO_PLATFORMS.map(p => `<option value="${p}">${p}</option>`).join('')}
-      </select></div>
-      <div class="form-group"><label>日期</label><input type="date" id="statDate" value="${getToday()}"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>播放量</label><input type="number" id="statViews" placeholder="0" min="0"></div>
-      <div class="form-group"><label>点赞数</label><input type="number" id="statLikes" placeholder="0" min="0"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>分享数</label><input type="number" id="statShares" placeholder="0" min="0"></div>
-      <div class="form-group"><label>评论数</label><input type="number" id="statComments" placeholder="0" min="0"></div>
-    </div>
-    <div class="toolbar" style="margin-top:8px;">
-      <button class="btn-primary" onclick="saveStat()">保存数据</button>
-    </div>
-  </div>`;
-
+  // Table
   html += '<div class="card"><div class="card-title">详细数据</div>';
-  const recentStats = monthStats.sort((a,b) => b.date.localeCompare(a.date));
-  if (recentStats.length === 0) html += '<div class="empty-state"><p>暂无数据，点击上方录入</p></div>';
+  const recentStats = [...monthStats].sort((a,b) => b.date.localeCompare(a.date));
+  if (recentStats.length === 0) html += '<div class="empty-state"><p>暂无数据，请在内容登记页录入</p></div>';
   else {
-    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>播放</th><th>点赞</th><th>分享</th><th>评论</th><th>操作</th></tr></thead><tbody>';
+    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>标题</th><th>播放</th><th>完播/人均观看</th><th>点赞</th><th>评论</th><th>收藏/推荐</th><th>分享</th><th>涨粉</th></tr></thead><tbody>';
     recentStats.forEach(s => {
-      html += `<tr><td>${s.date}</td><td><span class="platform-tag video">${s.platform}</span></td><td>${formatNum(s.views)}</td><td>${formatNum(s.likes)}</td><td>${formatNum(s.shares)}</td><td>${formatNum(s.comments)}</td><td><button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;" onclick="deleteStat('${s.id}')">删除</button></td></tr>`;
+      // 标题三级回退：contentId → platform+date → platform → 未关联
+      const linkedTitle = findLinkedTitle(s, 'video');
+      const title = s.title || linkedTitle || '未关联';
+      const titleShort = title.length > 12 ? title.slice(0,12) + '…' : title;
+      const noLink = linkedTitle === null;
+      // 完播率列：小红书显示人均观看时长，其他显示完播率
+      let completionCell;
+      if (s.platform === '小红书') {
+        completionCell = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
+      } else {
+        completionCell = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
+      }
+      // 收藏列：视频号显示推荐，其他显示收藏
+      const favCell = s.platform === '视频号' ? formatNum(s.recommend) : formatNum(s.favorites);
+      html += `<tr><td>${s.date}</td><td><span class="platform-tag video">${s.platform}</span></td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${noLink ? 'var(--orange)' : 'inherit'};" title="${title}">${titleShort}</td><td>${formatNum(s.views)}</td><td>${completionCell}</td><td>${formatNum(s.likes)}</td><td>${formatNum(s.comments)}</td><td>${favCell}</td><td>${formatNum(s.shares)}</td><td>${formatNum(s.followers)}</td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -1176,13 +2436,21 @@ function saveStat() {
   const existing = stats.find(s => s.platform === platform && s.date === date);
   if (existing) { existing.views = views; existing.likes = likes; existing.shares = shares; existing.comments = comments; }
   else stats.push({ id: Date.now(), platform, date, views, likes, shares, comments });
-  saveData('stats', stats); render(); showToast(platform + ' 数据已保存');
+  saveData('stats', stats);
+  markTaskRecorded(platform, date);
+  render(); showToast(platform + ' 数据已保存，链路进度已更新');
+}
+
+// 数据保存成功后，标记对应任务 recorded（链路第三环）
+function markTaskRecorded(platform, date) {
+  const t = tasks.find(x => x.date === date && x.platform === platform);
+  if (t && t.done) { t.recorded = true; if (!t.linked) t.linked = true; saveData('tasks', tasks); }
 }
 
 function deleteStat(id) {
   showConfirm({
     title: '确认删除',
-    desc: '确定删除这条数据吗？删除后不可恢复。',
+    desc: '将删除这条视频数据记录（播放/点赞/评论等），内容登记本身不受影响，统计数字会随之更新。',
     danger: true,
     onOk: () => {
       stats = stats.filter(s => s.id != id && s.id != Number(id));
@@ -1191,23 +2459,26 @@ function deleteStat(id) {
   });
 }
 
+// --- Article AI data ---
 function renderArticleData(thisMonth) {
   const monthAiStats = aiStats.filter(s => s.date.startsWith(thisMonth) && isArticle(s.platform));
   let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪</div>`;
-  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">追踪 6 大 AI 引擎收录情况：${AI_ENGINES.join('、')}</p>`;
+  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">按月统计 6 大 AI 引擎收录情况：${AI_ENGINES.join('、')}</p>`;
 
+  // Summary（月为单位：总发布数 / AI收录数 / AI收录率）
   let totalChecked = 0, totalPossible = 0;
   monthAiStats.forEach(s => {
     AI_ENGINES.forEach(ai => { totalPossible++; if (s.ai && s.ai[ai]) totalChecked++; });
   });
   const rate = totalPossible > 0 ? Math.round(totalChecked / totalPossible * 100) : 0;
   html += `<div class="stats-grid">
-    <div class="stat-card"><div class="stat-value">${monthAiStats.length}</div><div class="stat-label">记录条数</div></div>
-    <div class="stat-card"><div class="stat-value">${totalChecked}/${totalPossible}</div><div class="stat-label">AI收录总数</div></div>
-    <div class="stat-card"><div class="stat-value" style="color:${rate>=50?'var(--green)':'var(--yellow)'};">${rate}%</div><div class="stat-label">收录率</div></div>
+    <div class="stat-card"><div class="stat-value">${monthAiStats.length}</div><div class="stat-label">总发布数</div></div>
+    <div class="stat-card"><div class="stat-value">${totalChecked}/${totalPossible}</div><div class="stat-label">AI收录数</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${rate>=50?'var(--green)':'var(--yellow)'};">${rate}%</div><div class="stat-label">AI收录率</div></div>
   </div></div>`;
 
-  html += '<div class="card"><div class="card-title">各 AI 引擎收录分布</div>';
+  // AI引擎收录情况（引擎视角柱形图）
+  html += '<div class="card"><div class="card-title">AI引擎收录情况</div>';
   const aiCounts = {};
   AI_ENGINES.forEach(ai => aiCounts[ai] = 0);
   monthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) aiCounts[ai]++; }); });
@@ -1220,37 +2491,42 @@ function renderArticleData(thisMonth) {
   });
   html += '</div></div>';
 
-  html += `<div class="card"><div class="card-title">录入 AI 收录数据</div>
-    <div class="form-row">
-      <div class="form-group"><label>平台</label><select id="aiPlatform">
-        ${ARTICLE_PLATFORMS.map(p => `<option value="${p}">${p}</option>`).join('')}
-      </select></div>
-      <div class="form-group"><label>日期</label><input type="date" id="aiDate" value="${getToday()}"></div>
-    </div>
-    <div class="form-group"><label>内容标题（可选）</label><input type="text" id="aiTitle" placeholder="关联的内容标题"></div>
-    <div class="form-group"><label>AI 收录情况（勾选已收录）</label>
-      <div class="ai-checks" id="aiChecks">
-        ${AI_ENGINES.map(ai => `<div class="ai-check-item" data-ai="${ai}" onclick="toggleAiCheck(this)"><div class="check-box"></div><span>${ai}</span></div>`).join('')}
-      </div>
-    </div>
-    <div class="toolbar" style="margin-top:8px;">
-      <button class="btn-primary" onclick="saveAiStat()">保存数据</button>
-    </div>
-  </div>`;
+  // 文书平台被收录情况（平台视角柱形图）
+  html += '<div class="card"><div class="card-title">文书平台被收录情况</div>';
+  const platformCounts = {};
+  ARTICLE_PLATFORMS.forEach(p => platformCounts[p] = 0);
+  monthAiStats.forEach(s => {
+    if (platformCounts[s.platform] !== undefined) {
+      AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) platformCounts[s.platform]++; });
+    }
+  });
+  const maxPlat = Math.max(...Object.values(platformCounts), 1);
+  html += '<div class="bar-chart">';
+  ARTICLE_PLATFORMS.forEach(p => {
+    const v = platformCounts[p];
+    const h = Math.round(v / maxPlat * 100);
+    html += `<div class="bar-col"><div class="bar-value">${v}</div><div class="bar article" style="height:${Math.max(h,4)}%"></div><div class="bar-label">${p}</div></div>`;
+  });
+  html += '</div></div>';
 
+  // Table
   html += '<div class="card"><div class="card-title">详细数据</div>';
-  if (monthAiStats.length === 0) html += '<div class="empty-state"><p>暂无数据，点击上方录入</p></div>';
+  if (monthAiStats.length === 0) html += '<div class="empty-state"><p>暂无数据，请在内容登记页录入</p></div>';
   else {
-    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th>';
-    AI_ENGINES.forEach(ai => html += `<th>${ai}</th>`);
-    html += '<th>操作</th></tr></thead><tbody>';
-    monthAiStats.sort((a,b) => b.date.localeCompare(a.date)).forEach(s => {
-      html += `<tr><td>${s.date}</td><td><span class="platform-tag article">${s.platform}</span></td>`;
+    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>内容标题</th>';
+    AI_ENGINES.forEach(ai => html += `<th>${AI_ENGINES_SHORT[ai] || ai}</th>`);
+    html += '</tr></thead><tbody>';
+    [...monthAiStats].sort((a,b) => b.date.localeCompare(a.date)).forEach(s => {
+      const linkedTitle = findLinkedTitle(s, 'article');
+      const title = s.title || linkedTitle || '未关联';
+      const titleShort = title.length > 12 ? title.slice(0,12) + '…' : title;
+      const noLink = linkedTitle === null;
+      html += `<tr><td>${s.date}</td><td><span class="platform-tag article">${s.platform}</span></td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${noLink ? 'var(--orange)' : 'inherit'};" title="${title}">${titleShort}</td>`;
       AI_ENGINES.forEach(ai => {
         const yes = s.ai && s.ai[ai];
         html += `<td><span class="ai-badge ${yes?'yes':'no'}">${yes?'Y':'-'}</span></td>`;
       });
-      html += `<td><button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;" onclick="deleteAiStat('${s.id}')">删除</button></td></tr>`;
+      html += '</tr>';
     });
     html += '</tbody></table></div>';
   }
@@ -1276,13 +2552,15 @@ function saveAiStat() {
   const existing = aiStats.find(s => s.platform === platform && s.date === date);
   if (existing) { existing.ai = ai; existing.title = title || existing.title; }
   else aiStats.push({ id: Date.now(), platform, date, title, ai });
-  saveData('aiStats', aiStats); render(); showToast(platform + ' AI收录数据已保存');
+  saveData('aiStats', aiStats);
+  markTaskRecorded(platform, date);
+  render(); showToast(platform + ' AI收录数据已保存，链路进度已更新');
 }
 
 function deleteAiStat(id) {
   showConfirm({
     title: '确认删除',
-    desc: '确定删除这条数据吗？删除后不可恢复。',
+    desc: '将删除这条AI收录数据记录，内容登记本身不受影响，收录统计会随之更新。',
     danger: true,
     onOk: () => {
       aiStats = aiStats.filter(s => s.id != id && s.id != Number(id));
@@ -1292,6 +2570,19 @@ function deleteAiStat(id) {
 }
 
 // ===== UTIL =====
+// 关联内容标题：优先 contentId 精确匹配，兜底 platform+date 匹配。返回 null 表示无关联。
+function findLinkedTitle(record, type) {
+  // 1. 按 contentId 精确匹配
+  if (record.contentId) {
+    const c = contents.find(c => c.id == record.contentId || c.id == Number(record.contentId));
+    if (c) return c.title;
+  }
+  // 2. 按 platform + date 匹配（兼容无 contentId 的旧数据）
+  const sameDay = contents.find(c => c.platform === record.platform && c.createdAt === record.date);
+  if (sameDay) return sameDay.title;
+  return null;
+}
+
 function formatNum(n) {
   if (n >= 10000) return (n/10000).toFixed(1) + 'w';
   if (n >= 1000) return (n/1000).toFixed(1) + 'k';
@@ -1299,8 +2590,10 @@ function formatNum(n) {
 }
 
 // ===== MODAL =====
-function openAddModal(prefillPlatform) {
+let pendingLinkTaskId = null;
+function openAddModal(prefillPlatform, taskId) {
   editId = null;
+  pendingLinkTaskId = taskId || null;
   const preP = prefillPlatform || VIDEO_PLATFORMS[0];
   document.getElementById('modalContent').innerHTML = `
     <h3>登记内容</h3>
@@ -1363,17 +2656,52 @@ function saveContent() {
   const topic = document.getElementById('cTopic').value.trim();
   const url = document.getElementById('cUrl').value.trim();
   if (!title) { showToast('请输入标题'); return; }
+  let savedId = null;
   if (editId) {
     const c = contents.find(x => x.id == editId || x.id == Number(editId));
-    if (c) { c.title = title; c.platform = platform; c.topic = topic; c.url = url; c.createdAt = date; }
+    if (c) { c.title = title; c.platform = platform; c.topic = topic; c.url = url; c.createdAt = date; savedId = c.id; }
   } else {
-    contents.push({ id: Date.now(), title, platform, topic, url, createdAt: date });
+    savedId = Date.now();
+    contents.push({ id: savedId, title, platform, topic, url, createdAt: date });
   }
-  saveData('contents', contents); closeModal(); render();
-  showToast(editId ? '已更新' : '已登记');
+  saveData('contents', contents); closeModal();
+  // 打通链路：登记内容成功后，对应任务自动完成 + 标记 linked
+  if (pendingLinkTaskId) {
+    const t = tasks.find(x => x.id == pendingLinkTaskId || x.id == Number(pendingLinkTaskId));
+    if (t) {
+      if (!t.done) { t.done = true; }
+      t.linked = true;
+      t.contentId = savedId;
+      saveData('tasks', tasks);
+    }
+  } else {
+    linkTaskToContent(platform, date, savedId);
+  }
+  pendingLinkTaskId = null;
+  render();
+  showToast(editId ? '已更新' : '已登记，链路进度已更新');
 }
 
-function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+// ===== UNIFIED CONFIRM =====
+function showConfirm({ title, desc, danger = false, onOk }) {
+  document.getElementById('modalContent').innerHTML = `
+    <h3>${title}</h3>
+    <p class="confirm-text">${desc}</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save ${danger ? 'btn-danger' : ''}" id="confirmOkBtn">${danger ? '确认删除' : '确认'}</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('confirmOkBtn').onclick = () => {
+    closeModal();
+    if (onOk) onOk();
+  };
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  pendingLinkTaskId = null;
+}
 document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
 // ===== NAV =====
@@ -1396,7 +2724,7 @@ function showToast(msg) {
 
 // ===== EXPORT/IMPORT =====
 function exportData() {
-  const data = { version: 2, exportedAt: new Date().toISOString(), tasks, contents, stats, aiStats };
+  const data = { version: 3, exportedAt: new Date().toISOString(), tasks, contents, stats, aiStats, reviews };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `新媒体工作台_${getToday()}.json`; a.click();
@@ -1414,6 +2742,7 @@ function importData(event) {
       if (data.contents) { contents = data.contents; saveData('contents', contents); }
       if (data.stats) { stats = data.stats; saveData('stats', stats); }
       if (data.aiStats) { aiStats = data.aiStats; saveData('aiStats', aiStats); }
+      if (data.reviews) { reviews = data.reviews; saveData('reviews', reviews); }
       render(); showToast('导入成功');
     } catch(err) { showToast('导入失败：文件格式错误'); }
   };
@@ -1421,17 +2750,21 @@ function importData(event) {
 }
 
 function clearAllData() {
-  showConfirm({
-    title: '确认清空',
-    desc: '即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据），此操作不可恢复！<br><br>建议先导出备份。',
-    danger: true,
-    onOk: () => {
-      tasks = []; contents = []; stats = []; aiStats = [];
-      saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats);
-      selectedDate = null; ensureDailyTasks(); render();
-      showToast('已清空，已重置今日任务');
-    }
-  });
+  document.getElementById('modalContent').innerHTML = `
+    <h3>确认清空</h3>
+    <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据），此操作不可恢复！<br><br>建议先导出备份。</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" style="background:linear-gradient(135deg,#f87171,#ef4444);" onclick="confirmClear()">确认清空</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function confirmClear() {
+  tasks = []; contents = []; stats = []; aiStats = []; reviews = [];
+  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);
+  selectedDate = null; closeModal(); ensureDailyTasks(); render();
+  showToast('已清空，已重置今日任务');
 }
 
 function fillSampleData() {
@@ -1445,36 +2778,115 @@ function fillSampleData() {
       const yest = yestDate.getFullYear() + '-' + String(yestDate.getMonth()+1).padStart(2,'0') + '-' + String(yestDate.getDate()).padStart(2,'0');
 
       tasks = [];
-      ALL_PLATFORMS.forEach((p, i) => {
-        tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: i < 4, contentId: null, target: DAILY_TARGET });
-      });
-      tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, contentId: null, target: DAILY_TARGET });
+  ALL_PLATFORMS.forEach((p, i) => {
+    // 示例中 9 个平台都登记了内容，任务全部完成（contentId 对齐 1-9）
+    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: true, linked: true, contentId: i + 1, target: DAILY_TARGET });
+  });
+  tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, linked: false, contentId: null, target: DAILY_TARGET });
 
-      contents = [
-        { id: 1, title: '新品开箱vlog：夏日防晒好物推荐', platform: '抖音', topic: '好物推荐/防晒', url: 'https://www.douyin.com/video/7234567890', createdAt: today },
-        { id: 2, title: '618购物清单｜闭眼入的5件数码好物', platform: '小红书', topic: '数码好物/购物清单', url: 'https://www.xiaohongshu.com/explore/abc123', createdAt: today },
-        { id: 3, title: 'Python自动化脚本：批量处理Excel报表', platform: '知乎', topic: 'Python/自动化/教程', url: 'https://zhuanlan.zhihu.com/p/123456', createdAt: today },
-        { id: 4, title: '如何用AI提升10倍工作效率', platform: '公众号', topic: 'AI工具/效率提升', url: 'https://mp.weixin.qq.com/s/xxxxx', createdAt: today },
-        { id: 5, title: '街头美食探店EP38', platform: '快手', topic: '探店/美食', url: '', createdAt: yest },
-      ];
+  contents = [
+    // 短视频 4 个
+    { id: 1, title: '新品开箱vlog：夏日防晒好物推荐', platform: '抖音', topic: '好物推荐/防晒', url: 'https://www.douyin.com/video/7234567890', createdAt: today },
+    { id: 2, title: '街头美食探店EP38', platform: '快手', topic: '探店/美食', url: 'https://www.kuaishou.com/short-video/3x9f2a', createdAt: today },
+    { id: 3, title: '618购物清单｜闭眼入的5件数码好物', platform: '小红书', topic: '数码好物/购物清单', url: 'https://www.xiaohongshu.com/explore/abc123', createdAt: today },
+    { id: 4, title: '职场高效办公技巧合集', platform: '视频号', topic: '职场技能/效率', url: 'https://channels.weixin.qq.com/p/8888', createdAt: today },
+    // 文书 5 个
+    { id: 5, title: 'Python自动化脚本：批量处理Excel报表', platform: '知乎', topic: 'Python/自动化/教程', url: 'https://zhuanlan.zhihu.com/p/123456', createdAt: today },
+    { id: 6, title: '如何用AI提升10倍工作效率', platform: '公众号', topic: 'AI工具/效率提升', url: 'https://mp.weixin.qq.com/s/xxxxx', createdAt: today },
+    { id: 7, title: '2024年AI工具大盘点', platform: '百家号', topic: 'AI工具/盘点', url: 'https://baijiahao.baidu.com/s?id=777', createdAt: today },
+    { id: 8, title: '新媒体运营入门指南', platform: '企鹅号', topic: '运营技巧/入门', url: 'https://om.qq.com/article/555', createdAt: today },
+    { id: 9, title: '内容创作者必备的5个习惯', platform: '搜狐号', topic: '创作者/习惯', url: 'https://www.sohu.com/a/666', createdAt: today },
+  ];
 
-      stats = [
-        { id: 101, platform: '抖音', date: today, views: 12500, likes: 890, shares: 156, comments: 230 },
-        { id: 102, platform: '小红书', date: today, views: 8200, likes: 1200, shares: 89, comments: 175 },
-        { id: 103, platform: '视频号', date: today, views: 5600, likes: 340, shares: 67, comments: 89 },
-        { id: 104, platform: '快手', date: today, views: 9800, likes: 670, shares: 120, comments: 156 },
-      ];
+  // 视频数据：4 个短视频平台各 1 条，contentId 对齐内容登记，日期对齐
+  stats = [
+    { id: 101, platform: '抖音', date: today, contentId: 1, title: '新品开箱vlog：夏日防晒好物推荐', views: 12500, completionRate: 32.5, likes: 890, comments: 230, favorites: 156, shares: 120, followers: 35 },
+    { id: 102, platform: '快手', date: today, contentId: 2, title: '街头美食探店EP38', views: 9800, completionRate: 28.1, likes: 670, comments: 156, favorites: 98, shares: 67, followers: 21 },
+    { id: 103, platform: '小红书', date: today, contentId: 3, title: '618购物清单｜闭眼入的5件数码好物', views: 8200, completionRate: 35.8, likes: 1200, comments: 175, favorites: 342, shares: 89, followers: 58 },
+    { id: 104, platform: '视频号', date: today, contentId: 4, title: '职场高效办公技巧合集', views: 5600, completionRate: 24.3, likes: 340, comments: 89, favorites: 76, shares: 45, followers: 12 },
+  ];
 
-      aiStats = [
-        { id: 201, platform: '知乎', date: today, title: 'Python自动化脚本：批量处理Excel报表', ai: { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false } },
-        { id: 202, platform: '公众号', date: today, title: '如何用AI提升10倍工作效率', ai: { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false } },
-        { id: 203, platform: '百家号', date: today, title: '2024年AI工具盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
-      ];
+  // AI 收录：5 个文书平台各 1 条，contentId 对齐内容登记
+  aiStats = [
+    { id: 201, platform: '知乎', date: today, contentId: 5, title: 'Python自动化脚本：批量处理Excel报表', ai: { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false } },
+    { id: 202, platform: '公众号', date: today, contentId: 6, title: '如何用AI提升10倍工作效率', ai: { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false } },
+    { id: 203, platform: '百家号', date: today, contentId: 7, title: '2024年AI工具大盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
+    { id: 204, platform: '企鹅号', date: today, contentId: 8, title: '新媒体运营入门指南', ai: { 'DeepSeek': true, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': true } },
+    { id: 205, platform: '搜狐号', date: today, contentId: 9, title: '内容创作者必备的5个习惯', ai: { 'DeepSeek': false, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': false } },
+  ];
 
-      saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats);
-      render(); showToast('已重置示例数据');
+  reviews = [
+    { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', ai: 'DeepSeek、豆包收录正常，千问收录率待提升', plans: '下周重点优化公众号选题，尝试AI工具方向' },
+    { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', metrics: '总播放约3.6w，完播率均值28%', plans: '尝试竖版封面+前3秒钩子' },
+  ];
+
+  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);
+  render(); showToast('已重置示例数据');
     }
   });
+}
+
+// ===== 示例数据版本检测：检测到旧版示例数据时提示重置 =====
+function checkSampleDataVersion() {
+  // 判断依据：示例数据特征（内容登记不足9条 或 stats 无 contentId）
+  const hasOldSample = contents.length < 9 && contents.length > 0 && stats.length > 0;
+  const statsMissingContentId = stats.length > 0 && stats.every(s => s.contentId === undefined);
+  const versionKey = STORAGE_KEY + 'sample_v';
+  const currentVersion = '3';
+  if (localStorage.getItem(versionKey) === currentVersion) return;
+  if (hasOldSample || statsMissingContentId) {
+    showConfirm({
+      title: '检测到旧版示例数据',
+      desc: '示例数据已更新为完整版（9个平台 + 数据关联）。是否重置为最新示例？<br><br><span style="color:var(--text3);">如果你的内容是真实数据，请选择「取消」；只有测试/示例数据需要重置。</span>',
+      danger: false,
+      onOk: () => {
+        fillSampleDataSilent();
+        localStorage.setItem(versionKey, currentVersion);
+      }
+    });
+  } else {
+    localStorage.setItem(versionKey, currentVersion);
+  }
+}
+
+// 静默重置示例（不弹确认框，供版本迁移用）
+function fillSampleDataSilent() {
+  const today = getToday();
+  tasks = [];
+  ALL_PLATFORMS.forEach((p, i) => {
+    // 示例中 9 个平台都登记了内容，任务全部完成（contentId 对齐 1-9）
+    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: true, linked: true, contentId: i + 1, target: DAILY_TARGET });
+  });
+  contents = [
+    { id: 1, title: '新品开箱vlog：夏日防晒好物推荐', platform: '抖音', topic: '好物推荐/防晒', url: 'https://www.douyin.com/video/7234567890', createdAt: today },
+    { id: 2, title: '街头美食探店EP38', platform: '快手', topic: '探店/美食', url: 'https://www.kuaishou.com/short-video/3x9f2a', createdAt: today },
+    { id: 3, title: '618购物清单｜闭眼入的5件数码好物', platform: '小红书', topic: '数码好物/购物清单', url: 'https://www.xiaohongshu.com/explore/abc123', createdAt: today },
+    { id: 4, title: '职场高效办公技巧合集', platform: '视频号', topic: '职场技能/效率', url: 'https://channels.weixin.qq.com/p/8888', createdAt: today },
+    { id: 5, title: 'Python自动化脚本：批量处理Excel报表', platform: '知乎', topic: 'Python/自动化/教程', url: 'https://zhuanlan.zhihu.com/p/123456', createdAt: today },
+    { id: 6, title: '如何用AI提升10倍工作效率', platform: '公众号', topic: 'AI工具/效率提升', url: 'https://mp.weixin.qq.com/s/xxxxx', createdAt: today },
+    { id: 7, title: '2024年AI工具大盘点', platform: '百家号', topic: 'AI工具/盘点', url: 'https://baijiahao.baidu.com/s?id=777', createdAt: today },
+    { id: 8, title: '新媒体运营入门指南', platform: '企鹅号', topic: '运营技巧/入门', url: 'https://om.qq.com/article/555', createdAt: today },
+    { id: 9, title: '内容创作者必备的5个习惯', platform: '搜狐号', topic: '创作者/习惯', url: 'https://www.sohu.com/a/666', createdAt: today },
+  ];
+  stats = [
+    { id: 101, platform: '抖音', date: today, contentId: 1, title: '新品开箱vlog：夏日防晒好物推荐', views: 12500, completionRate: 32.5, likes: 890, comments: 230, favorites: 156, shares: 120, followers: 35 },
+    { id: 102, platform: '快手', date: today, contentId: 2, title: '街头美食探店EP38', views: 9800, completionRate: 28.1, likes: 670, comments: 156, favorites: 98, shares: 67, followers: 21 },
+    { id: 103, platform: '小红书', date: today, contentId: 3, title: '618购物清单｜闭眼入的5件数码好物', views: 8200, completionRate: 35.8, likes: 1200, comments: 175, favorites: 342, shares: 89, followers: 58 },
+    { id: 104, platform: '视频号', date: today, contentId: 4, title: '职场高效办公技巧合集', views: 5600, completionRate: 24.3, likes: 340, comments: 89, favorites: 76, shares: 45, followers: 12 },
+  ];
+  aiStats = [
+    { id: 201, platform: '知乎', date: today, contentId: 5, title: 'Python自动化脚本：批量处理Excel报表', ai: { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false } },
+    { id: 202, platform: '公众号', date: today, contentId: 6, title: '如何用AI提升10倍工作效率', ai: { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false } },
+    { id: 203, platform: '百家号', date: today, contentId: 7, title: '2024年AI工具大盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
+    { id: 204, platform: '企鹅号', date: today, contentId: 8, title: '新媒体运营入门指南', ai: { 'DeepSeek': true, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': true } },
+    { id: 205, platform: '搜狐号', date: today, contentId: 9, title: '内容创作者必备的5个习惯', ai: { 'DeepSeek': false, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': false } },
+  ];
+  reviews = [
+    { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', ai: 'DeepSeek、豆包收录正常，千问收录率待提升', plans: '下周重点优化公众号选题，尝试AI工具方向' },
+    { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', metrics: '总播放约3.6w，完播率均值28%', plans: '尝试竖版封面+前3秒钩子' },
+  ];
+  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);
+  render(); showToast('已重置为最新示例数据');
 }
 
 // ===== INIT =====
@@ -1486,8 +2898,46 @@ function checkBackupReminder() {
   }
 }
 
+// ===== 每周数据登记复盘 + AI收录筛查提醒 =====
+function checkWeeklyReminder() {
+  const KEY = STORAGE_KEY + 'weekly_remind';
+  const last = localStorage.getItem(KEY);
+  const today = getToday();
+  // 首次使用：记录今天，不打扰
+  if (!last) {
+    localStorage.setItem(KEY, today);
+    return;
+  }
+  // 距离上次提醒 >= 7 天则提醒
+  const lastDate = new Date(last);
+  const diffDays = Math.floor((new Date(today + 'T00:00:00') - lastDate) / 86400000);
+  if (diffDays >= 7) {
+    // 检查本周是否有已发布但未登记链接的任务
+    const weekAgo = new Date(Date.now() - 6 * 86400000);
+    const weekAgoStr = getDayStr(weekAgo);
+    const pendingTasks = tasks.filter(t =>
+      t.date >= weekAgoStr && t.date <= today && t.done && !t.linked
+    );
+    const pendingCount = pendingTasks.length;
+    // 检查本周是否已有复盘记录
+    const hasReview = reviews.some(r => r.date >= weekAgoStr && r.date <= today);
+    let msg;
+    if (pendingCount > 0) {
+      msg = `📊 已到每周复盘时间，本周还有 ${pendingCount} 条内容未登记链接，建议先登记再复盘`;
+    } else if (!hasReview) {
+      msg = `📊 已到每周复盘时间，记得进行一次数据登记复盘 + AI收录情况筛查`;
+    } else {
+      msg = `📊 已到每周复盘时间，本周复盘已完成，继续保持！`;
+    }
+    showToast(msg);
+    localStorage.setItem(KEY, today);
+  }
+}
+
 render();
 checkBackupReminder();
+checkWeeklyReminder();
+checkSampleDataVersion();
 </script>
 </body>
 </html>
