@@ -868,7 +868,7 @@ a { color: var(--accent); text-decoration: none; }
 <div class="topbar">
   <div class="header">
     <h1>新媒体内容发布工作台</h1>
-    <div class="subtitle">4短视频 + 5文书平台 · 每日1条 · AI收录追踪</div>
+    <div class="subtitle">4短视频 + 5文书平台 · 视频数据 + 收录情况</div>
   </div>
   <div class="nav-tabs" id="navTabs">
     <div class="nav-tab active" data-tab="today">今日待办</div>
@@ -1038,7 +1038,7 @@ function renderToday() {
   let html = '<div class="today-section"><h3>今日待办</h3>';
 
   // Today - video
-  html += '<div style="font-size:13px;color:#fdba74;margin-bottom:6px;font-weight:600;">短视频平台（每日各1条）</div><ul class="today-list">';
+  html += '<div style="font-size:13px;color:#fdba74;margin-bottom:6px;font-weight:600;">短视频平台</div><ul class="today-list">';
   todayVideo.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
     html += `<li class="today-item ${content ? 'has-detail' : ''}">
@@ -1052,7 +1052,7 @@ function renderToday() {
   html += '</ul>';
 
   // Today - article
-  html += '<div style="font-size:13px;color:#c4b5fd;margin:10px 0 6px;font-weight:600;">文书平台（每日各1条）</div><ul class="today-list">';
+  html += '<div style="font-size:13px;color:#c4b5fd;margin:10px 0 6px;font-weight:600;">文书平台</div><ul class="today-list">';
   todayArticle.forEach(t => {
     const content = t.contentId ? contents.find(c => c.id === t.contentId) : null;
     html += `<li class="today-item ${content ? 'has-detail' : ''}">
@@ -1074,7 +1074,7 @@ function renderToday() {
   html += '</div>';
 
   // Daily overview
-  html += '<div class="card"><div class="card-title">本日发布概览</div>';
+  html += '<div class="card"><div class="card-title">今日发布概览</div>';
   const tVideo = todayTasks.filter(t => t.type === 'video');
   const tArticle = todayTasks.filter(t => t.type === 'article');
   const vDone = tVideo.filter(t => t.done).length;
@@ -2463,7 +2463,7 @@ function deleteStat(id) {
 function renderArticleData(thisMonth) {
   const monthAiStats = aiStats.filter(s => s.date.startsWith(thisMonth) && isArticle(s.platform));
   let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪</div>`;
-  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">按月统计 6 大 AI 引擎收录情况：${AI_ENGINES.join('、')}</p>`;
+  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">统计6大AI引擎收录情况：${AI_ENGINES.join('、')}</p>`;
 
   // Summary（月为单位：总发布数 / AI收录数 / AI收录率）
   let totalChecked = 0, totalPossible = 0;
