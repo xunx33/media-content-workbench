@@ -58,7 +58,47 @@ function checkWeeklyReminder() {
   }
 }
 
-render();
-checkBackupReminder();
-checkWeeklyReminder();
-checkSampleDataVersion();
+// 访客分享模式不先渲染本地数据（等云端），正常模式正常渲染
+const _isShareMode = window.CloudBridge && window.CloudBridge.isShareMode && window.CloudBridge.isShareMode();
+if (!_isShareMode) {
+  render();
+  checkBackupReminder();
+  checkWeeklyReminder();
+  checkSampleDataVersion();
+}
+
+// ===== 云接入启动（CloudBridge 由 cloud.js 定义） =====
+function initCloudApp() {
+  if (!window.CloudBridge) return;
+  // 渲染云状态条
+  const bar = document.getElementById('cloudBar');
+  if (bar) bar.innerHTML = '';
+  CloudBridge.onAuthChange(() => {
+    if (window.CloudUI && window.CloudUI.renderBar) window.CloudUI.renderBar();
+  });
+  // 访客分享模式：只读，隐藏编辑入口，不先渲染本地数据
+  if (CloudBridge.isShareMode()) {
+    document.body.classList.add('share-mode');
+    const fab = document.getElementById('fabBtn');
+    if (fab) fab.style.display = 'none';
+    const backup = document.querySelector('.backup-bar');
+    if (backup) backup.style.display = 'none';
+    const main = document.getElementById('mainContent');
+    if (main) main.innerHTML = '<div class="card"><p style="font-size:13px;color:var(--text3);text-align:center;padding:30px;">正在加载分享数据...</p></div>';
+    // 拉取分享数据后渲染
+    CloudBridge.loadSharedData().then(ok => {
+      if (ok) {
+        render();
+        if (window.CloudUI && window.CloudUI.renderBar) window.CloudUI.renderBar();
+      } else {
+        const m = document.getElementById('mainContent');
+        if (m) m.innerHTML = '<div class="card"><p style="font-size:14px;color:var(--red);text-align:center;padding:30px;">分享链接无效或已关闭</p></div>';
+      }
+    });
+    return;
+  }
+  // 正常模式：初始化云 SDK
+  CloudBridge.initCloud();
+  if (window.CloudUI && window.CloudUI.renderBar) window.CloudUI.renderBar();
+}
+initCloudApp();

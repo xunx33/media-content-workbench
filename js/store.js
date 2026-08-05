@@ -10,7 +10,13 @@ const DAILY_TARGET = 1;
 const STORAGE_KEY = 'wb_content_workbench_v2_';
 
 function loadData(key) { try { return JSON.parse(localStorage.getItem(STORAGE_KEY + key)) || []; } catch(e){ return []; } }
-function saveData(key, val) { localStorage.setItem(STORAGE_KEY + key, JSON.stringify(val)); }
+function saveData(key, val) {
+  localStorage.setItem(STORAGE_KEY + key, JSON.stringify(val));
+  // 登录后自动触发云同步（防抖合并，见 cloud.js）
+  if (window.CloudBridge && window.CloudBridge.isLoggedIn && window.CloudBridge.isLoggedIn()) {
+    window.CloudBridge.scheduleCloudSync();
+  }
+}
 
 let tasks = loadData('tasks');
 let contents = loadData('contents');
