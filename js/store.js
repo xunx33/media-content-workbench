@@ -131,5 +131,6 @@ let dataSubTab = 'video'; // 'video' or 'article'
 let editId = null;
 let overviewMonth = new Date();
 let searchKeyword = '';
-let contentFilterType = '';   // '' | 'today' | 'video' | 'article'
+let contentFilterType = '';   // '' | 'today' | 具体平台名（如 '抖音'）
+let contentSortByViews = '';  // '' 默认(按日期) | 'desc' 播放量降序 | 'asc' 播放量升序
 let contentFoldOpen = true;   // 内容登记列表折叠状态

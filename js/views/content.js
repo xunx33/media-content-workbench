@@ -9,8 +9,9 @@ function renderContent() {
   html += `<div class="filter-pills">
     <span class="filter-pill ${!contentFilterType ? 'active' : ''}" onclick="filterContent('all',this)">全部</span>
     <span class="filter-pill ${contentFilterType === 'today' ? 'active' : ''}" onclick="filterContent('today',this)">今日</span>
-    <span class="filter-pill ${contentFilterType === 'video' ? 'active' : ''}" onclick="filterContent('video',this)">短视频</span>
-    <span class="filter-pill ${contentFilterType === 'article' ? 'active' : ''}" onclick="filterContent('article',this)">文书</span>
+    ${VIDEO_PLATFORMS.map(p => `<span class="filter-pill ${contentFilterType === p ? 'active' : ''}" onclick="filterContent('${p}',this)">${p}</span>`).join('')}
+    ${ARTICLE_PLATFORMS.map(p => `<span class="filter-pill ${contentFilterType === p ? 'active' : ''}" onclick="filterContent('${p}',this)">${p}</span>`).join('')}
+    <span class="filter-pill sort-views ${contentSortByViews === 'desc' ? 'active-desc' : contentSortByViews === 'asc' ? 'active-asc' : ''}" onclick="toggleSortViews()">${contentSortByViews === 'desc' ? '播放量 ↓' : contentSortByViews === 'asc' ? '播放量 ↑' : '播放量'}</span>
   </div>`;
 
   // 列表折叠区（可收起/展开）
@@ -159,6 +160,12 @@ function saveContentData() {
 
 function filterContent(filter, el) {
   contentFilterType = filter === 'all' ? '' : filter;
+  render();
+}
+
+// 播放量排序：默认(日期) → 降序 → 升序 → 默认 循环
+function toggleSortViews() {
+  contentSortByViews = contentSortByViews === 'desc' ? 'asc' : contentSortByViews === 'asc' ? '' : 'desc';
   render();
 }
 

@@ -10,7 +10,6 @@ function findLinkedTitle(record, type) {
 }
 
 function renderData() {
-  const thisMonth = getToday().slice(0, 7);
   let html = '';
 
   // Sub-tabs
@@ -19,17 +18,26 @@ function renderData() {
     <div class="sub-tab ${dataSubTab==='article'?'active':''}" onclick="switchDataTab('article')">文书AI收录</div>
   </div>`;
 
+  // 周期下拉（周数据与复盘 / 月数据与复盘，替代复盘登记里的周期选择）
+  const curPeriod = getCurPeriod();
+  html += `<div class="period-select-row">
+    <select id="dataPeriodSelect" onchange="switchDataPeriod(this.value)" aria-label="数据复盘周期">
+      <option value="week" ${curPeriod==='week'?'selected':''}>周数据与复盘</option>
+      <option value="month" ${curPeriod==='month'?'selected':''}>月数据与复盘</option>
+    </select>
+  </div>`;
+
   // 左右两栏：左=统计图表，右=复盘登记
   html += '<div class="data-layout">';
   html += '<div class="data-left">';
   if (dataSubTab === 'video') {
-    html += renderVideoData(thisMonth);
+    html += renderVideoData(curPeriod);
   } else {
-    html += renderArticleData(thisMonth);
+    html += renderArticleData(curPeriod);
   }
   html += '</div>';
   html += '<div class="data-right">';
-  html += renderReviewPanel();
+  html += renderReviewPanel(curPeriod);
   html += '</div>';
   html += '</div>';
 
@@ -38,26 +46,73 @@ function renderData() {
 
 function switchDataTab(tab) { dataSubTab = tab; render(); }
 
+// ===== 周期状态：视频/文书各自记忆周/月选择 =====
+let dataPeriod = { video: 'month', article: 'month' };
+function getCurPeriod() { return dataPeriod[dataSubTab] || 'month'; }
+function switchDataPeriod(p) { dataPeriod[dataSubTab] = p; render(); }
+
+// 当前周期范围 + 上一周期范围（用于双柱对比）
+// 返回 { label, prevLabel, start, end, prevStart, prevEnd }
+function getPeriodRanges(period) {
+  const today = new Date();
+  if (period === 'week') {
+    // 本周：周一~周日；上周：前一周一~周日
+    const dow = (today.getDay() + 6) % 7;
+    const monday = new Date(today); monday.setDate(today.getDate() - dow);
+    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+    const prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
+    const prevSunday = new Date(prevMonday); prevSunday.setDate(prevMonday.getDate() + 6);
+    return {
+      label: '本周', prevLabel: '上周',
+      start: getDayStr(monday), end: getDayStr(sunday),
+      prevStart: getDayStr(prevMonday), prevEnd: getDayStr(prevSunday)
+    };
+  }
+  // 月：本月；上月
+  const y = today.getFullYear(), m = today.getMonth();
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  const prevFirst = new Date(y, m - 1, 1);
+  const prevLast = new Date(y, m, 0);
+  return {
+    label: '本月', prevLabel: '上月',
+    start: getDayStr(first), end: getDayStr(last),
+    prevStart: getDayStr(prevFirst), prevEnd: getDayStr(prevLast)
+  };
+}
+
+// 复盘时间段标签：周→所在周周一~周日，月→当月1号~月末
+function formatReviewRange(period, dateStr) {
+  if (!dateStr) return period === 'month' ? '本月' : '本周';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return period === 'month' ? '本月' : '本周';
+  if (period === 'month') {
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return '本月·' + getDayStr(start) + ' ~ ' + getDayStr(end);
+  }
+  // 周：所在周的周一到周日
+  const diffToMon = (d.getDay() + 6) % 7;
+  const start = new Date(d); start.setDate(d.getDate() - diffToMon);
+  const end = new Date(start); end.setDate(start.getDate() + 6);
+  return '本周·' + getDayStr(start) + ' ~ ' + getDayStr(end);
+}
+
 // --- 复盘数据登记面板 ---
-function renderReviewPanel() {
+function renderReviewPanel(period) {
   // 跟随上方子Tab：短视频数据 ↔ 文书AI收录
   const type = dataSubTab; // 'video' | 'article'
   const isVideo = type === 'video';
+  const curPeriod = period || getCurPeriod();
+  const periodLabel = curPeriod === 'week' ? '本周复盘' : '本月复盘';
+  const ranges = getPeriodRanges(curPeriod);
   let html = `<div class="card"><div class="card-title">${isVideo ? '短视频' : '文书'}复盘登记</div>`;
 
-  html += `<div class="form-group"><label>复盘周期</label><select id="reviewPeriod">
-    <option value="week">本周复盘</option>
-    <option value="month">本月复盘</option>
-  </select></div>`;
+  html += `<div class="form-group"><label>复盘周期（跟随上方选项）</label><div style="font-size:13px;color:var(--accent);font-weight:600;padding:9px 13px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xs);">${periodLabel}·${ranges.start} ~ ${ranges.end}</div></div>`;
   html += `<div class="form-group"><label>复盘日期</label><input type="date" id="reviewDate" value="${getToday()}"></div>`;
-  html += `<div class="form-group"><label>亮点内容 / 做得好的</label><textarea id="reviewHighlights" placeholder="播放/互动表现好的内容、平台、选题…"></textarea></div>`;
+  // 数据小结与亮点分析（视频=数据表现+亮点，文书=AI收录+亮点）
+  html += `<div class="form-group"><label>数据小结与亮点分析</label><textarea id="reviewHighlights" placeholder="${isVideo ? '数据表现 + 亮点：播放/完播/互动表现好的内容、平台、选题…' : 'AI收录 + 亮点：收录情况小结、做得好的内容、平台、选题…'}"></textarea></div>`;
   html += `<div class="form-group"><label>问题与不足</label><textarea id="reviewProblems" placeholder="数据不理想的地方、待改进项…"></textarea></div>`;
-  // 按类型区分：短视频=数据表现小结，文书=AI收录筛查
-  if (isVideo) {
-    html += `<div class="form-group"><label>数据表现小结</label><textarea id="reviewMetrics" placeholder="播放量/完播率/互动情况总结…"></textarea></div>`;
-  } else {
-    html += `<div class="form-group"><label>AI收录筛查情况</label><textarea id="reviewAi" placeholder="DeepSeek/豆包/千问/文心/元宝/纳米 收录情况小结…"></textarea></div>`;
-  }
   html += `<div class="form-group"><label>下期计划</label><textarea id="reviewPlans" placeholder="下周/月计划做什么…"></textarea></div>`;
   html += `<div class="toolbar" style="margin-top:8px;">
     <button class="btn-primary" onclick="saveReview()">保存复盘</button>
@@ -80,14 +135,12 @@ function renderReviewPanel() {
       html += `<div class="review-item">
         <div class="review-item-head">
           <span class="platform-tag ${typeTag}">${typeLabel}·${formatReviewRange(r.period, r.date)}</span>
-          <span style="font-size:11px;color:var(--text3);">${r.date}</span>
+          <button class="btn-delete-mini" onclick="deleteReview('${r.id}')" title="删除复盘">删除</button>
         </div>
-        ${r.highlights ? `<div class="review-item-line"><span style="color:var(--green);">亮点：</span>${r.highlights}</div>` : ''}
-        ${r.metrics ? `<div class="review-item-line"><span style="color:var(--teal);">数据：</span>${r.metrics}</div>` : ''}
-        ${r.ai ? `<div class="review-item-line"><span style="color:var(--accent);">AI收录：</span>${r.ai}</div>` : ''}
+        <div class="review-item-date">${r.date}</div>
+        ${r.highlights ? `<div class="review-item-line"><span style="color:var(--green);">小结与亮点：</span>${r.highlights}</div>` : ''}
         ${r.problems ? `<div class="review-item-line"><span style="color:var(--red);">问题：</span>${r.problems}</div>` : ''}
         ${r.plans ? `<div class="review-item-line"><span style="color:var(--purple);">计划：</span>${r.plans}</div>` : ''}
-        <div class="review-item-actions"><button class="btn-delete-mini" onclick="deleteReview('${r.id}')">删除</button></div>
       </div>`;
     });
   }
@@ -97,20 +150,16 @@ function renderReviewPanel() {
 
 function saveReview() {
   const type = dataSubTab; // 跟随上方子Tab
-  const period = document.getElementById('reviewPeriod').value;
+  const period = getCurPeriod(); // 周期跟随页面顶部的周/月下拉
   const date = document.getElementById('reviewDate').value || getToday();
   const highlights = document.getElementById('reviewHighlights').value.trim();
   const problems = document.getElementById('reviewProblems').value.trim();
-  const aiEl = document.getElementById('reviewAi');
-  const ai = aiEl ? aiEl.value.trim() : '';
-  const metricsEl = document.getElementById('reviewMetrics');
-  const metrics = metricsEl ? metricsEl.value.trim() : '';
   const plans = document.getElementById('reviewPlans').value.trim();
-  if (!highlights && !problems && !ai && !metrics && !plans) { showToast('请至少填写一项内容'); return; }
+  if (!highlights && !problems && !plans) { showToast('请至少填写一项内容'); return; }
   // 同日同周期同类型覆盖
   const existing = reviews.find(r => r.date === date && r.period === period && r.type === type);
-  if (existing) { existing.highlights = highlights; existing.problems = problems; existing.ai = ai; existing.metrics = metrics; existing.plans = plans; }
-  else reviews.push({ id: Date.now(), type, period, date, highlights, problems, ai, metrics, plans });
+  if (existing) { existing.highlights = highlights; existing.problems = problems; existing.plans = plans; }
+  else reviews.push({ id: Date.now(), type, period, date, highlights, problems, plans });
   saveData('reviews', reviews); render(); showToast('复盘已保存');
 }
 
@@ -126,31 +175,7 @@ function deleteReview(id) {
   });
 }
 
-// 复盘时间段标签：周→所在周周一~周日，月→当月1号~月末
-function formatReviewRange(period, dateStr) {
-  if (!dateStr) return period === 'month' ? '本月' : '本周';
-  const d = new Date(dateStr + 'T00:00:00');
-  if (isNaN(d.getTime())) return period === 'month' ? '本月' : '本周';
-  if (period === 'month') {
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    return '本月·' + getDayStr(start) + ' ~ ' + getDayStr(end);
-  }
-  // 周：所在周的周一到周日
-  const diffToMon = (d.getDay() + 6) % 7;
-  const start = new Date(d); start.setDate(d.getDate() - diffToMon);
-  const end = new Date(start); end.setDate(start.getDate() + 6);
-  return '本周·' + getDayStr(start) + ' ~ ' + getDayStr(end);
-}
-
-// 上月月份字符串 YYYY-MM（用于本月 vs 上月对比）
-function getPrevMonthStr(monthStr) {
-  const [y, m] = monthStr.split('-').map(Number);
-  const prev = new Date(y, m - 2, 1);
-  return prev.getFullYear() + '-' + String(prev.getMonth() + 1).padStart(2, '0');
-}
-
-// 双柱对比柱形图：本月实心柱 + 上月半透明柱
+// 双柱对比柱形图：当前周期实心柱 + 上期半透明柱
 function renderDualBarChart(labels, currVals, prevVals, barClass, fmt) {
   const maxV = Math.max(...currVals, ...prevVals, 1);
   let html = '<div class="bar-chart">';
@@ -176,25 +201,105 @@ function renderDualBarChart(labels, currVals, prevVals, barClass, fmt) {
   return html;
 }
 
-// 本月 vs 上月图例
-function renderChartLegend(barClass) {
+// 近 N 天趋势折线图（纯 SVG 自绘，零依赖）
+// points: [{date:'YYYY-MM-DD', value:number}] 按日期升序
+// 返回 SVG 折线 + 结束值标注；数据不足 2 天时返回空
+function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, height = 160 } = {}) {
+  const data = points.filter(p => p && p.value !== undefined && p.value !== null);
+  if (data.length < 2) {
+    if (data.length === 1) {
+      return `<div class="trend-box"><div class="trend-single">近30天共 <b style="color:${color};">${fmt(data[0].value)}</b></div></div>`;
+    }
+    return '';
+  }
+  // viewBox 用合理宽高比（约 4:1），让 SVG 拉伸后比例变形可控
+  const VBW = 800, VBH = 200;
+  const padL = 60, padR = 50, padT = 30, padB = 36;  // 给两端点和日期标签留空间
+  const maxV = Math.max(...data.map(d => d.value), 1);
+  const minV = Math.min(...data.map(d => d.value), 0);
+  const span = (maxV - minV) || 1;
+  const stepX = (VBW - padL - padR) / (data.length - 1);
+  const pts = data.map((d, i) => {
+    const x = padL + i * stepX;
+    const y = padT + (VBH - padT - padB) * (1 - (d.value - minV) / span);
+    return { x, y, ...d };
+  });
+  const path = pts.map((p, i) => (i === 0 ? `M${p.x.toFixed(1)},${p.y.toFixed(1)}` : `L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join(' ');
+  const area = path + ` L${pts[pts.length-1].x.toFixed(1)},${(VBH-padB).toFixed(1)} L${pts[0].x.toFixed(1)},${(VBH-padB).toFixed(1)} Z`;
+  // 日期标签：数据 ≤ 7 天全部显示（周模式友好），>7 天均匀抽 5 个（月模式不挤）
+  const labelCount = data.length <= 7 ? data.length : Math.min(5, data.length);
+  const labelIdxs = [];
+  for (let i = 0; i < labelCount; i++) {
+    labelIdxs.push(Math.round(i * (data.length - 1) / (labelCount - 1)));
+  }
+  const labels = labelIdxs.map(i => pts[i]);
+  const last = pts[pts.length-1];
+  const first = pts[0];
+  const rise = last.value - first.value;
+  const risePct = first.value > 0 ? Math.round(rise / first.value * 100) : 0;
+  const trendBadge = rise > 0
+    ? `<span class="trend-up">▲ ${fmt(Math.abs(rise))} (+${risePct}%)</span>`
+    : rise < 0
+      ? `<span class="trend-down">▼ ${fmt(Math.abs(rise))} (${risePct}%)</span>`
+      : `<span class="trend-flat">— 持平</span>`;
+  // 数值标签：标注最大最小和最后
+  const valLabels = [];
+  if (last.value !== maxV) valLabels.push({ x: last.x, y: last.y, v: last.value });
+  if (last.value === maxV && data.length > 1) valLabels.push({ x: last.x, y: last.y, v: last.value });
+
+  return `<div class="trend-box">
+    <div class="trend-head"><span class="trend-label">${first.date} ~ ${last.date}</span>${trendBadge}</div>
+    <svg viewBox="0 0 ${VBW} ${VBH}" preserveAspectRatio="xMidYMid meet" class="trend-svg">
+      <defs>
+        <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.32"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      <path d="${area}" fill="url(#trendFill)"/>
+      <path d="${path}" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+      ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" />`).join('')}
+      <text x="${last.x.toFixed(1)}" y="${(last.y - 8).toFixed(1)}" text-anchor="end" font-size="22" font-weight="700" fill="${color}">${fmt(last.value)}</text>
+      ${labels.map(l => `<text x="${l.x.toFixed(1)}" y="${(VBH - 10).toFixed(1)}" text-anchor="middle" font-size="18" fill="var(--text3)">${l.date.slice(5)}</text>`).join('')}
+    </svg>
+  </div>`;
+}
+
+// 近 30 天按天汇总：records 数组 → [{date, value}]
+function aggregateDaily(records, getVal, days = 30, endDate) {
+  const map = {};
+  records.forEach(r => { const d = r.date; if (d) map[d] = (map[d] || 0) + getVal(r); });
+  const out = [];
+  const end = endDate || new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(end); d.setDate(end.getDate() - i);
+    const key = getDayStr(d);
+    out.push({ date: key, value: map[key] || 0 });
+  }
+  return out;
+}
+
+// 本月 vs 上月图例（支持自定义周期标签）
+function renderChartLegend(barClass, curLabel, prevLabel) {
   return `<div class="chart-legend">
-    <span class="legend-item"><span class="legend-dot ${barClass}"></span>本月</span>
-    <span class="legend-item"><span class="legend-dot ${barClass} prev"></span>上月</span>
+    <span class="legend-item"><span class="legend-dot ${barClass}"></span>${curLabel || '当前'}</span>
+    <span class="legend-item"><span class="legend-dot ${barClass} prev"></span>${prevLabel || '上期'}</span>
   </div>`;
 }
 
 // --- Video data（仅统计展示）---
-function renderVideoData(thisMonth) {
-  const monthStats = stats.filter(s => s.date.startsWith(thisMonth) && isVideo(s.platform));
-  const totalCount = monthStats.length;  // 总发布数（数据录入条数）
-  const totalViews = monthStats.reduce((sum, s) => sum + (s.views || 0), 0);
-  const totalLikes = monthStats.reduce((sum, s) => sum + (s.likes || 0), 0);
-  const totalComments = monthStats.reduce((sum, s) => sum + (s.comments || 0), 0);
-  const totalFavorites = monthStats.reduce((sum, s) => sum + (s.favorites || 0), 0);
-  const totalFollowers = monthStats.reduce((sum, s) => sum + (s.followers || 0), 0);
+function renderVideoData(period) {
+  const ranges = getPeriodRanges(period || 'month');
+  const currStats = stats.filter(s => isVideo(s.platform) && s.date >= ranges.start && s.date <= ranges.end);
+  const prevStats = stats.filter(s => isVideo(s.platform) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
+  const totalCount = currStats.length;  // 总发布数（数据录入条数）
+  const totalViews = currStats.reduce((sum, s) => sum + (s.views || 0), 0);
+  const totalLikes = currStats.reduce((sum, s) => sum + (s.likes || 0), 0);
+  const totalComments = currStats.reduce((sum, s) => sum + (s.comments || 0), 0);
+  const totalFavorites = currStats.reduce((sum, s) => sum + (s.favorites || 0), 0);
+  const totalFollowers = currStats.reduce((sum, s) => sum + (s.followers || 0), 0);
 
-  let html = `<div class="card"><div class="card-title">短视频平台本月数据</div>
+  let html = `<div class="card"><div class="card-title">短视频平台${ranges.label}数据 <span class="badge">${ranges.start} ~ ${ranges.end}</span></div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-value">${totalCount}</div><div class="stat-label">总发布数</div></div>
       <div class="stat-card"><div class="stat-value">${formatNum(totalViews)}</div><div class="stat-label">总播放量</div></div>
@@ -204,40 +309,37 @@ function renderVideoData(thisMonth) {
       <div class="stat-card"><div class="stat-value">${formatNum(totalFollowers)}</div><div class="stat-label">总涨粉</div></div>
     </div></div>`;
 
-  // Bar chart（本月 vs 上月双柱对比）
-  html += '<div class="card"><div class="card-title">各平台播放量对比 <span class="badge">本月 vs 上月</span></div>';
+  // Bar chart（当前周期 vs 上期双柱对比）
+  html += `<div class="card"><div class="card-title">各平台播放量对比 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const platformViews = {};
   const prevPlatformViews = {};
   VIDEO_PLATFORMS.forEach(p => { platformViews[p] = 0; prevPlatformViews[p] = 0; });
-  monthStats.forEach(s => { if (platformViews[s.platform] !== undefined) platformViews[s.platform] += s.views; });
-  const prevMonthVideoStats = stats.filter(s => s.date.startsWith(getPrevMonthStr(thisMonth)) && isVideo(s.platform));
-  prevMonthVideoStats.forEach(s => { if (prevPlatformViews[s.platform] !== undefined) prevPlatformViews[s.platform] += s.views; });
-  html += renderChartLegend('video');
+  currStats.forEach(s => { if (platformViews[s.platform] !== undefined) platformViews[s.platform] += s.views; });
+  prevStats.forEach(s => { if (prevPlatformViews[s.platform] !== undefined) prevPlatformViews[s.platform] += s.views; });
+  html += renderChartLegend('video', ranges.label, ranges.prevLabel);
   html += renderDualBarChart(VIDEO_PLATFORMS, VIDEO_PLATFORMS.map(p => platformViews[p]), VIDEO_PLATFORMS.map(p => prevPlatformViews[p]), 'video', formatNum);
   html += '</div>';
 
-  // Table
-  html += '<div class="card"><div class="card-title">详细数据</div>';
-  const recentStats = [...monthStats].sort((a,b) => b.date.localeCompare(a.date));
-  if (recentStats.length === 0) html += '<div class="empty-state"><p>暂无数据，请在内容登记页录入</p></div>';
-  else {
-    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>标题</th><th>播放</th><th>完播/人均观看</th><th>点赞</th><th>评论</th><th>收藏/推荐</th><th>分享</th><th>涨粉</th></tr></thead><tbody>';
-    recentStats.forEach(s => {
-      // 标题三级回退：contentId → platform+date → platform → 未关联
-      const linkedTitle = findLinkedTitle(s, 'video');
-      const title = s.title || linkedTitle || '未关联';
-      const titleShort = title.length > 12 ? title.slice(0,12) + '…' : title;
-      const noLink = linkedTitle === null;
-      // 完播率列：小红书显示人均观看时长，其他显示完播率
-      let completionCell;
-      if (s.platform === '小红书') {
-        completionCell = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
-      } else {
-        completionCell = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
-      }
-      // 收藏列：视频号显示推荐，其他显示收藏
-      const favCell = s.platform === '视频号' ? formatNum(s.recommend) : formatNum(s.favorites);
-      html += `<tr><td>${s.date}</td><td><span class="platform-tag video">${s.platform}</span></td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${noLink ? 'var(--orange)' : 'inherit'};" title="${title}">${titleShort}</td><td>${formatNum(s.views)}</td><td>${completionCell}</td><td>${formatNum(s.likes)}</td><td>${formatNum(s.comments)}</td><td>${favCell}</td><td>${formatNum(s.shares)}</td><td>${formatNum(s.followers)}</td></tr>`;
+  // 播放量趋势折线图（跟随周期：周=本周7天，月=近30天）
+  const isWeek = (period || 'month') === 'week';
+  const trendDays = isWeek ? 7 : 30;
+  const trendTitle = isWeek ? '本周播放量趋势' : '近30天播放量趋势';
+  // 周模式按本周一~今天取数据（今天之前的天也展示为0）；月模式近30天
+  const trendPts = isWeek
+    ? aggregateDaily(stats.filter(s => isVideo(s.platform)), s => s.views || 0, 7, new Date())
+    : aggregateDaily(stats.filter(s => isVideo(s.platform)), s => s.views || 0, 30);
+  html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${ranges.label}${isWeek ? '' : ''}</span></div>${renderTrendLine(trendPts, { color: 'var(--orange)' })}</div>`;
+
+  // 未关联记录（录了数据但找不到对应内容）— 折叠面板
+  const orphanStats = [...currStats].filter(s => findLinkedTitle(s, 'video') === null).sort((a,b) => b.date.localeCompare(a.date));
+  html += `<div class="card"><div class="card-title">未关联记录 <span class="badge">${orphanStats.length}</span></div>`;
+  if (orphanStats.length === 0) {
+    html += '<p style="font-size:12px;color:var(--text2);padding:6px 0;">当前周期无未关联记录</p>';
+  } else {
+    html += '<p style="font-size:12px;color:var(--orange);margin-bottom:8px;">以下数据未找到对应登记内容（已失效或被删除），可删除或补录内容</p>';
+    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>播放</th><th>点赞</th><th>操作</th></tr></thead><tbody>';
+    orphanStats.forEach(s => {
+      html += `<tr><td>${s.date}</td><td><span class="platform-tag video">${s.platform}</span></td><td>${formatNum(s.views)}</td><td>${formatNum(s.likes)}</td><td><button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;" onclick="deleteStat('${s.id}')">删除</button></td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -280,72 +382,77 @@ function deleteStat(id) {
 }
 
 // --- Article AI data ---
-function renderArticleData(thisMonth) {
-  const monthAiStats = aiStats.filter(s => s.date.startsWith(thisMonth) && isArticle(s.platform));
-  let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪</div>`;
+function renderArticleData(period) {
+  const ranges = getPeriodRanges(period || 'month');
+  const currAiStats = aiStats.filter(s => isArticle(s.platform) && s.date >= ranges.start && s.date <= ranges.end);
+  const prevAiStats = aiStats.filter(s => isArticle(s.platform) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
+  let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪 <span class="badge">${ranges.start} ~ ${ranges.end}</span></div>`;
   html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">统计6大AI引擎收录情况：${AI_ENGINES.join('、')}</p>`;
 
-  // Summary（月为单位：总发布数 / AI收录数 / AI收录率）
+  // Summary（当前周期：总发布数 / AI收录数 / AI收录率）
   let totalChecked = 0, totalPossible = 0;
-  monthAiStats.forEach(s => {
+  currAiStats.forEach(s => {
     AI_ENGINES.forEach(ai => { totalPossible++; if (s.ai && s.ai[ai]) totalChecked++; });
   });
   const rate = totalPossible > 0 ? Math.round(totalChecked / totalPossible * 100) : 0;
   html += `<div class="stats-grid">
-    <div class="stat-card"><div class="stat-value">${monthAiStats.length}</div><div class="stat-label">总发布数</div></div>
+    <div class="stat-card"><div class="stat-value">${currAiStats.length}</div><div class="stat-label">总发布数</div></div>
     <div class="stat-card"><div class="stat-value">${totalChecked}/${totalPossible}</div><div class="stat-label">AI收录数</div></div>
     <div class="stat-card"><div class="stat-value" style="color:${rate>=50?'var(--green)':'var(--yellow)'};">${rate}%</div><div class="stat-label">AI收录率</div></div>
   </div></div>`;
 
-  // AI引擎收录情况（引擎视角柱形图，本月 vs 上月）
-  html += '<div class="card"><div class="card-title">AI引擎收录情况 <span class="badge">本月 vs 上月</span></div>';
+  // AI引擎收录情况（引擎视角柱形图，当前周期 vs 上期）
+  html += `<div class="card"><div class="card-title">AI引擎收录情况 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const aiCounts = {};
   const prevAiCounts = {};
   AI_ENGINES.forEach(ai => { aiCounts[ai] = 0; prevAiCounts[ai] = 0; });
-  monthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) aiCounts[ai]++; }); });
-  const prevMonthAiStats = aiStats.filter(s => s.date.startsWith(getPrevMonthStr(thisMonth)));
-  prevMonthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevAiCounts[ai]++; }); });
-  html += renderChartLegend('article');
+  currAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) aiCounts[ai]++; }); });
+  prevAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevAiCounts[ai]++; }); });
+  html += renderChartLegend('article', ranges.label, ranges.prevLabel);
   html += renderDualBarChart(AI_ENGINES, AI_ENGINES.map(ai => aiCounts[ai]), AI_ENGINES.map(ai => prevAiCounts[ai]), 'article', n => n);
   html += '</div>';
 
-  // 文书平台被收录情况（平台视角柱形图，本月 vs 上月）
-  html += '<div class="card"><div class="card-title">文书平台被收录情况 <span class="badge">本月 vs 上月</span></div>';
+  // 文书平台被收录情况（平台视角柱形图，当前周期 vs 上期）
+  html += `<div class="card"><div class="card-title">文书平台被收录情况 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const platformCounts = {};
   const prevPlatformCounts = {};
   ARTICLE_PLATFORMS.forEach(p => { platformCounts[p] = 0; prevPlatformCounts[p] = 0; });
-  monthAiStats.forEach(s => {
+  currAiStats.forEach(s => {
     if (platformCounts[s.platform] !== undefined) {
       AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) platformCounts[s.platform]++; });
     }
   });
-  prevMonthAiStats.forEach(s => {
+  prevAiStats.forEach(s => {
     if (prevPlatformCounts[s.platform] !== undefined) {
       AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevPlatformCounts[s.platform]++; });
     }
   });
-  html += renderChartLegend('article');
+  html += renderChartLegend('article', ranges.label, ranges.prevLabel);
   html += renderDualBarChart(ARTICLE_PLATFORMS, ARTICLE_PLATFORMS.map(p => platformCounts[p]), ARTICLE_PLATFORMS.map(p => prevPlatformCounts[p]), 'article', n => n);
   html += '</div>';
 
-  // Table
-  html += '<div class="card"><div class="card-title">详细数据</div>';
-  if (monthAiStats.length === 0) html += '<div class="empty-state"><p>暂无数据，请在内容登记页录入</p></div>';
-  else {
-    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>内容标题</th>';
-    AI_ENGINES.forEach(ai => html += `<th>${AI_ENGINES_SHORT[ai] || ai}</th>`);
-    html += '</tr></thead><tbody>';
-    [...monthAiStats].sort((a,b) => b.date.localeCompare(a.date)).forEach(s => {
-      const linkedTitle = findLinkedTitle(s, 'article');
-      const title = s.title || linkedTitle || '未关联';
-      const titleShort = title.length > 12 ? title.slice(0,12) + '…' : title;
-      const noLink = linkedTitle === null;
-      html += `<tr><td>${s.date}</td><td><span class="platform-tag article">${s.platform}</span></td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${noLink ? 'var(--orange)' : 'inherit'};" title="${title}">${titleShort}</td>`;
-      AI_ENGINES.forEach(ai => {
-        const yes = s.ai && s.ai[ai];
-        html += `<td><span class="ai-badge ${yes?'yes':'no'}">${yes?'Y':'-'}</span></td>`;
-      });
-      html += '</tr>';
+  // AI 收录数趋势折线图（跟随周期：周=本周7天，月=近30天）
+  const aiIsWeek = (period || 'month') === 'week';
+  const aiTrendPts = aggregateDaily(aiStats.filter(s => isArticle(s.platform)), s => {
+    let n = 0;
+    AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) n++; });
+    return n;
+  }, aiIsWeek ? 7 : 30);
+  const aiTrendTitle = aiIsWeek ? '本周 AI 收录数趋势' : '近30天 AI 收录数趋势';
+  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${ranges.label}</span></div>${renderTrendLine(aiTrendPts, { color: 'var(--purple)', fmt: n => n })}</div>`;
+
+  // 未关联记录（AI收录但找不到对应内容）
+  const orphanAi = [...currAiStats].filter(s => findLinkedTitle(s, 'article') === null).sort((a,b) => b.date.localeCompare(a.date));
+  html += `<div class="card"><div class="card-title">未关联记录 <span class="badge">${orphanAi.length}</span></div>`;
+  if (orphanAi.length === 0) {
+    html += '<p style="font-size:12px;color:var(--text2);padding:6px 0;">当前周期无未关联记录</p>';
+  } else {
+    html += '<p style="font-size:12px;color:var(--orange);margin-bottom:8px;">以下 AI 收录未找到对应登记内容（已失效或被删除），可删除或补录内容</p>';
+    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>收录数</th><th>操作</th></tr></thead><tbody>';
+    orphanAi.forEach(s => {
+      let n = 0;
+      AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) n++; });
+      html += `<tr><td>${s.date}</td><td><span class="platform-tag article">${s.platform}</span></td><td>${n}/${AI_ENGINES.length}</td><td><button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;" onclick="deleteAiStat('${s.id}')">删除</button></td></tr>`;
     });
     html += '</tbody></table></div>';
   }

@@ -683,12 +683,26 @@ function getFilteredContents() {
     );
   }
 
-  // Apply filter type
+  // Apply filter type（'' = 全部 | 'today' | 具体平台名）
   if (contentFilterType === 'today') filtered = filtered.filter(c => c.createdAt === today);
-  else if (contentFilterType === 'video') filtered = filtered.filter(c => isVideo(c.platform));
-  else if (contentFilterType === 'article') filtered = filtered.filter(c => isArticle(c.platform));
+  else if (contentFilterType && ALL_PLATFORMS.includes(contentFilterType)) filtered = filtered.filter(c => c.platform === contentFilterType);
 
-  filtered.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  // 播放量排序：排除文书平台，只显示视频内容并按播放量排序（无数据排最后）
+  if (contentSortByViews === 'desc' || contentSortByViews === 'asc') {
+    filtered = filtered.filter(c => isVideo(c.platform));
+    const viewOf = c => {
+      const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+      return s ? (s.views || 0) : -1; // 无数据视为 -1（排最后）
+    };
+    filtered.sort((a, b) => {
+      const va = viewOf(a), vb = viewOf(b);
+      if (va === vb) return (b.createdAt||'').localeCompare(a.createdAt||''); // 同值按日期新在前
+      if (contentSortByViews === 'desc') return vb - va; // 降序：大的在前
+      return va - vb; // 升序：小的在前（-1 自然排最后）
+    });
+  } else {
+    filtered.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  }
   return filtered;
 }
 
