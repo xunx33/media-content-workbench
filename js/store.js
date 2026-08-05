@@ -25,6 +25,25 @@ function getToday() {
 function isVideo(p) { return VIDEO_PLATFORMS.includes(p); }
 function isArticle(p) { return ARTICLE_PLATFORMS.includes(p); }
 
+// ===== 完成判定（以登记为准，条数累计制）=====
+// 某平台某日期的登记内容列表
+function getPlatformContents(date, platform) {
+  return contents.filter(c => c.platform === platform && c.createdAt === date);
+}
+// 某日期各平台内容条数（发多少记多少，无上限）
+function getDayCounts(date) {
+  const counts = {};
+  ALL_PLATFORMS.forEach(p => { counts[p] = getPlatformContents(date, p).length; });
+  return counts;
+}
+// 当日任务完成判定：4 个视频平台全部有内容 + 文书至少 3 个平台有内容
+function isDayComplete(date) {
+  const counts = getDayCounts(date);
+  const videoOk = VIDEO_PLATFORMS.every(p => counts[p] > 0);
+  const articleOk = ARTICLE_PLATFORMS.filter(p => counts[p] > 0).length >= 3;
+  return videoOk && articleOk;
+}
+
 // Ensure daily tasks: each platform 1 task per day.
 // Also backfill all days from start of current month up to today so monthly stats are meaningful.
 function ensureDailyTasks() {

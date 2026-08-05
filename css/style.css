@@ -264,6 +264,12 @@ a { color: var(--accent); text-decoration: none; }
   border-radius: var(--radius-xs); font-size: 12px;
 }
 .task-detail.open { display: block; }
+.content-detail-item {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.content-detail-item:last-child { border-bottom: none; }
+.content-detail-item:first-child { padding-top: 0; }
 .task-detail-row {
   display: flex; gap: 8px; padding: 3px 0;
   color: var(--text2); line-height: 1.5;
@@ -480,7 +486,8 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 7px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.content-item .content-meta { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.content-item .content-meta { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.content-item .content-meta .meta-topic { margin-left: 2px; }
 .content-item .content-url { font-size: 12px; margin-bottom: 8px; }
 .content-item .content-url a { color: #7da7ff; word-break: break-all; }
 .content-item .content-url a:hover { text-decoration: underline; }
@@ -614,6 +621,29 @@ a { color: var(--accent); text-decoration: none; }
 .bar.article { background: linear-gradient(to top, #8b5cf6, #c4b5fd); box-shadow: 0 0 12px rgba(139,92,246,0.3); }
 .bar-label { font-size: 9px; color: var(--text2); margin-top: 5px; text-align: center; white-space: normal; line-height: 1.25; }
 .bar-value { font-size: 10px; margin-bottom: 3px; color: var(--text); font-weight: 600; }
+
+/* 双柱对比（本月 vs 上月）：同平台两柱固定等宽（14px）、间距 3px，平台间靠 bar-col/gap 分隔 */
+.bar-pair {
+  display: flex; gap: 3px; align-items: flex-end;
+  justify-content: center; height: 100%;
+}
+.bar-pair-item {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; height: 100%; width: 14px;
+}
+.bar-pair-item .bar { width: 100%; max-width: none; }
+.bar.prev { opacity: 0.35; }
+.bar-value.prev { font-size: 8px; color: var(--text3); }
+.chart-legend {
+  display: flex; gap: 14px; margin-bottom: 8px; font-size: 11px; color: var(--text2);
+}
+.chart-legend .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.chart-legend .legend-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+}
+.chart-legend .legend-dot.video { background: linear-gradient(to top, #fb923c, #fdba74); }
+.chart-legend .legend-dot.article { background: linear-gradient(to top, #8b5cf6, #c4b5fd); }
+.chart-legend .legend-dot.prev { opacity: 0.35; }
 
 /* Modal */
 .modal-overlay {

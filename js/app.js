@@ -33,18 +33,21 @@ function checkWeeklyReminder() {
   const lastDate = new Date(last);
   const diffDays = Math.floor((new Date(today + 'T00:00:00') - lastDate) / 86400000);
   if (diffDays >= 7) {
-    // 检查本周是否有已发布但未登记链接的任务
+    // 检查本周有内容但未录入数据的条数（以登记为准）
     const weekAgo = new Date(Date.now() - 6 * 86400000);
     const weekAgoStr = getDayStr(weekAgo);
-    const pendingTasks = tasks.filter(t =>
-      t.date >= weekAgoStr && t.date <= today && t.done && !t.linked
-    );
-    const pendingCount = pendingTasks.length;
+    const weekContents = contents.filter(c => c.createdAt >= weekAgoStr && c.createdAt <= today);
+    const pendingCount = weekContents.filter(c => {
+      if (isVideo(c.platform)) {
+        return !stats.some(s => s.contentId == c.id || s.contentId == Number(c.id) || (s.platform === c.platform && s.date === c.createdAt));
+      }
+      return !aiStats.some(s => s.contentId == c.id || s.contentId == Number(c.id) || (s.platform === c.platform && s.date === c.createdAt));
+    }).length;
     // 检查本周是否已有复盘记录
     const hasReview = reviews.some(r => r.date >= weekAgoStr && r.date <= today);
     let msg;
     if (pendingCount > 0) {
-      msg = `📊 已到每周复盘时间，本周还有 ${pendingCount} 条内容未登记链接，建议先登记再复盘`;
+      msg = `📊 已到每周复盘时间，本周还有 ${pendingCount} 条内容未录入数据，建议补录后复盘`;
     } else if (!hasReview) {
       msg = `📊 已到每周复盘时间，记得进行一次数据登记复盘 + AI收录情况筛查`;
     } else {

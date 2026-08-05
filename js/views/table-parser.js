@@ -1,10 +1,10 @@
 function renderTableParser() {
   const videoCount = stats.length;
   let html = `<div class="card"><div class="card-title">解析数据表格 <span class="badge">视频数据 ${videoCount}条</span></div>`;
-  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:10px;">先选择<b>平台</b>，再上传该平台导出的数据表文件（支持 <b>.xlsx</b> / <b>.csv</b> / <b>.tsv</b> / <b>.txt</b>），系统按该平台的表头规则自动识别，并入对应登记内容。有数据的字段自动填充，没有的留空。</p>`;
+  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:10px;">选择<b>平台</b>后上传该平台导出的数据表（支持 <b>.xlsx</b> / <b>.csv</b> / <b>.tsv</b> / <b>.txt</b>），文件先<b>暂存</b>，确认无误后点「<b>导入解析</b>」：内容自动登记 + 数据自动填充，并同步到发布日历。</p>`;
 
-  // 平台选择（仅 4 个短视频平台）
-  html += `<div class="form-group"><label>数据表所属平台</label><select id="parserPlatform" onchange="updateParserHelp()">
+  // 平台选择（仅 4 个短视频平台）；切换平台时刷新帮助说明 + 重检测暂存文件的匹配警告
+  html += `<div class="form-group"><label>数据表所属平台</label><select id="parserPlatform" onchange="onParserPlatformChange()">
     ${VIDEO_PLATFORMS.map(p => `<option value="${p}">${p}</option>`).join('')}
   </select></div>`;
 
@@ -21,6 +21,11 @@ function renderTableParser() {
     <input type="file" id="parserFile" accept=".xlsx,.csv,.tsv,.txt,text/plain" style="display:none;" onchange="handleParserFile(this.files[0])">
   </div>`;
   html += `<div class="form-group" id="parserPreview" style="display:none;font-size:12px;color:var(--text2);background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 12px;"></div>`;
+  // 导入/取消按钮（上传文件暂存后显示）
+  html += `<div class="toolbar" style="margin-top:8px;display:none;" id="parserImportWrap">
+    <button class="btn-primary" onclick="confirmImport()">导入解析</button>
+    <button class="btn-edit" onclick="cancelPendingImport()">取消</button>
+  </div>`;
   html += '<div id="parserResult" style="margin-top:8px;"></div>';
   html += '</div>';
 
@@ -35,6 +40,10 @@ function renderTableParser() {
         zone.style.borderColor = 'var(--border-strong)';
         if (e.dataTransfer.files.length > 0) handleParserFile(e.dataTransfer.files[0]);
       });
+    }
+    // 恢复暂存状态（切换 Tab 回来仍保留）
+    if (pendingParserRows) {
+      refreshPendingPreview();
     }
     // 初始填充默认平台（抖音）的表头说明
     updateParserHelp();
@@ -60,13 +69,36 @@ function updateParserHelp() {
     <b style="color:var(--text2);">说明：</b>完播率支持 0.35 / 20.6% / 35.6 三种格式，"--" 视为空；发布时间自动截取日期部分；小红书无人均观看时自动留空，视频号无收藏时记录「推荐」数。`;
 }
 
-// 处理上传文件（仅短视频平台数据表）
+// 切换平台时：刷新帮助说明 + 重检测暂存文件的匹配警告（选对平台后警告自动消失）
+function onParserPlatformChange() {
+  updateParserHelp();
+  if (pendingParserRows) refreshPendingPreview();
+}
+
+// 统一刷新暂存预览（含平台匹配检测警告）
+function refreshPendingPreview() {
+  const preview = document.getElementById('parserPreview');
+  const wrap = document.getElementById('parserImportWrap');
+  if (!preview || !pendingParserRows) return;
+  const platform = document.getElementById('parserPlatform').value;
+  const detect = detectPlatformMismatch(pendingParserRows, platform);
+  const warnHtml = detect.mismatch
+    ? `<br><span style="color:var(--red);font-weight:600;">⚠️ 表头特征疑似「${detect.likelyPlatform}」平台导出，与所选「${platform}」不匹配，请确认平台选择是否正确（可在导入时强制继续）</span>`
+    : '';
+  preview.style.display = 'block';
+  preview.innerHTML = `📄 [${platform}] ${pendingParserFileName}：读取到 <b>${pendingParserRows.length - 1}</b> 行数据，表头：<code style="font-size:11px;">${(getHeaderRow(pendingParserRows) || []).slice(0,8).join(' / ')}</code><br><span style="color:var(--yellow);">已暂存，确认无误后点击下方「导入解析」开始导入。</span>${warnHtml}`;
+  if (wrap) wrap.style.display = 'flex';
+}
+
+// 暂存的上传文件（等待用户点击「导入解析」后才真正解析导入）
+let pendingParserRows = null;
+let pendingParserFileName = '';
+
+// 处理上传文件（仅暂存，不直接导入）
 async function handleParserFile(file) {
   if (!file) return;
   const name = file.name.toLowerCase();
   const preview = document.getElementById('parserPreview');
-  const type = 'video';   // 解析器仅支持短视频数据
-  // 平台来自用户选择（解析器顶部下拉）
   const platform = document.getElementById('parserPlatform').value;
   if (!platform) { showToast('请先选择数据表所属平台'); return; }
 
@@ -74,7 +106,7 @@ async function handleParserFile(file) {
     let rows;
     if (name.endsWith('.xlsx')) {
       preview.style.display = 'block';
-      preview.innerHTML = '⏳ 正在解析 xlsx…';
+      preview.innerHTML = '⏳ 正在读取 xlsx…';
       const buf = await file.arrayBuffer();
       rows = await parseXlsx(buf);
       if (rows.length === 0) { showToast('xlsx 未解析到数据'); return; }
@@ -84,16 +116,63 @@ async function handleParserFile(file) {
       if (rows.length === 0) { showToast('文件未解析到数据'); return; }
     }
 
-    // 预览
-    preview.style.display = 'block';
-    preview.innerHTML = `📄 [${platform}] ${file.name}：解析出 <b>${rows.length - 1}</b> 行数据，表头：<code style="font-size:11px;">${rows[0].slice(0,8).join(' / ')}</code>`;
-
-    const result = parseTableRows(rows, type, platform);
-    showParserResult(result, type);
+    // 暂存文件，等待用户确认后导入（预览含平台匹配检测，统一走 refreshPendingPreview）
+    pendingParserRows = rows;
+    pendingParserFileName = file.name;
+    refreshPendingPreview();
+    const resultDiv = document.getElementById('parserResult');
+    if (resultDiv) resultDiv.innerHTML = '';
+    showToast('文件已暂存，点击「导入解析」开始导入');
   } catch (err) {
     console.error(err);
-    showToast('解析失败：' + (err.message || '未知错误'));
+    showToast('读取失败：' + (err.message || '未知错误'));
   }
+}
+
+// 点击「导入解析」：先检测平台匹配，再解析导入
+function confirmImport() {
+  if (!pendingParserRows) { showToast('请先上传文件'); return; }
+  const platform = document.getElementById('parserPlatform').value;
+  const detect = detectPlatformMismatch(pendingParserRows, platform);
+  if (detect.mismatch) {
+    showConfirm({
+      title: '平台可能选择错误',
+      desc: `检测到该表格表头特征更符合「<b>${detect.likelyPlatform}</b>」平台，而当前选择的是「<b>${platform}</b>」。<br><br>如果是选错平台，请点「取消」后切换平台；如果表格确实来自 ${platform}（格式特殊），可点「强制导入」。`,
+      danger: true,
+      okText: '强制导入',
+      onOk: () => doImport(pendingParserRows, platform)
+    });
+    return;
+  }
+  doImport(pendingParserRows, platform);
+}
+
+// 执行导入（解析暂存数据并入库）
+function doImport(rows, platform) {
+  const type = 'video';   // 解析器仅支持短视频数据
+  const result = parseTableRows(rows, type, platform);
+  showParserResult(result, type);
+  pendingParserRows = null;
+  pendingParserFileName = '';
+  const wrap = document.getElementById('parserImportWrap');
+  if (wrap) wrap.style.display = 'none';
+  const preview = document.getElementById('parserPreview');
+  if (preview) {
+    preview.innerHTML = '✅ 已导入完成，可继续上传其他文件';
+  }
+}
+
+// 取消暂存
+function cancelPendingImport() {
+  pendingParserRows = null;
+  pendingParserFileName = '';
+  const wrap = document.getElementById('parserImportWrap');
+  if (wrap) wrap.style.display = 'none';
+  const preview = document.getElementById('parserPreview');
+  if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+  const resultDiv = document.getElementById('parserResult');
+  if (resultDiv) resultDiv.innerHTML = '';
+  showToast('已取消导入');
 }
 
 // 解析分隔文本（csv/tsv/txt）
@@ -319,6 +398,63 @@ const ARTICLE_HEADERS = {
   ai: ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米']
 };
 
+// ===== 平台签名检测（表头特征匹配，用于提示表格平台与所选平台是否一致）=====
+// 词源：4 个平台真实导出表头（抖音作品列表导出/快手作品列表明细/小红书笔记列表明细/视频号动态数据明细）
+// 每个词都是该平台的「独有列名」，避免交叉误报（如"完播率"四平台都有、"封面点击率"抖音小红书都有、"平均播放时长"抖音视频号都有，均不采用）
+const PLATFORM_SIGNATURES = {
+  '抖音': ['审核状态', '5s完播率', '2s跳出率', '主页访问量', '粉丝增量'],
+  '快手': ['涨粉量', '作品'],
+  '小红书': ['笔记标题', '首次发布时间', '曝光', '弹幕', '人均观看时长'],
+  '视频号': ['视频ID', '转发聊天和朋友圈', '设为铃声', '企微', '关注量']
+};
+
+// 取真实表头行：自动扫描前 5 行，找出"最像表头"的行（按命中的字段词种类去重计数）
+// 兼容小红书第1行是"最多导出..."提示语（13列同一词只算1种），也兼容用户未切换平台下拉的情况
+function getHeaderRow(rows) {
+  if (!rows || rows.length === 0) return [];
+  const knownWords = ['发布时间', '日期', '时间', '标题', '作品', '笔记', '视频', '播放', '观看', '点赞', '评论', '收藏', '分享', '完播', '涨粉', '粉丝', '关注', '曝光', '体裁'];
+  let bestLine = rows[0];
+  let bestScore = -1;
+  rows.slice(0, 5).forEach(line => {
+    const hit = new Set();
+    line.forEach(cell => {
+      knownWords.forEach(kw => { if (String(cell || '').includes(kw)) hit.add(kw); });
+    });
+    if (hit.size > bestScore) { bestScore = hit.size; bestLine = line; }
+  });
+  return bestLine;
+}
+
+// 检测表格表头特征与所选平台是否匹配
+// 返回 { mismatch, likelyPlatform, scores }：mismatch=是否疑似不匹配，likelyPlatform=更像哪个平台
+function detectPlatformMismatch(rows, selectedPlatform) {
+  const empty = { mismatch: false, likelyPlatform: '', scores: {} };
+  if (!rows || rows.length === 0) return empty;
+
+  // 遍历前 5 行（兼容小红书表头在第2行），找出平台签名命中总数最多的行作为表头
+  const tryLines = rows.slice(0, Math.min(5, rows.length));
+  let best = { scores: {}, total: -1 };
+  tryLines.forEach(line => {
+    const scores = {};
+    Object.keys(PLATFORM_SIGNATURES).forEach(p => {
+      scores[p] = PLATFORM_SIGNATURES[p].filter(kw => line.some(cell => String(cell || '').includes(kw))).length;
+    });
+    const total = Object.values(scores).reduce((a, b) => a + b, 0);
+    if (total > best.total) best = { scores, total };
+  });
+
+  const scores = best.scores;
+  const selectedScore = scores[selectedPlatform] || 0;
+  let likelyPlatform = '';
+  let bestScore = 0;
+  Object.keys(scores).forEach(p => {
+    if (p !== selectedPlatform && scores[p] > bestScore) { bestScore = scores[p]; likelyPlatform = p; }
+  });
+  // 不匹配：所选平台的表头特征命中数明显低于其他平台（选错平台的概率高）
+  const mismatch = bestScore >= 1 && selectedScore < bestScore;
+  return { mismatch, likelyPlatform: mismatch ? likelyPlatform : '', scores };
+}
+
 // 统一解析行数据
 function parseTableRows(rows, type, platform) {
   if (rows.length < 2) { showToast('数据至少需要表头+一行数据'); return null; }
@@ -367,6 +503,7 @@ function parseTableRows(rows, type, platform) {
   const dataStart = headerRowIdx + 1;
   // 解析数据行（平台来自用户选择，不依赖表内平台列或文件名）
   let parsedCount = 0;
+  let contentCreatedCount = 0;
   const results = [];
   for (let i = dataStart; i < rows.length; i++) {
     const cells = rows[i];
@@ -387,21 +524,37 @@ function parseTableRows(rows, type, platform) {
       const shares = colShares >= 0 ? parseIntNum(cells[colShares]) : 0;
       const followers = colFollowers >= 0 ? parseIntNum(cells[colFollowers]) : 0;
 
-      const content = contents.find(c => c.platform === platform && c.createdAt === normDate);
-      if (content) {
-        const existing = stats.find(s => s.platform === platform && s.date === normDate);
-        const newStat = { platform, date: normDate, title: title || content.title, views, completionRate: completion, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: content.id };
-        if (existing) Object.assign(existing, newStat);
-        else stats.push({ id: Date.now() + Math.random(), ...newStat });
-        parsedCount++;
-        let summary = `播放${formatNum(views)}`;
-        if (completion !== null) summary += ` 完播${completion}%`;
-        if (avgWatch !== null) summary += ` 人均观看${avgWatch}s`;
-        if (recommend > 0) summary += ` 推荐${recommend}`;
-        results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${summary} 已并入「${content.title}」</div>`);
-      } else {
-        results.push(`<div style="font-size:12px;color:var(--yellow);">⚠ ${normDate} ${platform} 无匹配登记内容，跳过</div>`);
+      // 内容登记：优先匹配已登记内容，没有则自动登记一条（标题取表格作品名，平台/日期从表格读取）
+      let content = contents.find(c => c.platform === platform && c.createdAt === normDate);
+      let autoCreated = false;
+      if (!content) {
+        content = {
+          id: Date.now() + Math.random(),
+          title: title || (platform + ' ' + normDate + ' 作品'),
+          platform,
+          topic: '',
+          url: '',
+          createdAt: normDate
+        };
+        contents.push(content);
+        autoCreated = true;
       }
+
+      // 数据登记：更新或新建 stats 并关联内容
+      const existing = stats.find(s => s.platform === platform && s.date === normDate);
+      const newStat = { platform, date: normDate, title: title || content.title, views, completionRate: completion, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: content.id };
+      if (existing) Object.assign(existing, newStat);
+      else stats.push({ id: Date.now() + Math.random(), ...newStat });
+      parsedCount++;
+      if (autoCreated) contentCreatedCount++;
+      // 任务联动：该平台当日任务自动完成 + 标记已登记链接
+      linkTaskToContent(platform, normDate, content.id);
+
+      let summary = `播放${formatNum(views)}`;
+      if (completion !== null) summary += ` 完播${completion}%`;
+      if (avgWatch !== null) summary += ` 人均观看${avgWatch}s`;
+      if (recommend > 0) summary += ` 推荐${recommend}`;
+      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${content.title}」${summary}</div>`);
     } else {
       const ai = {};
       AI_ENGINES.forEach(eng => {
@@ -409,35 +562,42 @@ function parseTableRows(rows, type, platform) {
         const v = idx >= 0 ? cells[idx] : '';
         ai[eng] = isYesValue(v);
       });
-      const content = contents.find(c => c.platform === platform && c.createdAt === normDate);
-      if (content) {
-        const existing = aiStats.find(s => s.platform === platform && s.date === normDate);
-        if (existing) { existing.ai = ai; }
-        else aiStats.push({ id: Date.now() + Math.random(), platform, date: normDate, title: content.title, ai, contentId: content.id });
-        parsedCount++;
-        const yesCount = AI_ENGINES.filter(e => ai[e]).length;
-        results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} AI收录${yesCount}/6 已并入「${content.title}」</div>`);
-      } else {
-        results.push(`<div style="font-size:12px;color:var(--yellow);">⚠ ${normDate} ${platform} 无匹配登记内容，跳过</div>`);
+      // 内容登记：无已登记内容时自动登记
+      let content = contents.find(c => c.platform === platform && c.createdAt === normDate);
+      let autoCreated = false;
+      if (!content) {
+        content = { id: Date.now() + Math.random(), title: '文书 ' + platform + ' ' + normDate, platform, topic: '', url: '', createdAt: normDate };
+        contents.push(content);
+        autoCreated = true;
+        contentCreatedCount++;
       }
+      const existing = aiStats.find(s => s.platform === platform && s.date === normDate);
+      if (existing) { existing.ai = ai; existing.contentId = content.id; }
+      else aiStats.push({ id: Date.now() + Math.random(), platform, date: normDate, title: content.title, ai, contentId: content.id });
+      parsedCount++;
+      linkTaskToContent(platform, normDate, content.id);
+      const yesCount = AI_ENGINES.filter(e => ai[e]).length;
+      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${content.title}」AI收录${yesCount}/6</div>`);
     }
   }
 
+  saveData('contents', contents);
   saveData('stats', stats);
   saveData('aiStats', aiStats);
-  return { parsedCount, results };
+  return { parsedCount, contentCreatedCount, results };
 }
 
 function showParserResult(result, type) {
   const resultDiv = document.getElementById('parserResult');
   if (!result) return;
   if (result.parsedCount > 0) {
-    resultDiv.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">✅ 成功并入 ${result.parsedCount} 条数据</div>${result.results.join('')}`;
-    showToast(`解析完成，并入 ${result.parsedCount} 条数据`);
+    const createdInfo = result.contentCreatedCount > 0 ? `（含自动登记内容 ${result.contentCreatedCount} 条）` : '';
+    resultDiv.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">✅ 成功处理 ${result.parsedCount} 条数据${createdInfo}</div>${result.results.join('')}`;
+    showToast(`解析完成：${result.parsedCount} 条数据` + (result.contentCreatedCount ? ` + 新登记 ${result.contentCreatedCount} 条内容` : ''));
     render();
   } else {
-    resultDiv.innerHTML = `<div style="font-size:13px;color:var(--red);">❌ 没有匹配到已登记内容，请先在内容登记中登记对应平台和日期的内容</div>`;
-    showToast('解析失败：无匹配内容');
+    resultDiv.innerHTML = `<div style="font-size:13px;color:var(--red);">❌ 未解析到有效数据，请检查表头是否包含日期列、数据表是否与所选平台匹配</div>`;
+    showToast('解析失败：无有效数据');
   }
 }
 
@@ -445,6 +605,16 @@ function showParserResult(result, type) {
 function normalizeDate(s) {
   if (!s) return '';
   s = String(s).trim();
+  // Excel 日期序列号（如视频号导出：46233 → 2026-07-30，从 1899-12-30 起算的天数）
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const num = parseFloat(s);
+    // 合理日期范围：20000~60000 对应 1954-10-27 ~ 2064-04-12
+    if (num >= 20000 && num <= 60000) {
+      const d = new Date(Date.UTC(1899, 11, 30) + Math.round(num) * 86400000);
+      return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+    }
+    return '';
+  }
   // 带时间戳的日期：YYYY-MM-DD HH:MM:SS / YYYY/MM/DD HH:MM / YYYY-MM-DDTHH:MM
   s = s.replace(/[T\s].*$/, '');
   // 已经是 YYYY-MM-DD
@@ -591,14 +761,12 @@ function renderContentItem(c) {
       <span class="content-title">${titleHtml}</span>
       <span class="platform-tag ${type}">${platformHtml}</span>
     </div>`;
-  if (c.topic) {
-    leftHtml += `<div class="content-preview"><span style="color:var(--text2);">选题：</span>${topicHtml}</div>`;
-  }
   if (c.url) {
     const urlHtml = highlightText(c.url, kw);
     leftHtml += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${c.url}" target="_blank">${c.url.length > 50 ? urlHtml.slice(0,50)+'...' : urlHtml}</a></div>`;
   }
-  leftHtml += `<div class="content-meta">${c.createdAt || ''}</div>`;
+  // 最后一行：日期在前，选题在后（同一行同字号）
+  leftHtml += `<div class="content-meta">${c.createdAt || ''}${c.topic ? `<span class="meta-topic"><span style="color:var(--text2);">· 选题：</span>${topicHtml}</span>` : ''}</div>`;
   leftHtml += `<div class="content-actions">
     <button class="btn-edit" onclick="editContent('${c.id}')">编辑</button>
     <button class="btn-delete" onclick="deleteContent('${c.id}')">删除</button>

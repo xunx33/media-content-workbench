@@ -6,10 +6,11 @@ function formatNum(n) {
 
 // ===== MODAL =====
 let pendingLinkTaskId = null;
-function openAddModal(prefillPlatform, taskId) {
+function openAddModal(prefillPlatform, taskId, prefillDate) {
   editId = null;
   pendingLinkTaskId = taskId || null;
   const preP = prefillPlatform || VIDEO_PLATFORMS[0];
+  const preD = prefillDate || getToday();
   document.getElementById('modalContent').innerHTML = `
     <h3>登记内容</h3>
     <div class="form-row">
@@ -23,7 +24,7 @@ function openAddModal(prefillPlatform, taskId) {
           </optgroup>
         </select>
       </div>
-      <div class="form-group"><label>日期</label><input type="date" id="cDate" value="${getToday()}"></div>
+      <div class="form-group"><label>日期</label><input type="date" id="cDate" value="${preD}"></div>
     </div>
     <div class="form-group"><label>标题</label><input type="text" id="cTitle" placeholder="内容标题"></div>
     <div class="form-group"><label>选题</label><input type="text" id="cTopic" placeholder="内容选题/主题方向"></div>
@@ -80,31 +81,21 @@ function saveContent() {
     contents.push({ id: savedId, title, platform, topic, url, createdAt: date });
   }
   saveData('contents', contents); closeModal();
-  // 打通链路：登记内容成功后，对应任务自动完成 + 标记 linked
-  if (pendingLinkTaskId) {
-    const t = tasks.find(x => x.id == pendingLinkTaskId || x.id == Number(pendingLinkTaskId));
-    if (t) {
-      if (!t.done) { t.done = true; }
-      t.linked = true;
-      t.contentId = savedId;
-      saveData('tasks', tasks);
-    }
-  } else {
-    linkTaskToContent(platform, date, savedId);
-  }
+  // 任务锚点同步（完成状态以登记为准，动态计算；此调用仅保证日历锚点存在）
+  linkTaskToContent(platform, date, savedId);
   pendingLinkTaskId = null;
   render();
-  showToast(editId ? '已更新' : '已登记，链路进度已更新');
+  showToast(editId ? '已更新' : '已登记');
 }
 
 // ===== UNIFIED CONFIRM =====
-function showConfirm({ title, desc, danger = false, onOk }) {
+function showConfirm({ title, desc, danger = false, okText, onOk }) {
   document.getElementById('modalContent').innerHTML = `
     <h3>${title}</h3>
     <p class="confirm-text">${desc}</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save ${danger ? 'btn-danger' : ''}" id="confirmOkBtn">${danger ? '确认删除' : '确认'}</button>
+      <button class="btn-save ${danger ? 'btn-danger' : ''}" id="confirmOkBtn">${okText || (danger ? '确认删除' : '确认')}</button>
     </div>`;
   document.getElementById('modalOverlay').classList.add('active');
   document.getElementById('confirmOkBtn').onclick = () => {

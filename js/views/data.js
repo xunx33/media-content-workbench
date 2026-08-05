@@ -143,6 +143,47 @@ function formatReviewRange(period, dateStr) {
   return '本周·' + getDayStr(start) + ' ~ ' + getDayStr(end);
 }
 
+// 上月月份字符串 YYYY-MM（用于本月 vs 上月对比）
+function getPrevMonthStr(monthStr) {
+  const [y, m] = monthStr.split('-').map(Number);
+  const prev = new Date(y, m - 2, 1);
+  return prev.getFullYear() + '-' + String(prev.getMonth() + 1).padStart(2, '0');
+}
+
+// 双柱对比柱形图：本月实心柱 + 上月半透明柱
+function renderDualBarChart(labels, currVals, prevVals, barClass, fmt) {
+  const maxV = Math.max(...currVals, ...prevVals, 1);
+  let html = '<div class="bar-chart">';
+  labels.forEach((label, i) => {
+    const v = currVals[i] || 0, pv = prevVals[i] || 0;
+    const h = Math.max(Math.round(v / maxV * 100), 3);
+    const ph = Math.max(Math.round(pv / maxV * 100), 3);
+    html += `<div class="bar-col">
+      <div class="bar-pair">
+        <div class="bar-pair-item" title="本月 ${fmt(v)}">
+          <div class="bar-value">${fmt(v)}</div>
+          <div class="bar ${barClass}" style="height:${h}%"></div>
+        </div>
+        <div class="bar-pair-item" title="上月 ${fmt(pv)}">
+          <div class="bar-value prev">${fmt(pv)}</div>
+          <div class="bar ${barClass} prev" style="height:${ph}%"></div>
+        </div>
+      </div>
+      <div class="bar-label">${label}</div>
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+// 本月 vs 上月图例
+function renderChartLegend(barClass) {
+  return `<div class="chart-legend">
+    <span class="legend-item"><span class="legend-dot ${barClass}"></span>本月</span>
+    <span class="legend-item"><span class="legend-dot ${barClass} prev"></span>上月</span>
+  </div>`;
+}
+
 // --- Video data（仅统计展示）---
 function renderVideoData(thisMonth) {
   const monthStats = stats.filter(s => s.date.startsWith(thisMonth) && isVideo(s.platform));
@@ -163,19 +204,17 @@ function renderVideoData(thisMonth) {
       <div class="stat-card"><div class="stat-value">${formatNum(totalFollowers)}</div><div class="stat-label">总涨粉</div></div>
     </div></div>`;
 
-  // Bar chart
-  html += '<div class="card"><div class="card-title">各平台播放量对比</div>';
+  // Bar chart（本月 vs 上月双柱对比）
+  html += '<div class="card"><div class="card-title">各平台播放量对比 <span class="badge">本月 vs 上月</span></div>';
   const platformViews = {};
-  VIDEO_PLATFORMS.forEach(p => platformViews[p] = 0);
+  const prevPlatformViews = {};
+  VIDEO_PLATFORMS.forEach(p => { platformViews[p] = 0; prevPlatformViews[p] = 0; });
   monthStats.forEach(s => { if (platformViews[s.platform] !== undefined) platformViews[s.platform] += s.views; });
-  const maxViews = Math.max(...Object.values(platformViews), 1);
-  html += '<div class="bar-chart">';
-  VIDEO_PLATFORMS.forEach(p => {
-    const v = platformViews[p];
-    const h = Math.round(v / maxViews * 100);
-    html += `<div class="bar-col"><div class="bar-value">${formatNum(v)}</div><div class="bar video" style="height:${Math.max(h,4)}%"></div><div class="bar-label">${p}</div></div>`;
-  });
-  html += '</div></div>';
+  const prevMonthVideoStats = stats.filter(s => s.date.startsWith(getPrevMonthStr(thisMonth)) && isVideo(s.platform));
+  prevMonthVideoStats.forEach(s => { if (prevPlatformViews[s.platform] !== undefined) prevPlatformViews[s.platform] += s.views; });
+  html += renderChartLegend('video');
+  html += renderDualBarChart(VIDEO_PLATFORMS, VIDEO_PLATFORMS.map(p => platformViews[p]), VIDEO_PLATFORMS.map(p => prevPlatformViews[p]), 'video', formatNum);
+  html += '</div>';
 
   // Table
   html += '<div class="card"><div class="card-title">详细数据</div>';
@@ -258,37 +297,36 @@ function renderArticleData(thisMonth) {
     <div class="stat-card"><div class="stat-value" style="color:${rate>=50?'var(--green)':'var(--yellow)'};">${rate}%</div><div class="stat-label">AI收录率</div></div>
   </div></div>`;
 
-  // AI引擎收录情况（引擎视角柱形图）
-  html += '<div class="card"><div class="card-title">AI引擎收录情况</div>';
+  // AI引擎收录情况（引擎视角柱形图，本月 vs 上月）
+  html += '<div class="card"><div class="card-title">AI引擎收录情况 <span class="badge">本月 vs 上月</span></div>';
   const aiCounts = {};
-  AI_ENGINES.forEach(ai => aiCounts[ai] = 0);
+  const prevAiCounts = {};
+  AI_ENGINES.forEach(ai => { aiCounts[ai] = 0; prevAiCounts[ai] = 0; });
   monthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) aiCounts[ai]++; }); });
-  const maxAi = Math.max(...Object.values(aiCounts), 1);
-  html += '<div class="bar-chart">';
-  AI_ENGINES.forEach(ai => {
-    const v = aiCounts[ai];
-    const h = Math.round(v / maxAi * 100);
-    html += `<div class="bar-col"><div class="bar-value">${v}</div><div class="bar article" style="height:${Math.max(h,4)}%"></div><div class="bar-label">${ai}</div></div>`;
-  });
-  html += '</div></div>';
+  const prevMonthAiStats = aiStats.filter(s => s.date.startsWith(getPrevMonthStr(thisMonth)));
+  prevMonthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevAiCounts[ai]++; }); });
+  html += renderChartLegend('article');
+  html += renderDualBarChart(AI_ENGINES, AI_ENGINES.map(ai => aiCounts[ai]), AI_ENGINES.map(ai => prevAiCounts[ai]), 'article', n => n);
+  html += '</div>';
 
-  // 文书平台被收录情况（平台视角柱形图）
-  html += '<div class="card"><div class="card-title">文书平台被收录情况</div>';
+  // 文书平台被收录情况（平台视角柱形图，本月 vs 上月）
+  html += '<div class="card"><div class="card-title">文书平台被收录情况 <span class="badge">本月 vs 上月</span></div>';
   const platformCounts = {};
-  ARTICLE_PLATFORMS.forEach(p => platformCounts[p] = 0);
+  const prevPlatformCounts = {};
+  ARTICLE_PLATFORMS.forEach(p => { platformCounts[p] = 0; prevPlatformCounts[p] = 0; });
   monthAiStats.forEach(s => {
     if (platformCounts[s.platform] !== undefined) {
       AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) platformCounts[s.platform]++; });
     }
   });
-  const maxPlat = Math.max(...Object.values(platformCounts), 1);
-  html += '<div class="bar-chart">';
-  ARTICLE_PLATFORMS.forEach(p => {
-    const v = platformCounts[p];
-    const h = Math.round(v / maxPlat * 100);
-    html += `<div class="bar-col"><div class="bar-value">${v}</div><div class="bar article" style="height:${Math.max(h,4)}%"></div><div class="bar-label">${p}</div></div>`;
+  prevMonthAiStats.forEach(s => {
+    if (prevPlatformCounts[s.platform] !== undefined) {
+      AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevPlatformCounts[s.platform]++; });
+    }
   });
-  html += '</div></div>';
+  html += renderChartLegend('article');
+  html += renderDualBarChart(ARTICLE_PLATFORMS, ARTICLE_PLATFORMS.map(p => platformCounts[p]), ARTICLE_PLATFORMS.map(p => prevPlatformCounts[p]), 'article', n => n);
+  html += '</div>';
 
   // Table
   html += '<div class="card"><div class="card-title">详细数据</div>';
@@ -349,3 +387,4 @@ function deleteAiStat(id) {
     }
   });
 }
+
