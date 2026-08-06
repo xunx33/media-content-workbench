@@ -6,12 +6,27 @@
 <title>新媒体内容发布工作台</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="css/style.css?v=20260806bb">
+<link rel="stylesheet" href="css/style.css?v=20260806bc">
 <!-- CloudBase 环境配置（部署前创建 js/cloud-config.js；本地开发无此文件时走本地模式） -->
-<script src="js/cloud-config.js?v=20260806bb"></script>
-<!-- CloudBase Web SDK：ES Module 方式（jsdelivr CDN）+ 暴露为 window.cloudbase，给 cloud.js 使用 -->
+<script src="js/cloud-config.js?v=20260806bc"></script>
+<!-- CloudBase Web SDK：用 importmap 把 bare module 重写为 jsdelivr CDN -->
+<script type="importmap">
+{
+  "imports": {
+    "@cloudbase/js-sdk": "https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@3.7.1/dist/index.esm.js",
+    "@cloudbase/adapter-interface": "https://cdn.jsdelivr.net/npm/@cloudbase/adapter-interface@0.2.4/dist/index.esm.js",
+    "@cloudbase/adapter-wx_mp": "https://cdn.jsdelivr.net/npm/@cloudbase/adapter-wx_mp@0.2.0/dist/index.esm.js",
+    "@cloudbase/wx-cloud-client-sdk": "https://cdn.jsdelivr.net/npm/@cloudbase/wx-cloud-client-sdk@0.1.0/dist/index.esm.js",
+    "jwt-decode": "https://cdn.jsdelivr.net/npm/jwt-decode@4.0.0/+esm",
+    "web-streams-polyfill": "https://cdn.jsdelivr.net/npm/web-streams-polyfill@3.3.3/+esm",
+    "@mattiasbuelens/web-streams-adapter": "https://cdn.jsdelivr.net/npm/@mattiasbuelens/web-streams-adapter@0.3.0/+esm",
+    "text-encoding-shim": "https://cdn.jsdelivr.net/npm/text-encoding-shim@1.0.5/+esm",
+    "bson": "https://cdn.jsdelivr.net/npm/bson@6.10.1/+esm"
+  }
+}
+</script>
 <script type="module">
-  import cloudbase from 'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@3.7.1/dist/index.esm.js';
+  import cloudbase from '@cloudbase/js-sdk';
   window.cloudbase = cloudbase;
 </script>
 </head>
@@ -55,19 +70,19 @@
 </div>
 
 <!-- ===== 依赖顺序加载：store(数据) → ui(通用) → views → export/sample → cloud → app(入口) ===== -->
-<!-- ?v=20260806bb 版本号：改动 JS/CSS 后请同步更新，避免浏览器缓存旧文件 -->
-<script src="js/store.js?v=20260806bb"></script>
-<script src="js/ui.js?v=20260806bb"></script>
-<script src="js/views/today.js?v=20260806bb"></script>
-<script src="js/views/calendar.js?v=20260806bb"></script>
-<script src="js/views/overview.js?v=20260806bb"></script>
-<script src="js/views/content.js?v=20260806bb"></script>
-<script src="js/views/table-parser.js?v=20260806bb"></script>
-<script src="js/views/data.js?v=20260806bb"></script>
-<script src="js/export.js?v=20260806bb"></script>
-<script src="js/sample-migration.js?v=20260806bb"></script>
-<script src="js/cloud.js?v=20260806bb"></script>
-<script src="js/cloud-ui.js?v=20260806bb"></script>
-<script src="js/app.js?v=20260806bb"></script>
+<!-- ?v=20260806bc 版本号：改动 JS/CSS 后请同步更新，避免浏览器缓存旧文件 -->
+<script src="js/store.js?v=20260806bc"></script>
+<script src="js/ui.js?v=20260806bc"></script>
+<script src="js/views/today.js?v=20260806bc"></script>
+<script src="js/views/calendar.js?v=20260806bc"></script>
+<script src="js/views/overview.js?v=20260806bc"></script>
+<script src="js/views/content.js?v=20260806bc"></script>
+<script src="js/views/table-parser.js?v=20260806bc"></script>
+<script src="js/views/data.js?v=20260806bc"></script>
+<script src="js/export.js?v=20260806bc"></script>
+<script src="js/sample-migration.js?v=20260806bc"></script>
+<script src="js/cloud.js?v=20260806bc"></script>
+<script src="js/cloud-ui.js?v=20260806bc"></script>
+<script src="js/app.js?v=20260806bc"></script>
 </body>
 </html>
