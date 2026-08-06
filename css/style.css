@@ -112,13 +112,11 @@ a { color: var(--accent); text-decoration: none; }
   box-shadow: 0 0 12px rgba(91,140,255,0.6);
 }
 
-/* 云状态条（登录/同步/访客模式） */
+/* 云状态条（登录/同步/访客模式）：内联在备份栏右侧 */
 .cloud-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 8px; flex-wrap: wrap;
-  padding: 7px 16px;
-  background: rgba(15, 23, 42, 0.4);
-  border-bottom: 1px solid var(--border);
+  flex: 1 1 0;
+  display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap;
+  gap: 8px;
 }
 .cloud-bar .cloud-actions { display: flex; gap: 6px; }
 .cloud-bar .cloud-btn {
@@ -141,16 +139,20 @@ body.share-mode .btn-edit,
 body.share-mode .content-actions,
 body.share-mode .review-item-head .btn-delete-mini { display: none !important; }
 
-/* Backup bar (now below tabs, scrolls away) */
+/* Backup bar (now below tabs, scrolls away)
+   三段式：左占位 spacer(::before) + 中间按钮组居中 + 右侧云状态 */
 .backup-bar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 8px;
   padding: 10px 16px;
   -webkit-overflow-scrolling: touch;
   border-bottom: 1px solid var(--border);
   background: rgba(15, 23, 42, 0.5);
+}
+.backup-bar::before { content: ''; flex: 1 1 0; }
+.backup-group {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
 }
 .backup-bar button {
   padding: 6px 14px;

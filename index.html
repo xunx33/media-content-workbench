@@ -6,9 +6,9 @@
 <title>新媒体内容发布工作台</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="css/style.css?v=20260806a">
+<link rel="stylesheet" href="css/style.css?v=20260806ba">
 <!-- CloudBase 环境配置（部署前创建 js/cloud-config.js；本地开发无此文件时走本地模式） -->
-<script src="js/cloud-config.js?v=20260806a"></script>
+<script src="js/cloud-config.js?v=20260806ba"></script>
 <!-- CloudBase Web SDK（CDN） -->
 <script src="https://static.cloudbase.net/cloudbase-js-sdk/2.3.0/cloudbase.full.js"></script>
 </head>
@@ -28,14 +28,17 @@
   </div>
 </div>
 
-<div class="cloud-bar" id="cloudBar"></div>
-
 <div class="backup-bar">
-  <button onclick="exportData()">导出JSON</button>
-  <button onclick="document.getElementById('importFile').click()">导入恢复</button>
-  <button onclick="clearAllData()">清空数据</button>
-  <button onclick="fillSampleData()">重置示例</button>
-  <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+  <div class="backup-group">
+    <button onclick="exportData()">导出JSON</button>
+    <button onclick="document.getElementById('importFile').click()">导入恢复</button>
+    <button onclick="clearAllData()">清空数据</button>
+    <button onclick="fillSampleData()">重置示例</button>
+    <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+  </div>
+  <!-- 云同步状态条：登录/注册/未登录提示，右对齐 -->
+  <div class="cloud-bar" id="cloudBar"></div>
+</div>
 </div>
 
 <div class="main" id="mainContent"></div>
@@ -49,19 +52,19 @@
 </div>
 
 <!-- ===== 依赖顺序加载：store(数据) → ui(通用) → views → export/sample → cloud → app(入口) ===== -->
-<!-- ?v=20260806a 版本号：改动 JS/CSS 后请同步更新，避免浏览器缓存旧文件 -->
-<script src="js/store.js?v=20260806a"></script>
-<script src="js/ui.js?v=20260806a"></script>
-<script src="js/views/today.js?v=20260806a"></script>
-<script src="js/views/calendar.js?v=20260806a"></script>
-<script src="js/views/overview.js?v=20260806a"></script>
-<script src="js/views/content.js?v=20260806a"></script>
-<script src="js/views/table-parser.js?v=20260806a"></script>
-<script src="js/views/data.js?v=20260806a"></script>
-<script src="js/export.js?v=20260806a"></script>
-<script src="js/sample-migration.js?v=20260806a"></script>
-<script src="js/cloud.js?v=20260806a"></script>
-<script src="js/cloud-ui.js?v=20260806a"></script>
-<script src="js/app.js?v=20260806a"></script>
+<!-- ?v=20260806ba 版本号：改动 JS/CSS 后请同步更新，避免浏览器缓存旧文件 -->
+<script src="js/store.js?v=20260806ba"></script>
+<script src="js/ui.js?v=20260806ba"></script>
+<script src="js/views/today.js?v=20260806ba"></script>
+<script src="js/views/calendar.js?v=20260806ba"></script>
+<script src="js/views/overview.js?v=20260806ba"></script>
+<script src="js/views/content.js?v=20260806ba"></script>
+<script src="js/views/table-parser.js?v=20260806ba"></script>
+<script src="js/views/data.js?v=20260806ba"></script>
+<script src="js/export.js?v=20260806ba"></script>
+<script src="js/sample-migration.js?v=20260806ba"></script>
+<script src="js/cloud.js?v=20260806ba"></script>
+<script src="js/cloud-ui.js?v=20260806ba"></script>
+<script src="js/app.js?v=20260806ba"></script>
 </body>
 </html>
