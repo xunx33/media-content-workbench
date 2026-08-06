@@ -184,7 +184,7 @@ async function loadSharedData() {
 // 云函数 share_manage：生成新令牌 / 关闭分享 / 查询状态
 async function generateShareToken() {
   if (!isLoggedIn || !isCloudReady) throw new Error('请先登录');
-  const res = await cloud.callFunction({ name: 'share_manage', data: { action: 'enable' } });
+  const res = await cloud.callFunction({ name: 'share_manage', data: Object.assign({ username: getLoginUsername() || '' }, { action: 'enable' }) });
   const r = res && res.result;
   if (!r || !r.ok) throw new Error(r && r.msg || '生成失败');
   return r.token;
@@ -192,7 +192,7 @@ async function generateShareToken() {
 
 async function disableShare() {
   if (!isLoggedIn || !isCloudReady) return;
-  await cloud.callFunction({ name: 'share_manage', data: { action: 'disable' } });
+  await cloud.callFunction({ name: 'share_manage', data: Object.assign({ username: getLoginUsername() || '' }, { action: 'disable' }) });
 }
 
 // 组装分享链接
@@ -204,7 +204,7 @@ function buildShareUrl(token) {
 // 查询分享状态（主账号用）
 async function queryShareStatus() {
   if (!isLoggedIn || !isCloudReady) return { enabled: false, token: '' };
-  const res = await cloud.callFunction({ name: 'share_manage', data: { action: 'status' } });
+  const res = await cloud.callFunction({ name: 'share_manage', data: Object.assign({ username: getLoginUsername() || '' }, { action: 'status' }) });
   const r = res && res.result;
   return r && r.ok ? { enabled: !!r.enabled, token: r.token || '' } : { enabled: false, token: '' };
 }

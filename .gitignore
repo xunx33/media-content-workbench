@@ -1,3 +1,16 @@
-.workbuddy/
-# CloudBase 环境配置（含敏感 envId，勿提交；部署时手动创建）
-js/cloud-config.js
+# ===== 系统/工具文件（不上传） =====
+.workbuddy/                  # 系统记忆目录
+deploy-zips/                 # 临时打包目录（云函数 ZIP）
+node_modules/                # 依赖目录（用 npm install 还原）
+
+# ===== 操作系统/IDE 临时文件 =====
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# ===== 注意 =====
+# js/cloud-config.js 故意不放这里
+# 因为 CloudBase Git 部署需要这个文件（含 envId）
+# envId 是公开标识符（非密钥），安全可提交
