@@ -26,19 +26,20 @@ const AUTH_KEY = 'wb_cloud_auth_v1';
 })();
 
 // ===== 启动：检测分享模式 / 恢复登录态 =====
-function initCloud() {
+// 异步：动态加载 CloudBase SDK（ES Module 方式，兼容无打包器的纯静态部署）
+async function initCloud() {
   // 分享模式：访客只读（已在模块加载时检测）
   if (isShareMode) {
     document.body.classList.add('share-mode');
     return;
   }
 
-  // 非分享模式：加载 SDK 并恢复登录
-  if (typeof cloudbase === 'undefined') {
-    console.warn('[cloud] SDK 未加载（未部署环境时正常）');
-    return;
-  }
+  // 非分享模式：动态加载 SDK 并恢复登录
   try {
+    const mod = await import('https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@3.7.1/dist/index.esm.js');
+    const cloudbase = (mod && (mod.default || mod.cloudbase)) || window.cloudbase;
+    if (!cloudbase) throw new Error('SDK 加载后未找到 cloudbase 导出');
+    window.cloudbase = cloudbase; // 暴露给其他可能的引用
     cloud = cloudbase.init({ env: CLOUD_CONFIG.envId });
     auth = cloud.auth({ persistence: 'local' });
     isCloudReady = true;
@@ -53,8 +54,11 @@ function initCloud() {
     });
   } catch (e) {
     console.warn('[cloud] 初始化失败:', e);
+    if (window.showToast) window.showToast('云端初始化失败：' + (e.message || '请检查网络'));
   }
 }
+
+// 注意：启动调用由 app.js 的 CloudBridge.initCloud() 统一触发，避免重复初始化
 
 // ===== 登录 / 注册 =====
 // 账号密码登录（云函数 login 校验并签发 ticket）
