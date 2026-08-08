@@ -36,6 +36,8 @@ const COLUMN_LABELS = {
   problems: '问题',
   metrics: '关键指标',
   plans: '下期计划',
+  monthCount: '本月发布',
+  totalCount: '累计发布',
   // AI 引擎列（来自 aiStats.ai 展开）
   'DeepSeek': 'DeepSeek',
   '豆包': '豆包',
@@ -76,12 +78,19 @@ function enrichReview(r) {
   return result;
 }
 
-// 任务条目：type 中文化 + 删除多余字段（target 总是 1，无意义）
+// 任务条目：type 中文化 + 删除多余字段 + 注入发布条数（避免 Excel 把 1 当日期）
 function enrichTask(t) {
   const result = Object.assign({}, t);
   if (t.type && TYPE_LABELS[t.type]) result.type = TYPE_LABELS[t.type];
   delete result.target;       // 总是 1，"≥1 条目标"对 +1 登记模式无意义
   delete result.recorded;     // 计算属性 isTaskRecorded 处理
+  // 注入发布条数（该平台本月 / 累计已完成任务数）
+  // 用 nbsp 包裹数字，防止 Excel 把 1 误识别为日期 1900-01-01
+  const monthPrefix = getToday().substring(0, 7);
+  const monthCount = tasks.filter(x => x.date && x.date.startsWith(monthPrefix) && x.platform === t.platform && x.done).length;
+  const totalCount = tasks.filter(x => x.platform === t.platform && x.done).length;
+  result.monthCount = ' ' + monthCount + ' ';
+  result.totalCount = ' ' + totalCount + ' ';
   return result;
 }
 
@@ -159,15 +168,6 @@ function exportExcel() {
 
   // 数据统计概览
   const monthPrefix = getToday().substring(0, 7);
-  // 各平台本月发布条数（按类型分组，区分视频/文书）
-  const platformMonthStats = ALL_PLATFORMS.map(p => ({
-    name: p,
-    month: tasks.filter(t => t.date && t.date.startsWith(monthPrefix) && t.platform === p && t.done).length,
-    total: tasks.filter(t => t.platform === p && t.done).length,
-  }));
-  const videoStats = platformMonthStats.filter(s => isVideo(s.name));
-  const articleStats = platformMonthStats.filter(s => !isVideo(s.name));
-
   const summary = `
 <div class="summary">
   <h2>📈 数据概览</h2>
@@ -176,15 +176,6 @@ function exportExcel() {
     <tr><th>内容登记</th><td>${contents.length} 条</td><th>本月已登记</th><td>${contents.filter(c => c.createdAt && c.createdAt.startsWith(monthPrefix)).length} 条</td></tr>
     <tr><th>视频数据</th><td>${stats.length} 条</td><th>AI 收录</th><td>${aiStats.length} 条</td></tr>
     <tr><th>复盘记录</th><td>${reviews.length} 条</td><th>导出时间</th><td>${new Date().toLocaleString('zh-CN')}</td></tr>
-  </table>
-  <h3 style="margin-top:18px;color:#374151;">📺 各平台发布条数（本月 / 累计）</h3>
-  <table style="min-width:600px;">
-    <tr><th colspan="${videoStats.length}" style="background:#dbeafe;color:#1e40af;">视频平台</th></tr>
-    <tr>${videoStats.map(s => `<th>${s.name}</th>`).join('')}</tr>
-    <tr>${videoStats.map(s => `<td style="text-align:center;font-weight:600;color:#059669;">${s.month} / ${s.total}</td>`).join('')}</tr>
-    <tr><th colspan="${articleStats.length}" style="background:#fef3c7;color:#92400e;">文书平台</th></tr>
-    <tr>${articleStats.map(s => `<th>${s.name}</th>`).join('')}</tr>
-    <tr>${articleStats.map(s => `<td style="text-align:center;font-weight:600;color:#059669;">${s.month} / ${s.total}</td>`).join('')}</tr>
   </table>
 </div>`;
 
