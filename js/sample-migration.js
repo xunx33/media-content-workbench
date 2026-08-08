@@ -3,12 +3,12 @@ function checkSampleDataVersion() {
   const hasOldSample = contents.length < 10 && contents.length > 0 && stats.length > 0;
   const statsMissingContentId = stats.length > 0 && stats.every(s => s.contentId === undefined);
   const versionKey = STORAGE_KEY + 'sample_v';
-  const currentVersion = '4';
+  const currentVersion = '5';
   if (localStorage.getItem(versionKey) === currentVersion) return;
   if (hasOldSample || statsMissingContentId) {
     showConfirm({
       title: '检测到旧版示例数据',
-      desc: '示例数据已更新为完整版（10个平台 + 数据关联）。是否重置为最新示例？<br><br><span style="color:var(--text3);">如果你的内容是真实数据，请选择「取消」；只有测试/示例数据需要重置。</span>',
+      desc: '示例数据已更新为完整版（10个平台 + 与当前登记逻辑对齐）。是否重置为最新示例？<br><br><span style="color:var(--text3);">如果你的内容是真实数据，请选择「取消」；只有测试/示例数据需要重置。</span>',
       danger: false,
       onOk: () => {
         fillSampleDataSilent();
@@ -25,8 +25,8 @@ function fillSampleDataSilent() {
   const today = getToday();
   tasks = [];
   ALL_PLATFORMS.forEach((p, i) => {
-    // 示例中 10 个平台都登记了内容，任务全部完成（contentId 对齐 1-10）
-    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: true, linked: true, contentId: i + 1, target: DAILY_TARGET });
+    // 示例中 10 个平台都登记了内容，linked=true 表示已关联内容（当前逻辑不存 contentId/done）
+    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: false, linked: true, contentId: null, target: DAILY_TARGET }); // 登记即完成，done 不存储，linked 表示已关联内容
   });
   contents = [
     { id: 1, title: '新品开箱vlog：夏日防晒好物推荐', platform: '抖音', topic: '好物推荐/防晒', url: 'https://www.douyin.com/video/7234567890', createdAt: today },
@@ -56,7 +56,7 @@ function fillSampleDataSilent() {
   ];
   reviews = [
     { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', plans: '下周重点优化公众号选题，尝试AI工具方向' },
-    { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', metrics: '总播放约3.6w，完播率均值28%', plans: '尝试竖版封面+前3秒钩子' },
+    { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', plans: '尝试竖版封面+前3秒钩子' },
   ];
   saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);
   render(); showToast('已重置为最新示例数据');

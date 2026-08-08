@@ -36,7 +36,8 @@ const COLUMN_LABELS = {
   problems: '问题',
   metrics: '关键指标',
   plans: '下期计划',
-  monthCount: '本月发布',
+  dayCount: '当日发布',
+  weekCount: '本周发布',
   totalCount: '累计发布',
   // AI 引擎列（来自 aiStats.ai 展开）
   'DeepSeek': 'DeepSeek',
@@ -67,6 +68,21 @@ function formatReviewRange(period, dateStr) {
   return '本周·' + m(start) + ' ~ ' + m(end);
 }
 
+// 本周日期范围（周一 ~ 周日），用于「本周发布」统计
+function getWeekRange(d = new Date()) {
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffToMon = (date.getDay() + 6) % 7;
+  const start = new Date(date); start.setDate(date.getDate() - diffToMon);
+  const end = new Date(start); end.setDate(start.getDate() + 6);
+  const fmt = (n) => n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
+  return { start: fmt(start), end: fmt(end) };
+}
+function isInWeek(dateStr, d = new Date()) {
+  if (!dateStr) return false;
+  const { start, end } = getWeekRange(d);
+  return dateStr >= start && dateStr <= end;
+}
+
 // 复盘条目：period 合并成 "week 本周·8/3 ~ 8/9"，type 中文化，删除多余 ai 字段
 function enrichReview(r) {
   const result = Object.assign({}, r);
@@ -85,11 +101,13 @@ function enrichTask(t) {
   delete result.target;       // 总是 1，"≥1 条目标"对 +1 登记模式无意义
   delete result.recorded;     // 计算属性 isTaskRecorded 处理
   // 注入发布条数：按 contents 实际登记条数统计（任务完成状态以登记为准，不以 tasks.done 计）
+  // 每个任务行对应「日期+平台」，所以当日发布 = 该日期该平台的 contents 条数
   // 用 nbsp 包裹数字，防止 Excel 把 1 误识别为日期 1900-01-01
-  const monthPrefix = getToday().substring(0, 7);
-  const monthCount = contents.filter(c => c.createdAt && c.createdAt.startsWith(monthPrefix) && c.platform === t.platform).length;
+  const dayCount = contents.filter(c => c.createdAt === t.date && c.platform === t.platform).length;
+  const weekCount = contents.filter(c => c.createdAt && isInWeek(c.createdAt) && c.platform === t.platform).length;
   const totalCount = contents.filter(c => c.platform === t.platform).length;
-  result.monthCount = ' ' + monthCount + ' ';
+  result.dayCount = '\u00a0' + dayCount + '\u00a0';
+  result.weekCount = '\u00a0' + weekCount + '\u00a0';
   result.totalCount = ' ' + totalCount + ' ';
   return result;
 }
@@ -166,14 +184,16 @@ function exportExcel() {
     body += buildTable(t.items, t.name, t.enricher);
   }
 
-  // 数据统计概览
-  const monthPrefix = getToday().substring(0, 7);
+  // 数据统计概览（默认按周统计）
+  const { start: weekStart, end: weekEnd } = getWeekRange();
+  const weekContents = contents.filter(c => c.createdAt && c.createdAt >= weekStart && c.createdAt <= weekEnd);
+  const weekPlatforms = new Set(weekContents.map(c => c.platform)).size;
   const summary = `
 <div class="summary">
-  <h2>📈 数据概览</h2>
+  <h2>📈 数据概览（${weekStart} ~ ${weekEnd}）</h2>
   <table style="width:auto;min-width:400px;">
-    <tr><th>任务清单</th><td>${tasks.length} 条</td><th>本月已完成</th><td>${tasks.filter(t => t.date && t.date.startsWith(monthPrefix) && t.done).length} 条</td></tr>
-    <tr><th>内容登记</th><td>${contents.length} 条</td><th>本月已登记</th><td>${contents.filter(c => c.createdAt && c.createdAt.startsWith(monthPrefix)).length} 条</td></tr>
+    <tr><th>任务清单</th><td>${tasks.length} 条</td><th>本周已登记</th><td>${weekContents.length} 条</td></tr>
+    <tr><th>内容登记</th><td>${contents.length} 条</td><th>本周覆盖平台</th><td>${weekPlatforms}/${ALL_PLATFORMS.length} 个</td></tr>
     <tr><th>视频数据</th><td>${stats.length} 条</td><th>AI 收录</th><td>${aiStats.length} 条</td></tr>
     <tr><th>复盘记录</th><td>${reviews.length} 条</td><th>导出时间</th><td>${new Date().toLocaleString('zh-CN')}</td></tr>
   </table>
@@ -260,8 +280,8 @@ function fillSampleData() {
 
       tasks = [];
   ALL_PLATFORMS.forEach((p, i) => {
-    // 示例中 10 个平台都登记了内容，任务全部完成（contentId 对齐 1-10）
-    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: true, linked: true, contentId: i + 1, target: DAILY_TARGET });
+    // 示例中 10 个平台都登记了内容，linked=true 表示已关联内容（当前逻辑不存 contentId/done）
+    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: false, linked: true, contentId: null, target: DAILY_TARGET }); // 登记即完成，done 不存储，linked 表示已关联内容
   });
   tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, linked: false, contentId: null, target: DAILY_TARGET });
 
@@ -302,7 +322,7 @@ function fillSampleData() {
 
   reviews = [
     { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', plans: '下周重点优化公众号选题，尝试AI工具方向' },
-    { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', metrics: '总播放约3.6w，完播率均值28%', plans: '尝试竖版封面+前3秒钩子' },
+    { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', plans: '尝试竖版封面+前3秒钩子' },
   ];
 
   saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);
