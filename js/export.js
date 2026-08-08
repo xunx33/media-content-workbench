@@ -31,6 +31,7 @@ const COLUMN_LABELS = {
   shares: '分享',
   followers: '涨粉',
   period: '周期',
+  periodRange: '周期范围',
   highlights: '亮点',
   problems: '问题',
   metrics: '关键指标',
@@ -43,6 +44,41 @@ const COLUMN_LABELS = {
   '元宝': '元宝',
   '纳米': '纳米',
 };
+
+// 类型英文 → 中文
+const TYPE_LABELS = { video: '视频', article: '文书' };
+
+// 复盘周期计算（与 data.js 的 formatReviewRange 逻辑一致）
+function formatReviewRange(period, dateStr) {
+  if (!dateStr) return period === 'month' ? '本月' : '本周';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return period === 'month' ? '本月' : '本周';
+  const m = (n) => (n.getMonth() + 1) + '/' + n.getDate();
+  if (period === 'month') {
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return '本月·' + m(start) + ' ~ ' + m(end);
+  }
+  const diffToMon = (d.getDay() + 6) % 7;
+  const start = new Date(d); start.setDate(d.getDate() - diffToMon);
+  const end = new Date(start); end.setDate(start.getDate() + 6);
+  return '本周·' + m(start) + ' ~ ' + m(end);
+}
+
+// 复盘条目：加 periodRange + type 中文化
+function enrichReview(r) {
+  const result = Object.assign({}, r);
+  result.periodRange = formatReviewRange(r.period, r.date);
+  if (r.type && TYPE_LABELS[r.type]) result.type = TYPE_LABELS[r.type];
+  return result;
+}
+
+// 任务条目：type 中文化
+function enrichTask(t) {
+  const result = Object.assign({}, t);
+  if (t.type && TYPE_LABELS[t.type]) result.type = TYPE_LABELS[t.type];
+  return result;
+}
 
 function escapeHtml(s) {
   if (s === null || s === undefined) return '';
@@ -68,10 +104,13 @@ function fmtCell(v) {
   return v;
 }
 
-function buildTable(items, title) {
+// 通用表格生成：支持自定义 enricher（注入额外列 / 转中文）
+function buildTable(items, title, enricher) {
   if (items.length === 0) return `<h2>${escapeHtml(title)}（0 条）</h2><p style="color:#999">（暂无数据）</p>`;
 
-  const flat = items.map(flattenItem);
+  // 先 enrich（如 reviews 加 periodRange），再 flatten（如 aiStats 展开 ai 字段）
+  const enriched = enricher ? items.map(enricher) : items;
+  const flat = enriched.map(flattenItem);
   const cols = [];
   const seen = new Set();
   flat.forEach(item => Object.keys(item).forEach(k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } }));
@@ -98,56 +137,19 @@ function buildTable(items, title) {
   return html;
 }
 
-// 任务清单专用：recorded 字段用计算属性 isTaskRecorded
-function buildTasksTable(items, title) {
-  if (items.length === 0) return `<h2>${escapeHtml(title)}（0 条）</h2><p style="color:#999">（暂无数据）</p>`;
-
-  const cols = ['id', 'date', 'platform', 'type', 'done', 'linked', 'contentId', 'target'];
-  const labels = ['编号', '日期', '平台', '类型', '已完成', '已关联内容', '内容ID', '目标'];
-
-  let html = `<h2>${escapeHtml(title)}（${items.length} 条）</h2><table>`;
-  html += '<thead><tr>' + labels.map(l => `<th>${escapeHtml(l)}</th>`).join('') + `<th>${escapeHtml('已登记数据')}</th></tr></thead><tbody>`;
-
-  items.forEach(t => {
-    const recorded = isTaskRecorded(t) ? '✓' : '✗';
-    const cells = cols.map(c => {
-      const v = fmtCell(t[c]);
-      let style = '';
-      if (c === 'done' || c === 'linked') {
-        style = v === '✓' ? 'background:#d1fae5;color:#059669;font-weight:600;text-align:center;' :
-                v === '✗' ? 'color:#9ca3af;text-align:center;' : '';
-      }
-      const cell = v === undefined || v === null ? '' :
-                   typeof v === 'object' ? JSON.stringify(v) : escapeHtml(v);
-      return `<td style="${style}">${cell}</td>`;
-    }).join('');
-    const recStyle = recorded === '✓' ? 'background:#d1fae5;color:#059669;font-weight:600;text-align:center;' :
-                     'color:#9ca3af;text-align:center;';
-    html += '<tr>' + cells + `<td style="${recStyle}">${recorded}</td></tr>`;
-  });
-
-  html += '</tbody></table>';
-  return html;
-}
-
 function exportExcel() {
-  const tables = {
-    '📋 任务清单 (tasks)': tasks,
-    '📝 内容登记 (contents)': contents,
-    '📊 视频数据 (stats)': stats,
-    '🤖 AI 收录 (aiStats)': aiStats,
-    '💭 复盘记录 (reviews)': reviews,
-  };
+  // 每张表可指定 enricher：注入额外列 / 字段中文化
+  const tables = [
+    { name: '📋 任务清单 (tasks)', items: tasks, enricher: enrichTask },
+    { name: '📝 内容登记 (contents)', items: contents },
+    { name: '📊 视频数据 (stats)', items: stats },
+    { name: '🤖 AI 收录 (aiStats)', items: aiStats },
+    { name: '💭 复盘记录 (reviews)', items: reviews, enricher: enrichReview },
+  ];
 
   let body = '';
-  body += buildTasksTable(tasks, '📋 任务清单 (tasks)');
-  for (const [name, items] of Object.entries({
-    '📝 内容登记 (contents)': contents,
-    '📊 视频数据 (stats)': stats,
-    '🤖 AI 收录 (aiStats)': aiStats,
-    '💭 复盘记录 (reviews)': reviews,
-  })) {
-    body += buildTable(items, name);
+  for (const t of tables) {
+    body += buildTable(t.items, t.name, t.enricher);
   }
 
   // 数据统计概览
@@ -181,7 +183,7 @@ tr:hover td { background: #eff6ff; }
 </style>
 </head><body>
 <h1>📊 新媒体工作台数据报表</h1>
-<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　<span style="color:#9ca3af;font-size:12px;">注：完播率适用于抖音/快手/视频号；小红书为人均观看时长</span></p>
+<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　<span style="color:#9ca3af;font-size:12px;">注：完播率适用于抖音/快手/视频号；小红书为人均观看时长 ｜ 类型「视频」=抖音/快手/小红书/视频号；类型「文书」=百家号/公众号/知乎/企鹅号/搜狐号/官网 ｜ 复盘记录的"周期"=周/月分类，"周期范围"=实际时间段</span></p>
 ${summary}
 ${body}
 </body></html>`;
