@@ -24,6 +24,7 @@ const COLUMN_LABELS = {
   createdAt: '创建时间',
   views: '播放量',
   completionRate: '完播率(%)',
+  avgWatch: '人均观看时长(秒)',
   likes: '点赞',
   comments: '评论',
   favorites: '收藏',
@@ -97,6 +98,38 @@ function buildTable(items, title) {
   return html;
 }
 
+// 任务清单专用：recorded 字段用计算属性 isTaskRecorded
+function buildTasksTable(items, title) {
+  if (items.length === 0) return `<h2>${escapeHtml(title)}（0 条）</h2><p style="color:#999">（暂无数据）</p>`;
+
+  const cols = ['id', 'date', 'platform', 'type', 'done', 'linked', 'contentId', 'target'];
+  const labels = ['编号', '日期', '平台', '类型', '已完成', '已关联内容', '内容ID', '目标'];
+
+  let html = `<h2>${escapeHtml(title)}（${items.length} 条）</h2><table>`;
+  html += '<thead><tr>' + labels.map(l => `<th>${escapeHtml(l)}</th>`).join('') + `<th>${escapeHtml('已登记数据')}</th></tr></thead><tbody>`;
+
+  items.forEach(t => {
+    const recorded = isTaskRecorded(t) ? '✓' : '✗';
+    const cells = cols.map(c => {
+      const v = fmtCell(t[c]);
+      let style = '';
+      if (c === 'done' || c === 'linked') {
+        style = v === '✓' ? 'background:#d1fae5;color:#059669;font-weight:600;text-align:center;' :
+                v === '✗' ? 'color:#9ca3af;text-align:center;' : '';
+      }
+      const cell = v === undefined || v === null ? '' :
+                   typeof v === 'object' ? JSON.stringify(v) : escapeHtml(v);
+      return `<td style="${style}">${cell}</td>`;
+    }).join('');
+    const recStyle = recorded === '✓' ? 'background:#d1fae5;color:#059669;font-weight:600;text-align:center;' :
+                     'color:#9ca3af;text-align:center;';
+    html += '<tr>' + cells + `<td style="${recStyle}">${recorded}</td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  return html;
+}
+
 function exportExcel() {
   const tables = {
     '📋 任务清单 (tasks)': tasks,
@@ -107,7 +140,13 @@ function exportExcel() {
   };
 
   let body = '';
-  for (const [name, items] of Object.entries(tables)) {
+  body += buildTasksTable(tasks, '📋 任务清单 (tasks)');
+  for (const [name, items] of Object.entries({
+    '📝 内容登记 (contents)': contents,
+    '📊 视频数据 (stats)': stats,
+    '🤖 AI 收录 (aiStats)': aiStats,
+    '💭 复盘记录 (reviews)': reviews,
+  })) {
     body += buildTable(items, name);
   }
 
@@ -142,7 +181,7 @@ tr:hover td { background: #eff6ff; }
 </style>
 </head><body>
 <h1>📊 新媒体工作台数据报表</h1>
-<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}</p>
+<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　<span style="color:#9ca3af;font-size:12px;">注：完播率适用于抖音/快手/视频号；小红书为人均观看时长</span></p>
 ${summary}
 ${body}
 </body></html>`;
@@ -226,10 +265,12 @@ function fillSampleData() {
   ];
 
   // 视频数据：4 个短视频平台各 1 条，contentId 对齐内容登记，日期对齐
+  // 注意：小红书的"完播率"字段（35.8）是旧示例的硬编码占位值，
+  //       小红书的官方指标是"人均观看时长"，所以用 avgWatch 字段、completionRate 留空
   stats = [
     { id: 101, platform: '抖音', date: today, contentId: 1, title: '新品开箱vlog：夏日防晒好物推荐', views: 12500, completionRate: 32.5, likes: 890, comments: 230, favorites: 156, shares: 120, followers: 35 },
     { id: 102, platform: '快手', date: today, contentId: 2, title: '街头美食探店EP38', views: 9800, completionRate: 28.1, likes: 670, comments: 156, favorites: 98, shares: 67, followers: 21 },
-    { id: 103, platform: '小红书', date: today, contentId: 3, title: '618购物清单｜闭眼入的5件数码好物', views: 8200, completionRate: 35.8, likes: 1200, comments: 175, favorites: 342, shares: 89, followers: 58 },
+    { id: 103, platform: '小红书', date: today, contentId: 3, title: '618购物清单｜闭眼入的5件数码好物', views: 8200, completionRate: null, avgWatch: 18.5, likes: 1200, comments: 175, favorites: 342, shares: 89, followers: 58 },
     { id: 104, platform: '视频号', date: today, contentId: 4, title: '职场高效办公技巧合集', views: 5600, completionRate: 24.3, likes: 340, comments: 89, favorites: 76, shares: 45, followers: 12 },
   ];
 

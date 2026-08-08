@@ -363,10 +363,12 @@ function saveStat() {
   render(); showToast(platform + ' 数据已保存，链路进度已更新');
 }
 
-// 数据保存成功后，标记对应任务 recorded（链路第三环）
+// 数据保存成功后，确保任务链路完整（recorded 改为计算属性，不再存储）
 function markTaskRecorded(platform, date) {
   const t = tasks.find(x => x.date === date && x.platform === platform);
-  if (t && t.done) { t.recorded = true; if (!t.linked) t.linked = true; saveData('tasks', tasks); }
+  if (t) {
+    if (!t.linked) { t.linked = true; saveData('tasks', tasks); }
+  }
 }
 
 function deleteStat(id) {

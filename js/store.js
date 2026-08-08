@@ -93,7 +93,6 @@ async function ensureDailyTasks() {
           type: isVideo(p) ? 'video' : 'article',
           done: false,
           linked: false,
-          recorded: false,
           contentId: null,
           target: DAILY_TARGET
         });
@@ -102,14 +101,24 @@ async function ensureDailyTasks() {
     });
   }
 
-  // 兼容旧数据：补字段
+  // 兼容旧数据：补字段（recorded 不再存储，改为计算属性）
   let migrated = false;
   tasks.forEach(t => {
     if (t.linked === undefined) { t.linked = t.done || false; migrated = true; }
-    if (t.recorded === undefined) { t.recorded = false; migrated = true; }
     if (t.contentId === undefined) { t.contentId = null; migrated = true; }
+    // 清理遗留的 recorded 字段（不再使用）
+    if ('recorded' in t) { delete t.recorded; migrated = true; }
   });
   if (changed || migrated) await saveData('tasks', tasks);
+}
+
+// 计算属性：判断任务是否已登记数据（不依赖 stored recorded 字段）
+function isTaskRecorded(task) {
+  if (task.type === 'video') {
+    return stats.some(s => s.platform === task.platform && s.date === task.date);
+  } else {
+    return aiStats.some(s => s.platform === task.platform && s.date === task.date);
+  }
 }
 
 // 数据自动迁移：给旧版 stats/aiStats 补 contentId + title
@@ -126,6 +135,12 @@ async function migrateStatsData() {
     }
     if (s.completionRate === undefined) { s.completionRate = null; migrated = true; }
     if (s.favorites === undefined) { s.favorites = 0; migrated = true; }
+    // 小红书数据语义迁移：旧示例数据的 completionRate → avgWatch（小红书官方字段是"人均观看时长"）
+    if (s.platform === '小红书' && s.completionRate !== null && s.completionRate !== undefined && s.avgWatch === undefined) {
+      s.avgWatch = s.completionRate;
+      s.completionRate = null;
+      migrated = true;
+    }
   });
   aiStats.forEach(s => {
     if (s.contentId === undefined || s.title === undefined) {

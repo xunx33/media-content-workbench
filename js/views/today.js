@@ -123,7 +123,7 @@ function linkTaskToContent(platform, date, contentId) {
       id: Date.now() + Math.random(),
       date, platform,
       type: isVideo(platform) ? 'video' : 'article',
-      done: false, linked: false, recorded: false,
+      done: false, linked: false,
       contentId: contentId || null,
       target: DAILY_TARGET
     };
