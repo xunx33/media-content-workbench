@@ -178,3 +178,27 @@ let searchKeyword = '';
 let contentFilterType = '';
 let contentSortByViews = '';
 let contentFoldOpen = true;
+
+// ===== 心跳检测：每 30 秒 ping 服务，断开时显示横幅 =====
+function showServiceDeadBanner() {
+  if (document.getElementById('service-dead-banner')) return;
+  const div = document.createElement('div');
+  div.id = 'service-dead-banner';
+  div.innerHTML = '⚠️ 后台服务已断开，请重新启动 <b>start.bat</b>';
+  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#e53e3e;color:#fff;text-align:center;padding:10px;z-index:99999;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
+  document.body.appendChild(div);
+}
+function hideServiceDeadBanner() {
+  document.getElementById('service-dead-banner')?.remove();
+}
+
+let __serviceAlive = true;
+setInterval(async () => {
+  try {
+    const res = await fetch('/api/data/contents?ping=1', { cache: 'no-store' });
+    if (!res.ok) throw new Error('not ok');
+    if (!__serviceAlive) { __serviceAlive = true; hideServiceDeadBanner(); }
+  } catch (e) {
+    if (__serviceAlive) { __serviceAlive = false; showServiceDeadBanner(); }
+  }
+}, 30000);

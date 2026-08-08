@@ -1,15 +1,14 @@
 // start-service.js — 工作台后台启动器
-// 作用：检测 3000 端口 → 空闲则启动 server.js 为独立进程 → 等待就绪
+// 作用：检测端口 → 空闲则启动 server.js 为独立进程 → 等待就绪
 // 用法：node start-service.js（由 start.bat 调用）
 const { spawn } = require('child_process');
 const net = require('net');
 const path = require('path');
 
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT) || 3000;
 const ROOT = __dirname;
 
-// 主动连接测试：能连上 → 端口在 LISTEN（busy）；连不上 → 端口空闲（free）
-// 关键：不占用端口！避免和 server.js 抢 3000
+// 主动连接测试端口是否被占用（不占用端口，只是测试能否连上）
 function isPortBusy(port) {
   return new Promise((resolve) => {
     const socket = net.connect({ port, host: '127.0.0.1' });
@@ -19,7 +18,7 @@ function isPortBusy(port) {
   });
 }
 
-// 等待端口变为 busy（说明服务起来了）
+// 等待端口 busy（说明 server.js 起来了）
 async function waitPortBusy(port, maxMs = 8000) {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
@@ -30,15 +29,11 @@ async function waitPortBusy(port, maxMs = 8000) {
 }
 
 (async () => {
-  // 1. 端口检测
   if (await isPortBusy(PORT)) {
-    console.log('  [跳过] 3000 端口已被占用，服务可能已在运行');
-    console.log('  提示：浏览器直接访问 http://localhost:' + PORT);
+    console.log(`  [跳过] 端口 ${PORT} 已被占用，服务可能已在运行`);
     process.exit(0);
   }
 
-  // 2. 启动 server.js 为独立后台进程
-  console.log('  [启动] 正在启动 Node.js 服务（后台模式）...');
   const serverPath = path.join(ROOT, 'server.js');
   const child = spawn(process.execPath, [serverPath], {
     detached: true,
@@ -47,14 +42,13 @@ async function waitPortBusy(port, maxMs = 8000) {
   });
   child.unref();
 
-  // 3. 等待端口就绪
   const ok = await waitPortBusy(PORT, 8000);
   if (ok) {
-    console.log('  [OK] 服务已在后台运行（PID: ' + child.pid + '）');
+    console.log(`  [OK] 服务已在后台运行（PID: ${child.pid}，端口: ${PORT}）`);
     process.exit(0);
   } else {
-    console.log('  [警告] 服务启动超时，请检查 Node.js 是否安装');
-    console.log('  查看错误：手动运行 node server.js');
+    console.log(`  [失败] 服务启动超时（${PORT} 端口未就绪）`);
+    console.log(`         排查：手动运行 node server.js 查看错误`);
     try { process.kill(child.pid); } catch (e) {}
     process.exit(1);
   }
