@@ -1,5 +1,5 @@
-# 强制 bat/cmd/ps1 文件使用 CRLF（Windows 必需）
-# 否则 git 会按 LF 提交，Windows cmd 解析会报"不是内部命令"
-*.bat text eol=crlf
-*.cmd text eol=crlf
-*.ps1 text eol=crlf
+# bat/cmd/ps1 文件用 binary 模式存储，避免 git 把 CRLF 强制转成 LF
+# Windows cmd 必须用 CRLF + UTF-8 BOM；autocrlf=true 在 commit 时会破坏这些文件
+*.bat binary
+*.cmd binary
+*.ps1 binary
