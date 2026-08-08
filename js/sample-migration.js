@@ -1,14 +1,14 @@
 function checkSampleDataVersion() {
-  // 判断依据：示例数据特征（内容登记不足9条 或 stats 无 contentId）
-  const hasOldSample = contents.length < 9 && contents.length > 0 && stats.length > 0;
+  // 判断依据：示例数据特征（内容登记不足 10 条 或 stats 无 contentId）
+  const hasOldSample = contents.length < 10 && contents.length > 0 && stats.length > 0;
   const statsMissingContentId = stats.length > 0 && stats.every(s => s.contentId === undefined);
   const versionKey = STORAGE_KEY + 'sample_v';
-  const currentVersion = '3';
+  const currentVersion = '4';
   if (localStorage.getItem(versionKey) === currentVersion) return;
   if (hasOldSample || statsMissingContentId) {
     showConfirm({
       title: '检测到旧版示例数据',
-      desc: '示例数据已更新为完整版（9个平台 + 数据关联）。是否重置为最新示例？<br><br><span style="color:var(--text3);">如果你的内容是真实数据，请选择「取消」；只有测试/示例数据需要重置。</span>',
+      desc: '示例数据已更新为完整版（10个平台 + 数据关联）。是否重置为最新示例？<br><br><span style="color:var(--text3);">如果你的内容是真实数据，请选择「取消」；只有测试/示例数据需要重置。</span>',
       danger: false,
       onOk: () => {
         fillSampleDataSilent();
@@ -25,7 +25,7 @@ function fillSampleDataSilent() {
   const today = getToday();
   tasks = [];
   ALL_PLATFORMS.forEach((p, i) => {
-    // 示例中 9 个平台都登记了内容，任务全部完成（contentId 对齐 1-9）
+    // 示例中 10 个平台都登记了内容，任务全部完成（contentId 对齐 1-10）
     tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: true, linked: true, contentId: i + 1, target: DAILY_TARGET });
   });
   contents = [
@@ -38,6 +38,7 @@ function fillSampleDataSilent() {
     { id: 7, title: '2024年AI工具大盘点', platform: '百家号', topic: 'AI工具/盘点', url: 'https://baijiahao.baidu.com/s?id=777', createdAt: today },
     { id: 8, title: '新媒体运营入门指南', platform: '企鹅号', topic: '运营技巧/入门', url: 'https://om.qq.com/article/555', createdAt: today },
     { id: 9, title: '内容创作者必备的5个习惯', platform: '搜狐号', topic: '创作者/习惯', url: 'https://www.sohu.com/a/666', createdAt: today },
+    { id: 10, title: '官网技术博客：API 性能优化实战', platform: '官网', topic: '技术博客/性能优化', url: 'https://example.com/blog/api-perf', createdAt: today },
   ];
   stats = [
     { id: 101, platform: '抖音', date: today, contentId: 1, title: '新品开箱vlog：夏日防晒好物推荐', views: 12500, completionRate: 32.5, likes: 890, comments: 230, favorites: 156, shares: 120, followers: 35 },
@@ -51,6 +52,7 @@ function fillSampleDataSilent() {
     { id: 203, platform: '百家号', date: today, contentId: 7, title: '2024年AI工具大盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
     { id: 204, platform: '企鹅号', date: today, contentId: 8, title: '新媒体运营入门指南', ai: { 'DeepSeek': true, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': true } },
     { id: 205, platform: '搜狐号', date: today, contentId: 9, title: '内容创作者必备的5个习惯', ai: { 'DeepSeek': false, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': false } },
+    { id: 206, platform: '官网', date: today, contentId: 10, title: '官网技术博客：API 性能优化实战', ai: { 'DeepSeek': true, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
   ];
   reviews = [
     { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', ai: 'DeepSeek、豆包收录正常，千问收录率待提升', plans: '下周重点优化公众号选题，尝试AI工具方向' },

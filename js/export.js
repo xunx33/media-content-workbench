@@ -54,7 +54,7 @@ function fillSampleData() {
 
       tasks = [];
   ALL_PLATFORMS.forEach((p, i) => {
-    // 示例中 9 个平台都登记了内容，任务全部完成（contentId 对齐 1-9）
+    // 示例中 10 个平台都登记了内容，任务全部完成（contentId 对齐 1-10）
     tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: true, linked: true, contentId: i + 1, target: DAILY_TARGET });
   });
   tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, linked: false, contentId: null, target: DAILY_TARGET });
@@ -71,6 +71,7 @@ function fillSampleData() {
     { id: 7, title: '2024年AI工具大盘点', platform: '百家号', topic: 'AI工具/盘点', url: 'https://baijiahao.baidu.com/s?id=777', createdAt: today },
     { id: 8, title: '新媒体运营入门指南', platform: '企鹅号', topic: '运营技巧/入门', url: 'https://om.qq.com/article/555', createdAt: today },
     { id: 9, title: '内容创作者必备的5个习惯', platform: '搜狐号', topic: '创作者/习惯', url: 'https://www.sohu.com/a/666', createdAt: today },
+    { id: 10, title: '官网技术博客：API 性能优化实战', platform: '官网', topic: '技术博客/性能优化', url: 'https://example.com/blog/api-perf', createdAt: today },
   ];
 
   // 视频数据：4 个短视频平台各 1 条，contentId 对齐内容登记，日期对齐
@@ -81,13 +82,14 @@ function fillSampleData() {
     { id: 104, platform: '视频号', date: today, contentId: 4, title: '职场高效办公技巧合集', views: 5600, completionRate: 24.3, likes: 340, comments: 89, favorites: 76, shares: 45, followers: 12 },
   ];
 
-  // AI 收录：5 个文书平台各 1 条，contentId 对齐内容登记
+  // AI 收录：6 个文书平台各 1 条，contentId 对齐内容登记
   aiStats = [
     { id: 201, platform: '知乎', date: today, contentId: 5, title: 'Python自动化脚本：批量处理Excel报表', ai: { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false } },
     { id: 202, platform: '公众号', date: today, contentId: 6, title: '如何用AI提升10倍工作效率', ai: { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false } },
     { id: 203, platform: '百家号', date: today, contentId: 7, title: '2024年AI工具大盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
     { id: 204, platform: '企鹅号', date: today, contentId: 8, title: '新媒体运营入门指南', ai: { 'DeepSeek': true, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': true } },
     { id: 205, platform: '搜狐号', date: today, contentId: 9, title: '内容创作者必备的5个习惯', ai: { 'DeepSeek': false, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': false } },
+    { id: 206, platform: '官网', date: today, contentId: 10, title: '官网技术博客：API 性能优化实战', ai: { 'DeepSeek': true, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
   ];
 
   reviews = [

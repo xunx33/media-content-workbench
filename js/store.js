@@ -1,8 +1,8 @@
 // ===== CONFIG =====
 const VIDEO_PLATFORMS = ['抖音', '快手', '小红书', '视频号'];
-const ARTICLE_PLATFORMS = ['百家号', '公众号', '知乎', '企鹅号', '搜狐号'];
+const ARTICLE_PLATFORMS = ['百家号', '公众号', '知乎', '企鹅号', '搜狐号', '官网'];
 const ALL_PLATFORMS = [...VIDEO_PLATFORMS, ...ARTICLE_PLATFORMS];
-const PLATFORM_SHORT = { '抖音':'抖','快手':'快','小红书':'红','视频号':'视','百家号':'百','公众号':'公','知乎':'知','企鹅号':'企','搜狐号':'搜' };
+const PLATFORM_SHORT = { '抖音':'抖','快手':'快','小红书':'红','视频号':'视','百家号':'百','公众号':'公','知乎':'知','企鹅号':'企','搜狐号':'搜','官网':'官' };
 const AI_ENGINES = ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米'];
 const AI_ENGINES_SHORT = { 'DeepSeek': 'DS', '豆包': '豆包', '千问': '千问', '文心': '文心', '元宝': '元宝', '纳米': '纳米' };
 const DAILY_TARGET = 1;
