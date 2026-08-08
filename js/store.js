@@ -179,12 +179,37 @@ let contentFilterType = '';
 let contentSortByViews = '';
 let contentFoldOpen = true;
 
-// ===== 心跳检测：每 30 秒 ping 服务，断开时显示横幅 =====
+// ===== 心跳检测：服务断开时显示横幅 =====
+// 策略：每 5 秒定时 ping + 页面切回前台时立即 ping + render 时主动 ping
+// 用户每次操作（点击/切换 tab）必然触发 render → 主动检测服务
+let __serviceAlive = true;
+let __lastPingTime = 0;
+
+async function pingService(force) {
+  const now = Date.now();
+  if (!force && now - __lastPingTime < 2000) return;  // 2 秒内已 ping 过则跳过
+  __lastPingTime = now;
+  try {
+    const res = await fetch('/api/data/contents?ping=1', { cache: 'no-store', signal: AbortSignal.timeout(2000) });
+    if (!res.ok) throw new Error('not ok');
+    if (!__serviceAlive) { __serviceAlive = true; hideServiceDeadBanner(); }
+  } catch (e) {
+    if (__serviceAlive) { __serviceAlive = false; showServiceDeadBanner(); }
+  }
+}
+
+setInterval(() => pingService(true), 5000);
+
+// 页面切回前台时立即 ping（visibilitychange）
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) pingService(true);
+});
+
 function showServiceDeadBanner() {
   if (document.getElementById('service-dead-banner')) return;
   const div = document.createElement('div');
   div.id = 'service-dead-banner';
-  div.innerHTML = '⚠️ 后台服务已断开，请重新启动 <b>start.bat</b>';
+  div.innerHTML = '⚠️ 后台服务已断开，请重新启动 <b>start.bat</b>（数据可能不完整）';
   div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#e53e3e;color:#fff;text-align:center;padding:10px;z-index:99999;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
   document.body.appendChild(div);
 }
@@ -192,13 +217,5 @@ function hideServiceDeadBanner() {
   document.getElementById('service-dead-banner')?.remove();
 }
 
-let __serviceAlive = true;
-setInterval(async () => {
-  try {
-    const res = await fetch('/api/data/contents?ping=1', { cache: 'no-store' });
-    if (!res.ok) throw new Error('not ok');
-    if (!__serviceAlive) { __serviceAlive = true; hideServiceDeadBanner(); }
-  } catch (e) {
-    if (__serviceAlive) { __serviceAlive = false; showServiceDeadBanner(); }
-  }
-}, 30000);
+// 暴露给 render 使用：用户每次操作时主动 ping
+window.pingService = pingService;

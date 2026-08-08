@@ -10,6 +10,8 @@ function render() {
   };
   document.getElementById('mainContent').innerHTML = html[currentTab]();
   applyContentFold();
+  // 用户每次操作（点击/切换 tab）时主动 ping，关闭服务后立即检测到
+  if (window.pingService) window.pingService(true);
 }
 
 // 数据积累 30 条时，温和提示导出备份
