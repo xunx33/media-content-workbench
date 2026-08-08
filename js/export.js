@@ -65,11 +65,14 @@ function formatReviewRange(period, dateStr) {
   return '本周·' + m(start) + ' ~ ' + m(end);
 }
 
-// 复盘条目：加 periodRange + type 中文化
+// 复盘条目：period 合并成 "week 本周·8/3 ~ 8/9"，type 中文化，删除多余 ai 字段
 function enrichReview(r) {
   const result = Object.assign({}, r);
-  result.periodRange = formatReviewRange(r.period, r.date);
+  // 合并周期：分类 + 实际范围（一列搞定）
+  result.period = (r.period || '') + ' ' + formatReviewRange(r.period, r.date);
   if (r.type && TYPE_LABELS[r.type]) result.type = TYPE_LABELS[r.type];
+  // 视图只存 6 字段，ai 是示例数据塞的多余字段
+  delete result.ai;
   return result;
 }
 
@@ -287,7 +290,7 @@ function fillSampleData() {
   ];
 
   reviews = [
-    { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', ai: 'DeepSeek、豆包收录正常，千问收录率待提升', plans: '下周重点优化公众号选题，尝试AI工具方向' },
+    { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', plans: '下周重点优化公众号选题，尝试AI工具方向' },
     { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', metrics: '总播放约3.6w，完播率均值28%', plans: '尝试竖版封面+前3秒钩子' },
   ];
 

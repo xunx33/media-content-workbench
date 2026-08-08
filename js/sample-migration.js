@@ -55,7 +55,7 @@ function fillSampleDataSilent() {
     { id: 206, platform: '官网', date: today, contentId: 10, title: '官网技术博客：API 性能优化实战', ai: { 'DeepSeek': true, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
   ];
   reviews = [
-    { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', ai: 'DeepSeek、豆包收录正常，千问收录率待提升', plans: '下周重点优化公众号选题，尝试AI工具方向' },
+    { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', plans: '下周重点优化公众号选题，尝试AI工具方向' },
     { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', metrics: '总播放约3.6w，完播率均值28%', plans: '尝试竖版封面+前3秒钩子' },
   ];
   saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);

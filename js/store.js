@@ -158,6 +158,17 @@ async function migrateStatsData() {
   }
 }
 
+// 复盘记录迁移：清理示例数据塞的多余字段
+async function migrateReviews() {
+  let migrated = false;
+  reviews.forEach(r => {
+    // 视图只存 6 字段：type/period/date/highlights/problems/plans/metrics
+    // 旧示例数据塞了 ai 字段，删除
+    if (r.ai !== undefined) { delete r.ai; migrated = true; }
+  });
+  if (migrated) await saveData('reviews', reviews);
+}
+
 // ===== 异步初始化（暴露 storeReady 给 app.js 等待） =====
 // storeReady：数据加载 + 任务生成 + 数据迁移全部完成后 resolve
 window.storeReady = (async () => {
@@ -173,6 +184,7 @@ window.storeReady = (async () => {
     // 任务生成 + 数据迁移
     await ensureDailyTasks();
     await migrateStatsData();
+    await migrateReviews();
     console.log('[store] 初始化完成', {
       tasks: tasks.length, contents: contents.length,
       stats: stats.length, aiStats: aiStats.length, reviews: reviews.length
