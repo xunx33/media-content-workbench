@@ -1,9 +1,0 @@
-{
-  "name": "media-workbench-cloudfunctions",
-  "version": "1.0.0",
-  "description": "新媒体工作台 - CloudBase 云函数（register/login/share_get/share_manage）",
-  "main": "share_manage.js",
-  "dependencies": {
-    "@cloudbase/node-sdk": "^2.10.1"
-  }
-}
