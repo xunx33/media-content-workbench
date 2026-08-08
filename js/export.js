@@ -7,26 +7,90 @@ function exportData() {
 }
 
 // ===== 导出 Excel（HTML 表格，Excel 双击可直接打开）=====
+// 列名中英文映射（让 Excel 报表可读）
+const COLUMN_LABELS = {
+  id: '编号',
+  date: '日期',
+  platform: '平台',
+  type: '类型',
+  done: '已完成',
+  linked: '已关联内容',
+  contentId: '内容ID',
+  target: '目标',
+  recorded: '已登记数据',
+  title: '标题',
+  topic: '话题/分类',
+  url: '链接',
+  createdAt: '创建时间',
+  views: '播放量',
+  completionRate: '完播率(%)',
+  likes: '点赞',
+  comments: '评论',
+  favorites: '收藏',
+  shares: '分享',
+  followers: '涨粉',
+  period: '周期',
+  highlights: '亮点',
+  problems: '问题',
+  metrics: '关键指标',
+  plans: '下期计划',
+  // AI 引擎列（来自 aiStats.ai 展开）
+  'DeepSeek': 'DeepSeek',
+  '豆包': '豆包',
+  '千问': '千问',
+  '文心': '文心',
+  '元宝': '元宝',
+  '纳米': '纳米',
+};
+
 function escapeHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// 把 aiStats 的 ai:{DeepSeek:true,...} 展开成多列
+function flattenItem(item) {
+  const result = Object.assign({}, item);
+  if (item.ai && typeof item.ai === 'object') {
+    Object.entries(item.ai).forEach(([engine, ok]) => {
+      result[engine] = ok;
+    });
+    delete result.ai;
+  }
+  return result;
+}
+
+// 布尔值 → ✓/✗
+function fmtCell(v) {
+  if (v === true) return '✓';
+  if (v === false) return '✗';
+  return v;
+}
+
 function buildTable(items, title) {
-  if (items.length === 0) return `<h2>${title}（0 条）</h2><p style="color:#999">（空）</p>`;
+  if (items.length === 0) return `<h2>${escapeHtml(title)}（0 条）</h2><p style="color:#999">（暂无数据）</p>`;
+
+  const flat = items.map(flattenItem);
   const cols = [];
   const seen = new Set();
-  items.forEach(item => Object.keys(item).forEach(k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } }));
+  flat.forEach(item => Object.keys(item).forEach(k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } }));
 
   let html = `<h2>${escapeHtml(title)}（${items.length} 条）</h2><table>`;
-  html += '<thead><tr>' + cols.map(c => `<th>${escapeHtml(c)}</th>`).join('') + '</tr></thead><tbody>';
-  items.forEach(item => {
+  html += '<thead><tr>' + cols.map(c => `<th>${escapeHtml(COLUMN_LABELS[c] || c)}</th>`).join('') + '</tr></thead><tbody>';
+  flat.forEach(item => {
     html += '<tr>' + cols.map(c => {
-      const v = item[c];
-      const cell = v === undefined ? '' :
-                   v === null ? '' :
+      const v = fmtCell(item[c]);
+      const cell = v === undefined || v === null ? '' :
                    typeof v === 'object' ? JSON.stringify(v) : escapeHtml(v);
-      return `<td>${cell}</td>`;
+      // AI 引擎列 + 布尔值列加颜色
+      let style = '';
+      const isAiCol = ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米'].includes(c);
+      const isBoolCol = ['done', 'linked', 'recorded'].includes(c);
+      if (isAiCol || isBoolCol) {
+        style = v === '✓' ? 'background:#d1fae5;color:#059669;font-weight:600;text-align:center;' :
+                v === '✗' ? 'color:#9ca3af;text-align:center;' : '';
+      }
+      return `<td style="${style}">${cell}</td>`;
     }).join('') + '</tr>';
   });
   html += '</tbody></table>';
@@ -47,13 +111,28 @@ function exportExcel() {
     body += buildTable(items, name);
   }
 
+  // 数据统计概览
+  const monthPrefix = getToday().substring(0, 7);
+  const summary = `
+<div class="summary">
+  <h2>📈 数据概览</h2>
+  <table style="width:auto;min-width:400px;">
+    <tr><th>任务清单</th><td>${tasks.length} 条</td><th>本月已完成</th><td>${tasks.filter(t => t.date && t.date.startsWith(monthPrefix) && t.done).length} 条</td></tr>
+    <tr><th>内容登记</th><td>${contents.length} 条</td><th>本月已登记</th><td>${contents.filter(c => c.createdAt && c.createdAt.startsWith(monthPrefix)).length} 条</td></tr>
+    <tr><th>视频数据</th><td>${stats.length} 条</td><th>AI 收录</th><td>${aiStats.length} 条</td></tr>
+    <tr><th>复盘记录</th><td>${reviews.length} 条</td><th>导出时间</th><td>${new Date().toLocaleString('zh-CN')}</td></tr>
+  </table>
+</div>`;
+
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>新媒体工作台数据报表_${getToday()}</title>
 <style>
-body { font-family: 'Microsoft YaHei', sans-serif; margin: 20px; color: #1f2937; }
+body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; margin: 20px; color: #1f2937; line-height: 1.5; }
 h1 { color: #1f2937; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
 h2 { color: #2563eb; border-bottom: 2px solid #93c5fd; padding-bottom: 5px; margin-top: 30px; }
+.summary { background: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0; }
+.summary table { background: white; }
 table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 13px; }
 th, td { border: 1px solid #d1d5db; padding: 8px 12px; text-align: left; }
 th { background: #f3f4f6; font-weight: 600; color: #374151; }
@@ -63,11 +142,11 @@ tr:hover td { background: #eff6ff; }
 </style>
 </head><body>
 <h1>📊 新媒体工作台数据报表</h1>
-<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　共 5 张表</p>
+<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}</p>
+${summary}
 ${body}
 </body></html>`;
 
-  // 用 .xls 扩展名，Excel 会识别为表格格式
   const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -75,7 +154,7 @@ ${body}
   a.download = `新媒体工作台_${getToday()}.xls`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('已导出 Excel 报表（双击 .xls 用 Excel 打开）');
+  showToast('已导出 Excel 报表（中文列名 + AI 多列）');
 }
 
 function importData(event) {
@@ -174,4 +253,3 @@ function fillSampleData() {
     }
   });
 }
-
