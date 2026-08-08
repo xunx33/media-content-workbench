@@ -84,11 +84,11 @@ function enrichTask(t) {
   if (t.type && TYPE_LABELS[t.type]) result.type = TYPE_LABELS[t.type];
   delete result.target;       // 总是 1，"≥1 条目标"对 +1 登记模式无意义
   delete result.recorded;     // 计算属性 isTaskRecorded 处理
-  // 注入发布条数（该平台本月 / 累计已完成任务数）
+  // 注入发布条数：按 contents 实际登记条数统计（任务完成状态以登记为准，不以 tasks.done 计）
   // 用 nbsp 包裹数字，防止 Excel 把 1 误识别为日期 1900-01-01
   const monthPrefix = getToday().substring(0, 7);
-  const monthCount = tasks.filter(x => x.date && x.date.startsWith(monthPrefix) && x.platform === t.platform && x.done).length;
-  const totalCount = tasks.filter(x => x.platform === t.platform && x.done).length;
+  const monthCount = contents.filter(c => c.createdAt && c.createdAt.startsWith(monthPrefix) && c.platform === t.platform).length;
+  const totalCount = contents.filter(c => c.platform === t.platform).length;
   result.monthCount = ' ' + monthCount + ' ';
   result.totalCount = ' ' + totalCount + ' ';
   return result;
