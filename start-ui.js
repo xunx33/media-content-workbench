@@ -1,5 +1,5 @@
-// start-ui.js — 启动器 UI（Node 版，彻底告别 bat 中文回显问题）
-const { spawn, exec } = require('child_process');
+// start-ui.js — 启动器 UI（Node 版）
+const { spawn, exec, execSync } = require('child_process');
 const net = require('net');
 const path = require('path');
 const readline = require('readline');
@@ -7,7 +7,6 @@ const readline = require('readline');
 const PORT = parseInt(process.env.PORT) || 3000;
 const ROOT = __dirname;
 
-// ANSI 颜色（cmd 10周年更新后支持，但部分老版本不显示颜色；不影响可读性）
 const c = {
   reset: '\x1b[0m', bold: '\x1b[1m',
   green: '\x1b[32m', red: '\x1b[31m',
@@ -18,7 +17,6 @@ function line(icon, color, text) {
   console.log(`  ${color}${icon}${c.reset} ${text}`);
 }
 
-// 检测端口是否被占用（主动连接，不占用端口）
 function isPortBusy(port) {
   return new Promise((resolve) => {
     const socket = net.connect({ port, host: '127.0.0.1' });
@@ -28,7 +26,6 @@ function isPortBusy(port) {
   });
 }
 
-// 等待端口就绪（最多 maxMs 毫秒）
 async function waitPortBusy(port, maxMs = 8000) {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
@@ -38,10 +35,28 @@ async function waitPortBusy(port, maxMs = 8000) {
   return false;
 }
 
-// 按回车继续（替代 cmd pause，中文版）
+// 用 netstat 查占用端口的 PID（Windows）
+function getPortPid(port) {
+  try {
+    const out = execSync(`netstat -ano | findstr ":${port} " | findstr LISTENING`, { encoding: 'utf8' });
+    const m = out.match(/LISTENING\s+(\d+)/);
+    return m ? parseInt(m[1]) : null;
+  } catch (e) { return null; }
+}
+
+// 用 tasklist 查 PID 对应的进程名（Windows）
+function getProcessName(pid) {
+  try {
+    const out = execSync(`tasklist /FI "PID eq ${pid}" /NH /FO TABLE`, { encoding: 'utf8' });
+    // 输出格式: "node.exe                     12345 Console ..."
+    const m = out.match(/^(\S+)/m);
+    return m ? m[1] : null;
+  } catch (e) { return null; }
+}
+
 function pressEnter() {
   return new Promise((resolve) => {
-    if (!process.stdin.isTTY) { resolve(); return; }  // 双击时非 TTY
+    if (!process.stdin.isTTY) { resolve(); return; }
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     process.stdout.write(`  ${c.gray}按回车键关闭窗口...${c.reset}`);
     rl.once('line', () => { rl.close(); resolve(); });
@@ -56,7 +71,23 @@ function pressEnter() {
 
   // 1. 端口检测
   if (await isPortBusy(PORT)) {
-    line('⏭ ', c.yellow, `端口 ${PORT} 已被占用，服务可能已在运行`);
+    // 1a. 验证占用的是不是 node（防止误判其他程序占了端口）
+    const pid = getPortPid(PORT);
+    const procName = pid ? getProcessName(pid) : null;
+    const isNode = procName && procName.toLowerCase().includes('node');
+
+    if (isNode) {
+      // 是我们的服务在跑：清晰友好提示
+      line('✓', c.green, `后台服务已在运行（PID: ${pid}）`);
+      line(' ', c.gray, `请直接打开 http://localhost:${PORT}`);
+    } else {
+      // 被其他程序占了：明确报错 + 给出解决建议
+      line('✗', c.red, `端口 ${PORT} 被其他程序占用（${procName || '未知'}，PID: ${pid || '?'}）`);
+      line(' ', c.gray, `换端口启动：set PORT=3001 && start.bat`);
+      console.log('');
+      await pressEnter();
+      process.exit(1);
+    }
   } else {
     // 2. 启动 server.js 为独立后台进程
     line('▶ ', c.cyan, '正在启动 Node.js 服务...');
