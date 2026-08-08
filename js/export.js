@@ -6,6 +6,78 @@ function exportData() {
   URL.revokeObjectURL(url); showToast('已导出');
 }
 
+// ===== 导出 Excel（HTML 表格，Excel 双击可直接打开）=====
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildTable(items, title) {
+  if (items.length === 0) return `<h2>${title}（0 条）</h2><p style="color:#999">（空）</p>`;
+  const cols = [];
+  const seen = new Set();
+  items.forEach(item => Object.keys(item).forEach(k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } }));
+
+  let html = `<h2>${escapeHtml(title)}（${items.length} 条）</h2><table>`;
+  html += '<thead><tr>' + cols.map(c => `<th>${escapeHtml(c)}</th>`).join('') + '</tr></thead><tbody>';
+  items.forEach(item => {
+    html += '<tr>' + cols.map(c => {
+      const v = item[c];
+      const cell = v === undefined ? '' :
+                   v === null ? '' :
+                   typeof v === 'object' ? JSON.stringify(v) : escapeHtml(v);
+      return `<td>${cell}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function exportExcel() {
+  const tables = {
+    '📋 任务清单 (tasks)': tasks,
+    '📝 内容登记 (contents)': contents,
+    '📊 视频数据 (stats)': stats,
+    '🤖 AI 收录 (aiStats)': aiStats,
+    '💭 复盘记录 (reviews)': reviews,
+  };
+
+  let body = '';
+  for (const [name, items] of Object.entries(tables)) {
+    body += buildTable(items, name);
+  }
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>新媒体工作台数据报表_${getToday()}</title>
+<style>
+body { font-family: 'Microsoft YaHei', sans-serif; margin: 20px; color: #1f2937; }
+h1 { color: #1f2937; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
+h2 { color: #2563eb; border-bottom: 2px solid #93c5fd; padding-bottom: 5px; margin-top: 30px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 13px; }
+th, td { border: 1px solid #d1d5db; padding: 8px 12px; text-align: left; }
+th { background: #f3f4f6; font-weight: 600; color: #374151; }
+tr:nth-child(even) td { background: #f9fafb; }
+tr:hover td { background: #eff6ff; }
+.meta { color: #6b7280; font-size: 14px; margin: 5px 0; }
+</style>
+</head><body>
+<h1>📊 新媒体工作台数据报表</h1>
+<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　共 5 张表</p>
+${body}
+</body></html>`;
+
+  // 用 .xls 扩展名，Excel 会识别为表格格式
+  const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `新媒体工作台_${getToday()}.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('已导出 Excel 报表（双击 .xls 用 Excel 打开）');
+}
+
 function importData(event) {
   const file = event.target.files[0];
   if (!file) return;
