@@ -6,6 +6,7 @@ const readline = require('readline');
 
 const PORT = parseInt(process.env.PORT) || 3000;
 const ROOT = __dirname;
+const SILENT = process.env.MCB_SILENT === '1'; // 静默模式：启动/复用服务后不开交互窗口、直接退出
 
 const c = {
   reset: '\x1b[0m', bold: '\x1b[1m',
@@ -63,6 +64,18 @@ function pressEnter() {
   });
 }
 
+// 打开工作台：优先拉起已安装的 PWA 独立窗口（开始菜单里的 .lnk 快捷方式），
+// 找不到则退回打开 localhost 网址（若默认浏览器已装该 PWA，也会自动开成 App 窗口）
+function openWorkbench(port) {
+  const url = 'http://localhost:' + port;
+  const ps = 'powershell -NoProfile -Command "$ErrorActionPreference=\'SilentlyContinue\'; '
+    + '$dirs=@([Environment]::GetFolderPath(\'StartMenu\')+\'\\Programs\', "$env:LOCALAPPDATA\\Microsoft\\Windows\\Application Shortcuts"); '
+    + '$s=Get-ChildItem -Path $dirs -Recurse -Filter \'*.lnk\' -ErrorAction SilentlyContinue '
+    + '| Where-Object { $_.Name -like \'*新媒体工作台*\' } | Select-Object -First 1; '
+    + 'if($s){ Start-Process $s.FullName } else { Start-Process \'' + url + '\' }"';
+  exec(ps, (err) => { if (err) exec('start "" "' + url + '"'); });
+}
+
 (async () => {
   console.log('');
   console.log(`  ${c.bold}${c.cyan}新媒体内容发布工作台${c.reset}`);
@@ -111,10 +124,10 @@ function pressEnter() {
     }
   }
 
-  // 4. 打开浏览器
+  // 4. 打开工作台（优先 PWA App，退回浏览器）
   console.log('');
-  line('🌐', c.cyan, '打开浏览器...');
-  exec(`start "" "http://localhost:${PORT}"`);
+  line('🌐', c.cyan, '打开工作台...');
+  openWorkbench(PORT);
 
   // 5. 成功提示
   console.log('');
@@ -123,6 +136,7 @@ function pressEnter() {
   console.log(`  ${c.gray}停止服务：任务管理器 → 结束 node.exe 进程${c.reset}`);
   console.log('');
 
+  if (SILENT) { process.exit(0); } // 静默模式：服务已在后台跑，直接退出，不卡交互窗口
   await pressEnter();
   process.exit(0);
 })();

@@ -7,229 +7,248 @@ function exportData() {
 }
 
 // ===== 导出 Excel（HTML 表格，Excel 双击可直接打开）=====
-// 列名中英文映射（让 Excel 报表可读）
-const COLUMN_LABELS = {
-  id: '编号',
-  date: '日期',
-  platform: '平台',
-  type: '类型',
-  done: '已完成',
-  linked: '已关联内容',
-  contentId: '内容ID',
-  target: '目标',
-  recorded: '已登记数据',
-  title: '标题',
-  topic: '话题/分类',
-  url: '链接',
-  createdAt: '创建时间',
-  views: '播放量',
-  completionRate: '完播率(%)',
-  avgWatch: '人均观看时长(秒)',
-  likes: '点赞',
-  comments: '评论',
-  favorites: '收藏',
-  shares: '分享',
-  followers: '涨粉',
-  period: '周期',
-  periodRange: '周期范围',
-  highlights: '亮点',
-  problems: '问题',
-  metrics: '关键指标',
-  plans: '下期计划',
-  dayCount: '当日发布',
-  weekCount: '本周发布',
-  totalCount: '累计发布',
-  // AI 引擎列（来自 aiStats.ai 展开）
-  'DeepSeek': 'DeepSeek',
-  '豆包': '豆包',
-  '千问': '千问',
-  '文心': '文心',
-  '元宝': '元宝',
-  '纳米': '纳米',
-};
-
-// 类型英文 → 中文
-const TYPE_LABELS = { video: '视频', article: '文书' };
-
-// 复盘周期计算（与 data.js 的 formatReviewRange 逻辑一致）
-function formatReviewRange(period, dateStr) {
-  if (!dateStr) return period === 'month' ? '本月' : '本周';
-  const d = new Date(dateStr + 'T00:00:00');
-  if (isNaN(d.getTime())) return period === 'month' ? '本月' : '本周';
-  const m = (n) => (n.getMonth() + 1) + '/' + n.getDate();
-  if (period === 'month') {
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    return '本月·' + m(start) + ' ~ ' + m(end);
-  }
-  const diffToMon = (d.getDay() + 6) % 7;
-  const start = new Date(d); start.setDate(d.getDate() - diffToMon);
-  const end = new Date(start); end.setDate(start.getDate() + 6);
-  return '本周·' + m(start) + ' ~ ' + m(end);
-}
-
-// 本周日期范围（周一 ~ 周日），用于「本周发布」统计
-function getWeekRange(d = new Date()) {
-  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diffToMon = (date.getDay() + 6) % 7;
-  const start = new Date(date); start.setDate(date.getDate() - diffToMon);
-  const end = new Date(start); end.setDate(start.getDate() + 6);
-  const fmt = (n) => n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
-  return { start: fmt(start), end: fmt(end) };
-}
-function isInWeek(dateStr, d = new Date()) {
-  if (!dateStr) return false;
-  const { start, end } = getWeekRange(d);
-  return dateStr >= start && dateStr <= end;
-}
-
-// 复盘条目：period 合并成 "week 本周·8/3 ~ 8/9"，type 中文化，删除多余 ai 字段
-function enrichReview(r) {
-  const result = Object.assign({}, r);
-  // 合并周期：分类 + 实际范围（一列搞定）
-  result.period = (r.period || '') + ' ' + formatReviewRange(r.period, r.date);
-  if (r.type && TYPE_LABELS[r.type]) result.type = TYPE_LABELS[r.type];
-  // 视图只存 6 字段，ai 是示例数据塞的多余字段
-  delete result.ai;
-  return result;
-}
-
-// 任务条目：type 中文化 + 删除多余字段 + 注入发布条数（避免 Excel 把 1 当日期）
-function enrichTask(t) {
-  const result = Object.assign({}, t);
-  if (t.type && TYPE_LABELS[t.type]) result.type = TYPE_LABELS[t.type];
-  delete result.target;       // 总是 1，"≥1 条目标"对 +1 登记模式无意义
-  delete result.recorded;     // 计算属性 isTaskRecorded 处理
-  // 注入发布条数：按 contents 实际登记条数统计（任务完成状态以登记为准，不以 tasks.done 计）
-  // 每个任务行对应「日期+平台」，所以当日发布 = 该日期该平台的 contents 条数
-  // 用 nbsp 包裹数字，防止 Excel 把 1 误识别为日期 1900-01-01
-  const dayCount = contents.filter(c => c.createdAt === t.date && c.platform === t.platform).length;
-  const weekCount = contents.filter(c => c.createdAt && isInWeek(c.createdAt) && c.platform === t.platform).length;
-  const totalCount = contents.filter(c => c.platform === t.platform).length;
-  result.dayCount = '\u00a0' + dayCount + '\u00a0';
-  result.weekCount = '\u00a0' + weekCount + '\u00a0';
-  result.totalCount = ' ' + totalCount + ' ';
-  return result;
-}
+// 四张表：数据概览 / 内容登记 / 视频数据 / 文书收录数据
+// 整体按「日期 + 平台」分组，同一日期的单元格纵向合并；只显示登记条数，不显示任务完成
+// 支持导出范围：全部 / 本周（周一~周日）/ 本月（日历月），区间复用数据复盘页的 getPeriodRanges
 
 function escapeHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// 把 aiStats 的 ai:{DeepSeek:true,...} 展开成多列
-function flattenItem(item) {
-  const result = Object.assign({}, item);
-  if (item.ai && typeof item.ai === 'object') {
-    Object.entries(item.ai).forEach(([engine, ok]) => {
-      result[engine] = ok;
-    });
-    delete result.ai;
-  }
-  return result;
+// 数字单元格：数字原样输出（含 0），null/undefined/空 → 空字符串
+function cellNum(v) {
+  if (typeof v === 'number') return v;
+  if (v === null || v === undefined || v === '') return '';
+  const n = Number(v);
+  return isNaN(n) ? v : n;
 }
 
-// 布尔值 → ✓/✗
-function fmtCell(v) {
-  if (v === true) return '✓';
-  if (v === false) return '✗';
-  return v;
+// 各视频平台「适用」的指标：不适用的指标在报表中留白，而非显示 0
+// （抖音/快手看完播率+收藏；小红书看人均观看+收藏；视频号看完成率+推荐，不记收藏）
+const VIDEO_METRIC_APPLY = {
+  '抖音':   { completionRate: true,  avgWatch: false, favorites: true,  recommend: false },
+  '快手':   { completionRate: true,  avgWatch: false, favorites: true,  recommend: false },
+  '小红书': { completionRate: false, avgWatch: true,  favorites: true,  recommend: false },
+  '视频号': { completionRate: true,  avgWatch: false, favorites: false, recommend: true },
+};
+// 视频指标：平台不适用该项时留白（例如视频号不记收藏、小红书不记完播率）
+function videoMetric(s, key) {
+  const apply = VIDEO_METRIC_APPLY[s.platform];
+  if (apply && apply[key] === false) return '';
+  return cellNum(s[key]);
 }
 
-// 通用表格生成：支持自定义 enricher（注入额外列 / 转中文）
-function buildTable(items, title, enricher) {
-  if (items.length === 0) return `<h2>${escapeHtml(title)}（0 条）</h2><p style="color:#999">（暂无数据）</p>`;
+// AI 收录引擎 → ✓（绿）= 已收录；未收录则留白（不显示叉叉）
+function aiCell(ok) {
+  return ok ? '<span style="color:#059669;font-weight:700;">✓</span>' : '';
+}
 
-  // 先 enrich（如 reviews 加 periodRange），再 flatten（如 aiStats 展开 ai 字段）
-  const enriched = enricher ? items.map(enricher) : items;
-  const flat = enriched.map(flattenItem);
-  const cols = [];
-  const seen = new Set();
-  flat.forEach(item => Object.keys(item).forEach(k => { if (!seen.has(k)) { seen.add(k); cols.push(k); } }));
-
-  let html = `<h2>${escapeHtml(title)}（${items.length} 条）</h2><table>`;
-  html += '<thead><tr>' + cols.map(c => `<th>${escapeHtml(COLUMN_LABELS[c] || c)}</th>`).join('') + '</tr></thead><tbody>';
-  flat.forEach(item => {
-    html += '<tr>' + cols.map(c => {
-      const v = fmtCell(item[c]);
-      const cell = v === undefined || v === null ? '' :
-                   typeof v === 'object' ? JSON.stringify(v) : escapeHtml(v);
-      // AI 引擎列 + 布尔值列加颜色
-      let style = '';
-      const isAiCol = ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米'].includes(c);
-      const isBoolCol = ['done', 'linked', 'recorded'].includes(c);
-      if (isAiCol || isBoolCol) {
-        style = v === '✓' ? 'background:#d1fae5;color:#059669;font-weight:600;text-align:center;' :
-                v === '✗' ? 'color:#9ca3af;text-align:center;' : '';
+// 通用「日期合并」表格：groups = [{ date, rows: [[cellHtml,...], ...] }]
+function buildMergedTable(title, colHeaders, groups, note) {
+  const total = groups.reduce((n, g) => n + g.rows.length, 0);
+  if (total === 0) return `<h2>${escapeHtml(title)}（0 条）</h2><p style="color:#999">（暂无数据）</p>`;
+  let html = `<h2>${escapeHtml(title)}（${total} 条）</h2>`;
+  if (note) html += `<p style="color:#9ca3af;font-size:12px;margin:2px 0 8px;">${escapeHtml(note)}</p>`;
+  html += '<table><thead><tr>' + colHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>';
+  groups.forEach(g => {
+    g.rows.forEach((cells, i) => {
+      html += '<tr>';
+      // 同日期首行写入日期格并纵向合并后续行
+      if (i === 0) {
+        html += `<td rowspan="${g.rows.length}" style="vertical-align:middle;font-weight:600;background:#f0f7ff;white-space:nowrap;">${escapeHtml(g.date)}</td>`;
       }
-      return `<td style="${style}">${cell}</td>`;
-    }).join('') + '</tr>';
+      html += cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+    });
   });
   html += '</tbody></table>';
   return html;
 }
 
-function exportExcel() {
-  // 每张表可指定 enricher：注入额外列 / 字段中文化
-  const tables = [
-    { name: '📋 任务清单 (tasks)', items: tasks, enricher: enrichTask },
-    { name: '📝 内容登记 (contents)', items: contents },
-    { name: '📊 视频数据 (stats)', items: stats },
-    { name: '🤖 AI 收录 (aiStats)', items: aiStats },
-    { name: '💭 复盘记录 (reviews)', items: reviews, enricher: enrichReview },
-  ];
+// 数据概览：总体指标 + 各平台分布 + 每日分布
+function buildOverviewSheet(ds) {
+  const contents = ds.contents;
+  const videoCount = contents.filter(c => isVideo(c.platform)).length;
+  const articleCount = contents.filter(c => isArticle(c.platform)).length;
+  const platformCounts = {};
+  ALL_PLATFORMS.forEach(p => { platformCounts[p] = contents.filter(c => c.platform === p).length; });
+  const dateCounts = {};
+  contents.forEach(c => { const d = c.createdAt || '未注明日期'; dateCounts[d] = (dateCounts[d] || 0) + 1; });
+  const dates = Object.keys(dateCounts).sort();
+  const dateRange = dates.length ? `${dates[0]} ~ ${dates[dates.length - 1]}` : '-';
+  const activePlatforms = ALL_PLATFORMS.filter(p => platformCounts[p] > 0).length;
 
-  let body = '';
-  for (const t of tables) {
-    body += buildTable(t.items, t.name, t.enricher);
+  let html = `<h2>数据概览</h2>`;
+  html += '<table style="width:auto;min-width:440px;margin-bottom:18px;"><tbody>';
+  html += `<tr><th>内容登记总数</th><td>${contents.length} 条</td><th>覆盖平台</th><td>${activePlatforms}/${ALL_PLATFORMS.length} 个</td></tr>`;
+  html += `<tr><th>视频内容</th><td>${videoCount} 条</td><th>文书内容</th><td>${articleCount} 条</td></tr>`;
+  html += `<tr><th>日期范围</th><td colspan="3">${escapeHtml(dateRange)}</td></tr>`;
+  html += '</tbody></table>';
+
+  html += '<h3 style="margin:14px 0 6px;color:#374151;">各平台登记分布</h3>';
+  html += '<table style="width:auto;min-width:440px;margin-bottom:18px;"><thead><tr><th>平台</th><th>类型</th><th>登记条数</th></tr></thead><tbody>';
+  ALL_PLATFORMS.forEach(p => {
+    html += `<tr><td>${escapeHtml(p)}</td><td>${isVideo(p) ? '视频' : '文书'}</td><td style="text-align:center;">${platformCounts[p]}</td></tr>`;
+  });
+  html += '</tbody></table>';
+
+  html += '<h3 style="margin:14px 0 6px;color:#374151;">每日登记分布</h3>';
+  html += '<table style="width:auto;min-width:440px;"><thead><tr><th>日期</th><th>登记条数</th></tr></thead><tbody>';
+  if (dates.length === 0) html += '<tr><td colspan="2" style="color:#999;">（暂无数据）</td></tr>';
+  else dates.forEach(d => { html += `<tr><td>${escapeHtml(d)}</td><td style="text-align:center;">${dateCounts[d]}</td></tr>`; });
+  html += '</tbody></table>';
+  return html;
+}
+
+// 内容登记：日期 + 平台 + 登记条数（仅显示有登记内容的平台）
+function buildContentRegSheet(ds) {
+  const contents = ds.contents;
+  const map = {};
+  contents.forEach(c => {
+    const d = c.createdAt || '未注明日期';
+    (map[d] = map[d] || {});
+    map[d][c.platform] = (map[d][c.platform] || 0) + 1;
+  });
+  const dates = Object.keys(map).sort();
+  const groups = dates.map(d => ({
+    date: d,
+    rows: ALL_PLATFORMS
+      .filter(p => map[d][p] > 0)
+      .map(p => [escapeHtml(p), String(map[d][p])])
+  }));
+  return buildMergedTable('内容登记', ['日期', '平台', '登记条数'], groups,
+    '按日期分组（同日期合并）；仅列出当天有登记内容的平台，只显示登记条数');
+}
+
+// 视频数据：来自 stats
+function buildVideoSheet(ds) {
+  const stats = ds.stats;
+  const map = {};
+  stats.forEach(s => {
+    const d = s.date || '未注明日期';
+    (map[d] = map[d] || []).push(s);
+  });
+  const dates = Object.keys(map).sort();
+  const groups = dates.map(d => ({
+    date: d,
+    rows: map[d]
+      .slice()
+      .sort((a, b) => VIDEO_PLATFORMS.indexOf(a.platform) - VIDEO_PLATFORMS.indexOf(b.platform))
+      .map(s => [
+        escapeHtml(s.platform),
+        escapeHtml(s.title || ''),
+        cellNum(s.views),
+        videoMetric(s, 'completionRate'),
+        videoMetric(s, 'avgWatch'),
+        cellNum(s.likes),
+        cellNum(s.comments),
+        videoMetric(s, 'favorites'),
+        videoMetric(s, 'recommend'),
+        cellNum(s.shares),
+        cellNum(s.followers),
+      ])
+  }));
+  return buildMergedTable('视频数据',
+    ['日期', '平台', '标题', '播放量', '完播率(%)', '人均观看(秒)', '点赞', '评论', '收藏', '推荐', '分享', '涨粉'],
+    groups,
+    '抖音/快手/视频号看「完播率」，小红书看「人均观看」；视频号看「推荐」、不记收藏');
+}
+
+// 文书收录数据：来自 aiStats
+function buildAiSheet(ds) {
+  const aiStats = ds.aiStats;
+  const map = {};
+  aiStats.forEach(s => {
+    const d = s.date || '未注明日期';
+    (map[d] = map[d] || []).push(s);
+  });
+  const dates = Object.keys(map).sort();
+  const groups = dates.map(d => ({
+    date: d,
+    rows: map[d]
+      .slice()
+      .sort((a, b) => ARTICLE_PLATFORMS.indexOf(a.platform) - ARTICLE_PLATFORMS.indexOf(b.platform))
+      .map(s => {
+        const ai = (s.ai && typeof s.ai === 'object') ? s.ai : {};
+        const engineCells = AI_ENGINES.map(eng => aiCell(ai[eng]));
+        return [escapeHtml(s.platform), escapeHtml(s.title || ''), ...engineCells];
+      })
+  }));
+  return buildMergedTable('文书收录数据', ['日期', '平台', '标题', ...AI_ENGINES], groups,
+    '✓ = 该平台内容已被对应 AI 引擎收录；空白 = 未收录');
+}
+
+// ===== 导出下拉菜单控制 =====
+function toggleExportMenu(e) {
+  if (e) e.stopPropagation();
+  const m = document.getElementById('exportMenu');
+  if (m) m.classList.toggle('open');
+}
+function doExport(scope) {
+  const m = document.getElementById('exportMenu');
+  if (m) m.classList.remove('open');
+  exportExcel(scope);
+}
+// 点击页面其他地方自动收起下拉
+document.addEventListener('click', function() {
+  const m = document.getElementById('exportMenu');
+  if (m) m.classList.remove('open');
+});
+
+// ===== 导出 Excel（按范围筛选）=====
+function exportExcel(scope) {
+  scope = scope || 'all';
+  const scopeLabel = { all: '全量', week: '本周', month: '本月' }[scope] || '全量';
+
+  // 周/月区间复用数据复盘页的 getPeriodRanges（本周=周一~周日；本月=自然月）
+  let range = null;
+  if (scope === 'week' || scope === 'month') {
+    range = getPeriodRanges(scope);
   }
+  const inRange = d => !range || (d >= range.start && d <= range.end);
 
-  // 数据统计概览（默认按周统计）
-  const { start: weekStart, end: weekEnd } = getWeekRange();
-  const weekContents = contents.filter(c => c.createdAt && c.createdAt >= weekStart && c.createdAt <= weekEnd);
-  const weekPlatforms = new Set(weekContents.map(c => c.platform)).size;
-  const summary = `
-<div class="summary">
-  <h2>📈 数据概览（${weekStart} ~ ${weekEnd}）</h2>
-  <table style="width:auto;min-width:400px;">
-    <tr><th>任务清单</th><td>${tasks.length} 条</td><th>本周已登记</th><td>${weekContents.length} 条</td></tr>
-    <tr><th>内容登记</th><td>${contents.length} 条</td><th>本周覆盖平台</th><td>${weekPlatforms}/${ALL_PLATFORMS.length} 个</td></tr>
-    <tr><th>视频数据</th><td>${stats.length} 条</td><th>AI 收录</th><td>${aiStats.length} 条</td></tr>
-    <tr><th>复盘记录</th><td>${reviews.length} 条</td><th>导出时间</th><td>${new Date().toLocaleString('zh-CN')}</td></tr>
-  </table>
-</div>`;
+  const ds = {
+    contents: contents.filter(c => inRange(c.createdAt || '')),
+    stats: stats.filter(s => inRange(s.date || '')),
+    aiStats: aiStats.filter(s => inRange(s.date || '')),
+  };
 
+  const sections = [
+    buildOverviewSheet(ds),
+    buildContentRegSheet(ds),
+    buildVideoSheet(ds),
+    buildAiSheet(ds),
+  ].join('');
+
+  const rangeText = range ? `（${range.start} ~ ${range.end}）` : '';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<title>新媒体工作台数据报表_${getToday()}</title>
+<title>新媒体工作台数据报表_${scopeLabel}_${getToday()}</title>
 <style>
 body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; margin: 20px; color: #1f2937; line-height: 1.5; }
 h1 { color: #1f2937; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
 h2 { color: #2563eb; border-bottom: 2px solid #93c5fd; padding-bottom: 5px; margin-top: 30px; }
-.summary { background: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0; }
-.summary table { background: white; }
+h3 { color: #374151; }
 table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 13px; }
-th, td { border: 1px solid #d1d5db; padding: 8px 12px; text-align: left; }
+th, td { border: 1px solid #d1d5db; padding: 7px 11px; text-align: left; }
 th { background: #f3f4f6; font-weight: 600; color: #374151; }
 tr:nth-child(even) td { background: #f9fafb; }
-tr:hover td { background: #eff6ff; }
 .meta { color: #6b7280; font-size: 14px; margin: 5px 0; }
 </style>
 </head><body>
-<h1>📊 新媒体工作台数据报表</h1>
-<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　<span style="color:#9ca3af;font-size:12px;">注：完播率适用于抖音/快手/视频号；小红书为人均观看时长 ｜ 类型「视频」=抖音/快手/小红书/视频号；类型「文书」=百家号/公众号/知乎/企鹅号/搜狐号/官网 ｜ 复盘记录的"周期"=周/月分类，"周期范围"=实际时间段</span></p>
-${summary}
-${body}
+<h1>📊 新媒体工作台数据报表（${scopeLabel}${rangeText}）</h1>
+<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　报表含：数据概览 · 内容登记 · 视频数据 · 文书收录数据（按日期与平台分组，同一日期合并显示）</p>
+${sections}
 </body></html>`;
 
-  const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const blob = new Blob(['﻿' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `新媒体工作台_${getToday()}.xls`;
+  a.download = `新媒体工作台_${scopeLabel}_${getToday()}.xls`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('已导出 Excel 报表（中文列名 + AI 多列）');
+  showToast(`已导出${scopeLabel}Excel 报表（数据概览/内容登记/视频数据/文书收录数据）`);
 }
 
 function importData(event) {
@@ -281,7 +300,7 @@ function fillSampleData() {
       tasks = [];
   ALL_PLATFORMS.forEach((p, i) => {
     // 示例中 10 个平台都登记了内容，linked=true 表示已关联内容（当前逻辑不存 contentId/done）
-    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: false, linked: true, contentId: null, target: DAILY_TARGET }); // 登记即完成，done 不存储，linked 表示已关联内容
+    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: false, linked: true, contentId: null, target: DAILY_TARGET });
   });
   tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, linked: false, contentId: null, target: DAILY_TARGET });
 
@@ -291,7 +310,7 @@ function fillSampleData() {
     { id: 2, title: '街头美食探店EP38', platform: '快手', topic: '探店/美食', url: 'https://www.kuaishou.com/short-video/3x9f2a', createdAt: today },
     { id: 3, title: '618购物清单｜闭眼入的5件数码好物', platform: '小红书', topic: '数码好物/购物清单', url: 'https://www.xiaohongshu.com/explore/abc123', createdAt: today },
     { id: 4, title: '职场高效办公技巧合集', platform: '视频号', topic: '职场技能/效率', url: 'https://channels.weixin.qq.com/p/8888', createdAt: today },
-    // 文书 5 个
+    // 文书 6 个
     { id: 5, title: 'Python自动化脚本：批量处理Excel报表', platform: '知乎', topic: 'Python/自动化/教程', url: 'https://zhuanlan.zhihu.com/p/123456', createdAt: today },
     { id: 6, title: '如何用AI提升10倍工作效率', platform: '公众号', topic: 'AI工具/效率提升', url: 'https://mp.weixin.qq.com/s/xxxxx', createdAt: today },
     { id: 7, title: '2024年AI工具大盘点', platform: '百家号', topic: 'AI工具/盘点', url: 'https://baijiahao.baidu.com/s?id=777', createdAt: today },
@@ -301,13 +320,13 @@ function fillSampleData() {
   ];
 
   // 视频数据：4 个短视频平台各 1 条，contentId 对齐内容登记，日期对齐
-  // 注意：小红书的"完播率"字段（35.8）是旧示例的硬编码占位值，
-  //       小红书的官方指标是"人均观看时长"，所以用 avgWatch 字段、completionRate 留空
+  // 小红书官方指标是"人均观看时长"，故用 avgWatch 字段、completionRate 留空；
+  // 视频号无"收藏"、改用"推荐"数（recommend 字段），favorites 记 0
   stats = [
     { id: 101, platform: '抖音', date: today, contentId: 1, title: '新品开箱vlog：夏日防晒好物推荐', views: 12500, completionRate: 32.5, likes: 890, comments: 230, favorites: 156, shares: 120, followers: 35 },
     { id: 102, platform: '快手', date: today, contentId: 2, title: '街头美食探店EP38', views: 9800, completionRate: 28.1, likes: 670, comments: 156, favorites: 98, shares: 67, followers: 21 },
     { id: 103, platform: '小红书', date: today, contentId: 3, title: '618购物清单｜闭眼入的5件数码好物', views: 8200, completionRate: null, avgWatch: 18.5, likes: 1200, comments: 175, favorites: 342, shares: 89, followers: 58 },
-    { id: 104, platform: '视频号', date: today, contentId: 4, title: '职场高效办公技巧合集', views: 5600, completionRate: 24.3, likes: 340, comments: 89, favorites: 76, shares: 45, followers: 12 },
+    { id: 104, platform: '视频号', date: today, contentId: 4, title: '职场高效办公技巧合集', views: 5600, completionRate: 24.3, recommend: 52, likes: 340, comments: 89, favorites: 0, shares: 45, followers: 12 },
   ];
 
   // AI 收录：6 个文书平台各 1 条，contentId 对齐内容登记

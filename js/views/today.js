@@ -10,7 +10,7 @@ function renderToday() {
   // 当日完成状态条
   html += `<div class="today-progress" style="background:${complete ? 'rgba(52,211,153,0.12)' : 'var(--bg-2)'};border:1px solid ${complete ? 'rgba(52,211,153,0.35)' : 'var(--border)'};border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
     <span style="font-size:13px;font-weight:600;color:${complete ? 'var(--green)' : 'var(--text)'};">${complete ? '✅ 今日任务已完成' : '今日任务进行中'}</span>
-    <span style="font-size:12px;color:var(--text2);">短视频 ${videoDone}/4 · 文书 ${articleDone}/5</span>
+    <span style="font-size:12px;color:var(--text2);">短视频 ${videoDone}/${VIDEO_PLATFORMS.length} · 文书 ${articleDone}/${ARTICLE_PLATFORMS.length}</span>
   </div>`;
 
   // 短视频平台（全部 4 个有内容）
@@ -65,9 +65,10 @@ function renderPlatformTodayItem(platform, count, date, type) {
 // 单条内容详情：标题/链接/日期+选题 + 数据摘要 + 操作（数据录入/编辑/删除）
 function renderContentDetail(content) {
   const type = isVideo(content.platform) ? 'video' : 'article';
+  const safeLink = safeUrl(content.url);
   let html = `<div class="content-detail-item">
-    <div class="task-detail-row"><span class="detail-label">标题</span><span>${content.title}</span></div>
-    ${content.url ? `<div class="task-detail-row"><span class="detail-label">链接</span><a href="${content.url}" target="_blank" style="color:#7da7ff;word-break:break-all;">${content.url}</a></div>` : ''}
+    <div class="task-detail-row"><span class="detail-label">标题</span><span>${escapeHtml(content.title)}</span></div>
+    ${safeLink ? `<div class="task-detail-row"><span class="detail-label">链接</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" style="color:#7da7ff;word-break:break-all;">${escapeHtml(content.url)}</a></div>` : ''}
     <div class="task-detail-row"><span class="detail-label">日期</span><span>${content.createdAt || ''}${content.topic ? ' · 选题：' + content.topic : ''}</span></div>`;
 
   // 数据摘要（视频 / AI收录，按平台动态显示）

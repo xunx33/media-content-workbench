@@ -69,3 +69,10 @@ function checkWeeklyReminder() {
   checkWeeklyReminder();
   checkSampleDataVersion();
 })();
+
+// ===== PWA：注册 Service Worker（本地 localhost 或 https 才支持安装）=====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.warn('[SW] 注册失败:', e));
+  });
+}

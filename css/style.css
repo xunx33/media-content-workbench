@@ -115,13 +115,13 @@ a { color: var(--accent); text-decoration: none; }
 .backup-bar {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
   padding: 10px 16px;
   -webkit-overflow-scrolling: touch;
   border-bottom: 1px solid var(--border);
   background: rgba(15, 23, 42, 0.5);
 }
-.backup-bar::before { content: ''; flex: 1 1 0; }
 .backup-group {
   display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
 }
@@ -141,6 +141,23 @@ a { color: var(--accent); text-decoration: none; }
   color: var(--text);
   background: var(--accent-soft);
 }
+
+/* 导出下拉菜单 */
+.export-dropdown { position: relative; display: inline-block; }
+.export-trigger { display: inline-flex; align-items: center; gap: 2px; }
+.export-menu {
+  display: none; position: absolute; top: 100%; left: 0; margin-top: 6px;
+  background: var(--card-solid); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs); box-shadow: var(--shadow);
+  z-index: 60; min-width: 132px; overflow: hidden;
+}
+.export-menu.open { display: block; animation: overlayIn 0.18s var(--ease); }
+.export-item {
+  display: block; width: 100%; text-align: left; padding: 10px 14px;
+  background: transparent; border: none; color: var(--text);
+  font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.export-item:hover { background: var(--accent-soft); color: var(--text); }
 #importFile { display: none; }
 
 /* Main Content */

@@ -55,9 +55,9 @@ function editContent(id) {
       </div>
       <div class="form-group"><label>日期</label><input type="date" id="cDate" value="${c.createdAt}"></div>
     </div>
-    <div class="form-group"><label>标题</label><input type="text" id="cTitle" value="${c.title}"></div>
-    <div class="form-group"><label>选题</label><input type="text" id="cTopic" value="${c.topic||''}"></div>
-    <div class="form-group"><label>链接</label><input type="url" id="cUrl" value="${c.url||''}" placeholder="https://..."></div>
+    <div class="form-group"><label>标题</label><input type="text" id="cTitle" value="${escapeHtml(c.title)}"></div>
+    <div class="form-group"><label>选题</label><input type="text" id="cTopic" value="${escapeHtml(c.topic||'')}"></div>
+    <div class="form-group"><label>链接</label><input type="url" id="cUrl" value="${escapeHtml(c.url||'')}" placeholder="https://..."></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-save" onclick="saveContent()">保存</button>

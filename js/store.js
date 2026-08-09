@@ -1,3 +1,22 @@
+// ===== 安全工具（防 XSS）=====
+// 转义 HTML 特殊字符：把 < > & 变成无害文本，防止用户输入被当代码执行
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+// 链接安全校验：只允许 http/https 开头，其余一律当作纯文本（防 javascript: 等注入）
+function safeUrl(url) {
+  if (!url) return '';
+  const u = String(url).trim();
+  if (/^https?:\/\//i.test(u)) return u;
+  return '';
+}
+
 // ===== CONFIG =====
 const VIDEO_PLATFORMS = ['抖音', '快手', '小红书', '视频号'];
 const ARTICLE_PLATFORMS = ['百家号', '公众号', '知乎', '企鹅号', '搜狐号', '官网'];

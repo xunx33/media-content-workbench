@@ -124,18 +124,21 @@ function saveContentData() {
   if (!c) { showToast('内容不存在'); return; }
   const type = isVideo(c.platform) ? 'video' : 'article';
   if (type === 'video') {
-    const title = (document.getElementById('statTitle').value || '').trim() || c.title;
-    const views = parseInt(document.getElementById('statViews').value) || 0;
-    const completionInput = document.getElementById('statCompletion').value;
+    // 安全读取：弹窗按平台只渲染部分输入框（小红书无完播率、视频号无收藏），
+    // 缺失的输入框直接返回空串，避免 null.value 抛异常导致保存失败
+    const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const title = (gv('statTitle').trim()) || c.title;
+    const views = parseInt(gv('statViews')) || 0;
+    const completionInput = gv('statCompletion');
     const completionRate = completionInput !== '' ? parseFloat(completionInput) : null;
-    const avgWatchInput = document.getElementById('statAvgWatch').value;
+    const avgWatchInput = gv('statAvgWatch');
     const avgWatch = avgWatchInput !== '' ? parseFloat(avgWatchInput) : null;
-    const recommend = parseInt(document.getElementById('statRecommend').value) || 0;
-    const likes = parseInt(document.getElementById('statLikes').value) || 0;
-    const comments = parseInt(document.getElementById('statComments').value) || 0;
-    const favorites = parseInt(document.getElementById('statFavorites').value) || 0;
-    const shares = parseInt(document.getElementById('statShares').value) || 0;
-    const followers = parseInt(document.getElementById('statFollowers').value) || 0;
+    const recommend = parseInt(gv('statRecommend')) || 0;
+    const likes = parseInt(gv('statLikes')) || 0;
+    const comments = parseInt(gv('statComments')) || 0;
+    const favorites = parseInt(gv('statFavorites')) || 0;
+    const shares = parseInt(gv('statShares')) || 0;
+    const followers = parseInt(gv('statFollowers')) || 0;
     const existing = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
     const statData = { platform: c.platform, date: c.createdAt, title, views, completionRate, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: c.id };
     if (existing) Object.assign(existing, statData);

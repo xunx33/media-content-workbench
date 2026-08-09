@@ -720,10 +720,11 @@ function clearSearch() {
 }
 
 function highlightText(text, keyword) {
-  if (!keyword) return text;
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
-  return text.replace(regex, '<span class="search-highlight">$1</span>');
+  const safeText = escapeHtml(text);
+  if (!keyword) return safeText;
+  const escapedKw = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escapedKw})`, 'gi');
+  return safeText.replace(regex, '<span class="search-highlight">$1</span>');
 }
 
 function renderContentItem(c) {
@@ -776,8 +777,9 @@ function renderContentItem(c) {
       <span class="platform-tag ${type}">${platformHtml}</span>
     </div>`;
   if (c.url) {
+    const safeLink = safeUrl(c.url);
     const urlHtml = highlightText(c.url, kw);
-    leftHtml += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${c.url}" target="_blank">${c.url.length > 50 ? urlHtml.slice(0,50)+'...' : urlHtml}</a></div>`;
+    leftHtml += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer">${c.url.length > 50 ? urlHtml.slice(0,50)+'...' : urlHtml}</a></div>`;
   }
   // 最后一行：日期在前，选题在后（同一行同字号）
   leftHtml += `<div class="content-meta">${c.createdAt || ''}${c.topic ? `<span class="meta-topic"><span style="color:var(--text2);">· 选题：</span>${topicHtml}</span>` : ''}</div>`;

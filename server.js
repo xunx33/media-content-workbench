@@ -24,7 +24,8 @@ const MIME = {
   '.png': 'image/png',
   '.ico': 'image/x-icon',
   '.svg': 'image/svg+xml',
-  '.md': 'text/markdown; charset=utf-8'
+  '.md': 'text/markdown; charset=utf-8',
+  '.webmanifest': 'application/manifest+json'
 };
 
 const server = http.createServer(async (req, res) => {
@@ -46,7 +47,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // API：POST /api/data/{key} → 写入
+    // API：POST /api/data/{key} → 写入（原子写：先写临时文件再 rename 替换）
     if (req.method === 'POST' && url.startsWith('/api/data/')) {
       const key = url.replace('/api/data/', '').replace(/[^a-zA-Z0-9_]/g, '');
       let body = '';
@@ -55,8 +56,15 @@ const server = http.createServer(async (req, res) => {
         try { JSON.parse(body); } catch (e) {
           res.writeHead(400); res.end('Invalid JSON'); return;
         }
-        fs.writeFileSync(path.join(DATA_DIR, key + '.json'), body);
-        res.writeHead(200); res.end('OK');
+        const target = path.join(DATA_DIR, key + '.json');
+        const tmp = target + '.tmp';
+        try {
+          fs.writeFileSync(tmp, body);
+          fs.renameSync(tmp, target); // 原子替换，中途关窗不会留半截文件
+          res.writeHead(200); res.end('OK');
+        } catch (e) {
+          res.writeHead(500); res.end('Write failed');
+        }
       });
       return;
     }
@@ -64,6 +72,11 @@ const server = http.createServer(async (req, res) => {
     // 静态文件服务
     let filePath = path.join(__dirname, url === '/' ? 'index.html' : url);
     const ext = path.extname(filePath);
+
+    // 安全：禁止通过网址直接访问数据目录（data/ 只允许走 /api/data 接口）
+    if (filePath.startsWith(DATA_DIR)) {
+      res.writeHead(403); res.end('Forbidden'); return;
+    }
 
     // 安全：禁止路径穿越（防止访问项目外的文件）
     if (!filePath.startsWith(__dirname)) {
