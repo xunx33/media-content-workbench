@@ -1,5 +1,5 @@
 // start-ui.js — 启动器 UI（Node 版）
-const { spawn, exec, execSync } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const net = require('net');
 const path = require('path');
 const readline = require('readline');
@@ -45,13 +45,15 @@ function getPortPid(port) {
   } catch (e) { return null; }
 }
 
-// 用 tasklist 查 PID 对应的进程名（Windows）
+// 用 PowerShell 查 PID 对应的进程名（比 tasklist+正则稳健，兼容中文系统表头）
 function getProcessName(pid) {
   try {
-    const out = execSync(`tasklist /FI "PID eq ${pid}" /NH /FO TABLE`, { encoding: 'utf8' });
-    // 输出格式: "node.exe                     12345 Console ..."
-    const m = out.match(/^(\S+)/m);
-    return m ? m[1] : null;
+    const out = execSync(
+      'powershell.exe -NoProfile -Command "(Get-Process -Id ' + pid + ' -ErrorAction SilentlyContinue).ProcessName"',
+      { encoding: 'utf8' }
+    );
+    const name = out.trim();
+    return name || null;
   } catch (e) { return null; }
 }
 
@@ -64,16 +66,12 @@ function pressEnter() {
   });
 }
 
-// 打开工作台：优先拉起已安装的 PWA 独立窗口（开始菜单里的 .lnk 快捷方式），
-// 找不到则退回打开 localhost 网址（若默认浏览器已装该 PWA，也会自动开成 App 窗口）
+// 打开工作台：由启动脚本（.bat）在自身交互式控制台里用 start "" <url> 拉起浏览器。
+// 实测结论：node 子进程（无论 cmd/explorer、无论 detached/windowsHide 组合）都无法从干净状态拉起浏览器，
+// 只有 bat 控制台里的 start 可靠。node 在这里只提示访问地址。
 function openWorkbench(port) {
   const url = 'http://localhost:' + port;
-  const ps = 'powershell -NoProfile -Command "$ErrorActionPreference=\'SilentlyContinue\'; '
-    + '$dirs=@([Environment]::GetFolderPath(\'StartMenu\')+\'\\Programs\', "$env:LOCALAPPDATA\\Microsoft\\Windows\\Application Shortcuts"); '
-    + '$s=Get-ChildItem -Path $dirs -Recurse -Filter \'*.lnk\' -ErrorAction SilentlyContinue '
-    + '| Where-Object { $_.Name -like \'*新媒体工作台*\' } | Select-Object -First 1; '
-    + 'if($s){ Start-Process $s.FullName } else { Start-Process \'' + url + '\' }"';
-  exec(ps, (err) => { if (err) exec('start "" "' + url + '"'); });
+  line(' ', c.gray, `访问地址：${url}（浏览器由启动脚本拉起）`);
 }
 
 (async () => {
@@ -127,7 +125,7 @@ function openWorkbench(port) {
   // 4. 打开工作台（优先 PWA App，退回浏览器）
   console.log('');
   line('🌐', c.cyan, '打开工作台...');
-  openWorkbench(PORT);
+  await openWorkbench(PORT);
 
   // 5. 成功提示
   console.log('');

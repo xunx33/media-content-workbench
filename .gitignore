@@ -1,15 +1,15 @@
 # ===== 系统/工具文件（不上传） =====
-.workbuddy/                  # 系统记忆目录
-deploy-zips/                 # 临时打包目录（云函数 ZIP）—— 已废弃
-node_modules/                # 依赖目录（用 npm install 还原）
+.workbuddy/
+deploy-zips/
+node_modules/
 
 # ===== 项目本地数据/临时文件 =====
-data/                        # 本地 JSON 数据目录（用户的个人数据，不入仓）
-*.log                        # 日志文件
-cleanup-cloud.*              # 云功能清理脚本（一次性工具，不入仓）
+data/
+*.log
+cleanup-cloud.*
 
 # ===== 操作系统/IDE 临时文件 =====
 .DS_Store
 Thumbs.db
 .vscode/
-.idea/
+.idea
