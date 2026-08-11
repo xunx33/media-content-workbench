@@ -63,6 +63,8 @@ let contents = [];
 let stats = [];       // video stats: views/likes/shares/comments
 let aiStats = [];     // article AI inclusion stats
 let reviews = [];     // 周/月复盘记录
+let accountStats = []; // 视频平台账号总数据快照（投稿/粉丝/播放/点赞/评论/互动）
+let accountIds = [];   // 视频平台账号ID（平台 → 账号ID + 备注，静态信息）
 
 // 备份提醒标记（用 localStorage 即可，无需走 server）
 const STORAGE_KEY = 'wb_content_workbench_v2_';
@@ -188,25 +190,42 @@ async function migrateReviews() {
   if (migrated) await saveData('reviews', reviews);
 }
 
+// 账号数据迁移：旧字段 interactions → shares（互动量改名为总转发/分享）
+async function migrateAccountStats() {
+  let migrated = false;
+  accountStats.forEach(s => {
+    if (s.shares === undefined && s.interactions !== undefined) {
+      s.shares = s.interactions;
+      delete s.interactions;
+      migrated = true;
+    }
+  });
+  if (migrated) await saveData('accountStats', accountStats);
+}
+
 // ===== 异步初始化（暴露 storeReady 给 app.js 等待） =====
 // storeReady：数据加载 + 任务生成 + 数据迁移全部完成后 resolve
 window.storeReady = (async () => {
   try {
-    // 并行加载 5 个数据文件
-    [tasks, contents, stats, aiStats, reviews] = await Promise.all([
+    // 并行加载 7 个数据文件
+    [tasks, contents, stats, aiStats, reviews, accountStats, accountIds] = await Promise.all([
       loadData('tasks'),
       loadData('contents'),
       loadData('stats'),
       loadData('aiStats'),
-      loadData('reviews')
+      loadData('reviews'),
+      loadData('accountStats'),
+      loadData('accountIds')
     ]);
     // 任务生成 + 数据迁移
     await ensureDailyTasks();
     await migrateStatsData();
     await migrateReviews();
+    await migrateAccountStats();
     console.log('[store] 初始化完成', {
       tasks: tasks.length, contents: contents.length,
-      stats: stats.length, aiStats: aiStats.length, reviews: reviews.length
+      stats: stats.length, aiStats: aiStats.length, reviews: reviews.length,
+      accountStats: accountStats.length, accountIds: accountIds.length
     });
   } catch (e) {
     console.error('[store] 初始化失败:', e);

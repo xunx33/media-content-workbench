@@ -1,5 +1,5 @@
 function exportData() {
-  const data = { version: 3, exportedAt: new Date().toISOString(), tasks, contents, stats, aiStats, reviews };
+  const data = { version: 3, exportedAt: new Date().toISOString(), tasks, contents, stats, aiStats, reviews, accountStats, accountIds };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `新媒体工作台_${getToday()}.json`; a.click();
@@ -24,15 +24,15 @@ function cellNum(v) {
   return isNaN(n) ? v : n;
 }
 
-// 各视频平台「适用」的指标：不适用的指标在报表中留白，而非显示 0
-// （抖音/快手看完播率+收藏；小红书看人均观看+收藏；视频号看完成率+推荐，不记收藏）
+// 各视频平台「适用」的指标：不适用的指标在报表中留白，而非显示 0；有数据时（含 0）照实输出
+// （完播率：抖音/快手/视频号；均播时长(秒)：抖音/小红书/视频号；收藏：抖音/快手/小红书；推荐：视频号）
 const VIDEO_METRIC_APPLY = {
-  '抖音':   { completionRate: true,  avgWatch: false, favorites: true,  recommend: false },
+  '抖音':   { completionRate: true,  avgWatch: true,  favorites: true,  recommend: false },
   '快手':   { completionRate: true,  avgWatch: false, favorites: true,  recommend: false },
   '小红书': { completionRate: false, avgWatch: true,  favorites: true,  recommend: false },
-  '视频号': { completionRate: true,  avgWatch: false, favorites: false, recommend: true },
+  '视频号': { completionRate: true,  avgWatch: true,  favorites: false, recommend: true },
 };
-// 视频指标：平台不适用该项时留白（例如视频号不记收藏、小红书不记完播率）
+// 视频指标：平台不适用该项时留白（例如快手不记均播、小红书不记完播率）；适用时 cellNum 输出——0 显示 0、无值留空
 function videoMetric(s, key) {
   const apply = VIDEO_METRIC_APPLY[s.platform];
   if (apply && apply[key] === false) return '';
@@ -97,6 +97,7 @@ function buildOverviewSheet(ds) {
   if (dates.length === 0) html += '<tr><td colspan="2" style="color:#999;">（暂无数据）</td></tr>';
   else dates.forEach(d => { html += `<tr><td>${escapeHtml(d)}</td><td style="text-align:center;">${dateCounts[d]}</td></tr>`; });
   html += '</tbody></table>';
+
   return html;
 }
 
@@ -149,9 +150,9 @@ function buildVideoSheet(ds) {
       ])
   }));
   return buildMergedTable('视频数据',
-    ['日期', '平台', '标题', '播放量', '完播率(%)', '人均观看(秒)', '点赞', '评论', '收藏', '推荐', '分享', '涨粉'],
+    ['日期', '平台', '标题', '播放量', '完播率(%)', '均播时长(秒)', '点赞', '评论', '收藏', '推荐', '分享', '涨粉'],
     groups,
-    '抖音/快手/视频号看「完播率」，小红书看「人均观看」；视频号看「推荐」、不记收藏');
+    '完播率：抖音/快手/视频号；均播时长(秒)：抖音/小红书/视频号（小红书「人均观看时长」同义，有数据记 0、无数据留空）；收藏：抖音/快手/小红书；视频号看「推荐」、不记收藏');
 }
 
 // 文书收录数据：来自 aiStats
@@ -176,6 +177,39 @@ function buildAiSheet(ds) {
   }));
   return buildMergedTable('文书收录数据', ['日期', '平台', '标题', ...AI_ENGINES], groups,
     '✓ = 该平台内容已被对应 AI 引擎收录；空白 = 未收录');
+}
+
+// 视频平台账号数据（仅导出各平台最新一次记录，标注记录日期/时间；未登记账号ID时留空）
+function buildAccountSheet(ds) {
+  const list = ds.accountStats || [];
+  const accIds = ds.accountIds || [];
+  // 各平台最新一次记录
+  const latestOf = (p) => {
+    let best = null;
+    list.forEach(s => { if (s.platform === p && (!best || (s.date || '') > (best.date || ''))) best = s; });
+    return best;
+  };
+  let html = '<h2>视频平台账号数据</h2>';
+  html += '<p style="color:#9ca3af;font-size:12px;margin:2px 0 8px;">仅导出各平台最新一次数据记录（当天记录=最新总数据，不定时记录）；标注记录日期便于追溯数据时效；未登记账号ID时该栏留空</p>';
+  html += '<table><thead><tr><th>平台</th><th>账号ID</th><th>备注</th><th>记录日期</th><th>发布量</th><th>粉丝量</th><th>总播放量</th><th>总点赞量</th><th>总评论量</th><th>总转发/分享</th></tr></thead><tbody>';
+  VIDEO_PLATFORMS.forEach(p => {
+    const idr = accIds.find(x => x.platform === p);
+    const r = latestOf(p);
+    html += `<tr>
+      <td>${escapeHtml(p)}</td>
+      <td>${escapeHtml(idr && idr.accountId || '')}</td>
+      <td>${escapeHtml(idr && idr.note || '')}</td>
+      <td>${r ? escapeHtml(r.date) : ''}</td>
+      <td>${r ? cellNum(r.posts) : ''}</td>
+      <td>${r ? cellNum(r.followers) : ''}</td>
+      <td>${r ? cellNum(r.views) : ''}</td>
+      <td>${r ? cellNum(r.likes) : ''}</td>
+      <td>${r ? cellNum(r.comments) : ''}</td>
+      <td>${r ? cellNum(r.shares) : ''}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  return html;
 }
 
 // ===== 导出下拉菜单控制 =====
@@ -211,13 +245,16 @@ function exportExcel(scope) {
     contents: contents.filter(c => inRange(c.createdAt || '')),
     stats: stats.filter(s => inRange(s.date || '')),
     aiStats: aiStats.filter(s => inRange(s.date || '')),
+    accountStats: accountStats.filter(s => inRange(s.date || '')),
+    accountIds: accountIds, // 账号ID为静态信息，不按日期过滤
   };
 
   const sections = [
     buildOverviewSheet(ds),
     buildContentRegSheet(ds),
     buildVideoSheet(ds),
-    buildAiSheet(ds),
+    buildAccountSheet(ds),
+    buildAiSheet(ds),   // 文书收录数据放最下方
   ].join('');
 
   const rangeText = range ? `（${range.start} ~ ${range.end}）` : '';
@@ -237,7 +274,7 @@ tr:nth-child(even) td { background: #f9fafb; }
 </style>
 </head><body>
 <h1>📊 新媒体工作台数据报表（${scopeLabel}${rangeText}）</h1>
-<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　报表含：数据概览 · 内容登记 · 视频数据 · 文书收录数据（按日期与平台分组，同一日期合并显示）</p>
+<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　报表含：数据概览 · 内容登记 · 视频数据 · 视频平台账号数据 · 文书收录数据（按日期与平台分组，同一日期合并显示）</p>
 ${sections}
 </body></html>`;
 
@@ -248,7 +285,7 @@ ${sections}
   a.download = `新媒体工作台_${scopeLabel}_${getToday()}.xls`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast(`已导出${scopeLabel}Excel 报表（数据概览/内容登记/视频数据/文书收录数据）`);
+  showToast(`已导出${scopeLabel}Excel 报表（数据概览/内容登记/视频数据/视频平台账号数据/文书收录数据）`);
 }
 
 function importData(event) {
@@ -263,6 +300,8 @@ function importData(event) {
       if (data.stats) { stats = data.stats; saveData('stats', stats); }
       if (data.aiStats) { aiStats = data.aiStats; saveData('aiStats', aiStats); }
       if (data.reviews) { reviews = data.reviews; saveData('reviews', reviews); }
+      if (data.accountStats) { accountStats = data.accountStats; saveData('accountStats', accountStats); }
+      if (data.accountIds) { accountIds = data.accountIds; saveData('accountIds', accountIds); }
       render(); showToast('导入成功');
     } catch(err) { showToast('导入失败：文件格式错误'); }
   };
@@ -272,7 +311,7 @@ function importData(event) {
 function clearAllData() {
   document.getElementById('modalContent').innerHTML = `
     <h3>确认清空</h3>
-    <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据），此操作不可恢复！<br><br>建议先导出备份。</p>
+    <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据、账号总数据），此操作不可恢复！<br><br>建议先导出备份。</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-save" style="background:linear-gradient(135deg,#f87171,#ef4444);" onclick="confirmClear()">确认清空</button>
@@ -281,8 +320,8 @@ function clearAllData() {
 }
 
 function confirmClear() {
-  tasks = []; contents = []; stats = []; aiStats = []; reviews = [];
-  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);
+  tasks = []; contents = []; stats = []; aiStats = []; reviews = []; accountStats = []; accountIds = [];
+  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
   selectedDate = null; closeModal(); ensureDailyTasks(); render();
   showToast('已清空，已重置今日任务');
 }
@@ -290,62 +329,13 @@ function confirmClear() {
 function fillSampleData() {
   showConfirm({
     title: '重置示例数据',
-    desc: '将重置为示例数据，当前数据会被覆盖。是否继续？',
+    desc: '将重置为示例数据（最近3天，覆盖全部登记 + 账号总数据），当前数据会被覆盖。是否继续？',
     danger: true,
     onOk: () => {
-      const today = getToday();
-      const yestDate = new Date(Date.now() - 86400000);
-      const yest = yestDate.getFullYear() + '-' + String(yestDate.getMonth()+1).padStart(2,'0') + '-' + String(yestDate.getDate()).padStart(2,'0');
-
-      tasks = [];
-  ALL_PLATFORMS.forEach((p, i) => {
-    // 示例中 10 个平台都登记了内容，linked=true 表示已关联内容（当前逻辑不存 contentId/done）
-    tasks.push({ id: Date.now() + i, date: today, platform: p, type: isVideo(p) ? 'video' : 'article', done: false, linked: true, contentId: null, target: DAILY_TARGET });
-  });
-  tasks.push({ id: Date.now() + 100, date: yest, platform: '快手', type: 'video', done: false, linked: false, contentId: null, target: DAILY_TARGET });
-
-  contents = [
-    // 短视频 4 个
-    { id: 1, title: '新品开箱vlog：夏日防晒好物推荐', platform: '抖音', topic: '好物推荐/防晒', url: 'https://www.douyin.com/video/7234567890', createdAt: today },
-    { id: 2, title: '街头美食探店EP38', platform: '快手', topic: '探店/美食', url: 'https://www.kuaishou.com/short-video/3x9f2a', createdAt: today },
-    { id: 3, title: '618购物清单｜闭眼入的5件数码好物', platform: '小红书', topic: '数码好物/购物清单', url: 'https://www.xiaohongshu.com/explore/abc123', createdAt: today },
-    { id: 4, title: '职场高效办公技巧合集', platform: '视频号', topic: '职场技能/效率', url: 'https://channels.weixin.qq.com/p/8888', createdAt: today },
-    // 文书 6 个
-    { id: 5, title: 'Python自动化脚本：批量处理Excel报表', platform: '知乎', topic: 'Python/自动化/教程', url: 'https://zhuanlan.zhihu.com/p/123456', createdAt: today },
-    { id: 6, title: '如何用AI提升10倍工作效率', platform: '公众号', topic: 'AI工具/效率提升', url: 'https://mp.weixin.qq.com/s/xxxxx', createdAt: today },
-    { id: 7, title: '2024年AI工具大盘点', platform: '百家号', topic: 'AI工具/盘点', url: 'https://baijiahao.baidu.com/s?id=777', createdAt: today },
-    { id: 8, title: '新媒体运营入门指南', platform: '企鹅号', topic: '运营技巧/入门', url: 'https://om.qq.com/article/555', createdAt: today },
-    { id: 9, title: '内容创作者必备的5个习惯', platform: '搜狐号', topic: '创作者/习惯', url: 'https://www.sohu.com/a/666', createdAt: today },
-    { id: 10, title: '官网技术博客：API 性能优化实战', platform: '官网', topic: '技术博客/性能优化', url: 'https://example.com/blog/api-perf', createdAt: today },
-  ];
-
-  // 视频数据：4 个短视频平台各 1 条，contentId 对齐内容登记，日期对齐
-  // 小红书官方指标是"人均观看时长"，故用 avgWatch 字段、completionRate 留空；
-  // 视频号无"收藏"、改用"推荐"数（recommend 字段），favorites 记 0
-  stats = [
-    { id: 101, platform: '抖音', date: today, contentId: 1, title: '新品开箱vlog：夏日防晒好物推荐', views: 12500, completionRate: 32.5, likes: 890, comments: 230, favorites: 156, shares: 120, followers: 35 },
-    { id: 102, platform: '快手', date: today, contentId: 2, title: '街头美食探店EP38', views: 9800, completionRate: 28.1, likes: 670, comments: 156, favorites: 98, shares: 67, followers: 21 },
-    { id: 103, platform: '小红书', date: today, contentId: 3, title: '618购物清单｜闭眼入的5件数码好物', views: 8200, completionRate: null, avgWatch: 18.5, likes: 1200, comments: 175, favorites: 342, shares: 89, followers: 58 },
-    { id: 104, platform: '视频号', date: today, contentId: 4, title: '职场高效办公技巧合集', views: 5600, completionRate: 24.3, recommend: 52, likes: 340, comments: 89, favorites: 0, shares: 45, followers: 12 },
-  ];
-
-  // AI 收录：6 个文书平台各 1 条，contentId 对齐内容登记
-  aiStats = [
-    { id: 201, platform: '知乎', date: today, contentId: 5, title: 'Python自动化脚本：批量处理Excel报表', ai: { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false } },
-    { id: 202, platform: '公众号', date: today, contentId: 6, title: '如何用AI提升10倍工作效率', ai: { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false } },
-    { id: 203, platform: '百家号', date: today, contentId: 7, title: '2024年AI工具大盘点', ai: { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
-    { id: 204, platform: '企鹅号', date: today, contentId: 8, title: '新媒体运营入门指南', ai: { 'DeepSeek': true, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': true } },
-    { id: 205, platform: '搜狐号', date: today, contentId: 9, title: '内容创作者必备的5个习惯', ai: { 'DeepSeek': false, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': false } },
-    { id: 206, platform: '官网', date: today, contentId: 10, title: '官网技术博客：API 性能优化实战', ai: { 'DeepSeek': true, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false } },
-  ];
-
-  reviews = [
-    { id: 301, type: 'article', period: 'week', date: today, highlights: '知乎技术文收录情况良好', problems: '公众号阅读量偏低，需要优化标题', plans: '下周重点优化公众号选题，尝试AI工具方向' },
-    { id: 302, type: 'video', period: 'week', date: today, highlights: '抖音防晒选题播放量破万', problems: '小红书完播率偏低', plans: '尝试竖版封面+前3秒钩子' },
-  ];
-
-  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews);
-  render(); showToast('已重置示例数据');
+      const s = buildSampleData(getToday());
+      tasks = s.tasks; contents = s.contents; stats = s.stats; aiStats = s.aiStats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds;
+      saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
+      render(); showToast('已重置示例数据（最近3天）');
     }
   });
 }

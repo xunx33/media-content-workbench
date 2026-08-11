@@ -6,7 +6,8 @@ function render() {
     calendar: renderCalendar,
     overview: renderOverview,
     content: renderContent,
-    data: renderData
+    data: renderData,
+    account: renderAccountTab
   };
   document.getElementById('mainContent').innerHTML = html[currentTab]();
   applyContentFold();

@@ -37,6 +37,9 @@ function renderToday() {
       <div class="stat-card"><div class="stat-value">${videoDone}/4</div><div class="stat-label">视频平台覆盖</div></div>
     </div></div>`;
 
+  // 解析数据表格模块（原在内容登记页，移至今日待办页底部）
+  html += renderTableParser();
+
   return html;
 }
 
@@ -77,7 +80,9 @@ function renderContentDetail(content) {
     if (s) {
       const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
       const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
-      const secondItem = content.platform === '小红书' ? '人均观看' + avgWatch : '完播' + completion;
+      const secondItem = content.platform === '小红书'
+        ? '均播' + avgWatch
+        : ((content.platform === '视频号' || content.platform === '抖音') && avgWatch !== '-' ? '完播' + completion + '·均播' + avgWatch : '完播' + completion);
       const favItem = content.platform === '视频号' ? '推荐' + formatNum(s.recommend) : '收藏' + formatNum(s.favorites);
       html += `<div class="task-detail-row"><span class="detail-label">数据</span><span>播放${formatNum(s.views)} · ${secondItem} · 点赞${formatNum(s.likes)} · 评论${formatNum(s.comments)} · ${favItem} · 分享${formatNum(s.shares)} · 涨粉${formatNum(s.followers)}</span></div>`;
     }

@@ -56,17 +56,17 @@ function updateParserHelp() {
   const help = document.getElementById('parserHelp');
   // 各平台表头说明（随选择的平台高亮当前项）
   const headers = {
-    '抖音': '作品名称 | 发布时间 | 播放量 | 完播率(0.35) | 点赞量 | 评论量 | 收藏量 | 分享量',
+    '抖音': '作品名称 | 发布时间 | 播放量 | 完播率 | 平均播放时长(秒) | 点赞量 | 评论量 | 收藏量 | 分享量',
     '快手': '作品 | 发布时间 | 播放量 | 完播率(20.6%) | 评论量 | 点赞量 | 收藏量',
-    '小红书': '笔记标题 | 首次发布时间 | 观看量 | 点赞 | 评论 | 收藏 | 涨粉 | 分享 | 人均观看时长',
-    '视频号': '视频描述 | 发布时间 | 播放量 | 完播率 | 喜欢 | 评论量 | 关注量 | 分享量 | 推荐'
+    '小红书': '笔记标题 | 首次发布时间 | 观看量 | 点赞 | 评论 | 收藏 | 涨粉 | 分享 | 人均观看时长(秒)',
+    '视频号': '视频描述 | 发布时间 | 完播率 | 平均播放时长(秒) | 播放量 | 推荐 | 喜欢 | 评论量 | 分享量 | 关注量'
   };
   help.innerHTML = `<b style="color:var(--text2);">当前平台：${platform}</b> — 上传该平台导出的数据表，系统按以下列名自动识别：<br><br>
     ${Object.keys(headers).map(p => `
       <div style="margin-bottom:4px;${p === platform ? 'background:var(--accent-soft);border-radius:6px;padding:3px 6px;' : ''}">
         <b style="color:${p === platform ? 'var(--accent)' : 'var(--text2)'};">${p}：</b><code>${headers[p]}</code>
       </div>`).join('')}
-    <b style="color:var(--text2);">说明：</b>完播率支持 0.35 / 20.6% / 35.6 三种格式，"--" 视为空；发布时间自动截取日期部分；小红书无人均观看时自动留空，视频号无收藏时记录「推荐」数。`;
+    <b style="color:var(--text2);">说明：</b>完播率支持 0.35 / 20.6% / 35.6 三种格式，"--" 视为空；发布时间自动截取日期部分；均播时长（秒）自动导入——小红书「人均观看时长」与抖音/视频号「平均播放时长」为同一指标（统一显示为「均播」）；视频号无收藏时记录「推荐」数；空白标题的笔记会以「空标题」占位录入。`;
 }
 
 // 切换平台时：刷新帮助说明 + 重检测暂存文件的匹配警告（选对平台后警告自动消失）
@@ -176,8 +176,9 @@ function cancelPendingImport() {
 }
 
 // 解析分隔文本（csv/tsv/txt）
+// 注意：只去行尾空白、保留行首制表符——空标题行行首是 \t，若 trim 掉会导致整行左移一列
 function parseDelimitedText(text) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0).map(l => l.replace(/\s+$/, ''));
   if (lines.length === 0) return [];
   const headerLine = lines[0];
   let delimiter = '\t';
@@ -299,22 +300,28 @@ function parseSheetXml(xml, sharedStrings) {
   let rm;
   while ((rm = rowRegex.exec(xml)) !== null) {
     const cells = [];
-    const cellRegex = /<c[^>]*r="([A-Z]+)\d+"[^>]*>([\s\S]*?)<\/c>/g;
+    // 单元格匹配：自闭合空单元格（<c r="A10"/>）优先，否则普通带值单元格
+    // 原正则要求 </c> 结尾，会把自闭合空单元格与其后单元格一起吞掉 → 整行左移（空标题行因此丢失）
+    const cellRegex = /<c[^>]*r="([A-Z]+)\d+"[^>]*\/>|<c[^>]*r="([A-Z]+)\d+"[^>]*>([\s\S]*?)<\/c>/g;
     let cm;
-    // 收集 (列字母, 值)
     const cellMap = {};
     while ((cm = cellRegex.exec(rm[2])) !== null) {
-      const colLetter = cm[1];
-      const inner = cm[2];
-      const tMatch = cm[0].match(/t="([^"]+)"/);
-      const t = tMatch ? tMatch[1] : '';
-      const vMatch = inner.match(/<v>([\s\S]*?)<\/v>/);
-      const isMatch = inner.match(/<is>[\s\S]*?<t[^>]*>([\s\S]*?)<\/t>/);
-      let val = '';
-      if (t === 's' && vMatch) val = sharedStrings[parseInt(vMatch[1])] || '';
-      else if (t === 'inlineStr' && isMatch) val = decodeXml(isMatch[1]);
-      else if (vMatch) val = decodeXml(vMatch[1]);
-      cellMap[colLetter] = val;
+      const selfClosed = cm[1] !== undefined;
+      const colLetter = selfClosed ? cm[1] : cm[2];
+      const inner = selfClosed ? '' : (cm[3] || '');
+      if (!selfClosed) {
+        const tMatch = cm[0].match(/t="([^"]+)"/);
+        const t = tMatch ? tMatch[1] : '';
+        const vMatch = inner.match(/<v>([\s\S]*?)<\/v>/);
+        const isMatch = inner.match(/<is>[\s\S]*?<t[^>]*>([\s\S]*?)<\/t>/);
+        let val = '';
+        if (t === 's' && vMatch) val = sharedStrings[parseInt(vMatch[1])] || '';
+        else if (t === 'inlineStr' && isMatch) val = decodeXml(isMatch[1]);
+        else if (vMatch) val = decodeXml(vMatch[1]);
+        cellMap[colLetter] = val;
+      } else {
+        cellMap[colLetter] = '';
+      }
     }
     // 按列字母顺序排列（A, B, ..., AA, ...）
     const letters = Object.keys(cellMap).sort((a, b) => colToNum(a) - colToNum(b));
@@ -347,6 +354,7 @@ const PLATFORM_HEADERS = {
     title: ['作品名称', '作品标题', '标题', '作品', 'title'],
     views: ['播放量', '播放数', '播放', 'views', 'view'],
     completion: ['完播率', '完播', 'completion'],
+    avgWatch: ['平均播放时长', '人均播放时长', '人均观看时长', 'avgwatch'],
     likes: ['点赞量', '点赞数', '点赞', 'likes', 'like'],
     comments: ['评论量', '评论数', '评论', 'comments', 'comment'],
     favorites: ['收藏量', '收藏数', '收藏', 'favorites', 'favorite'],
@@ -382,6 +390,7 @@ const PLATFORM_HEADERS = {
     title: ['视频描述', '作品名称', '作品', '标题', 'title'],
     views: ['播放量', '播放数', '播放', 'views', 'view'],
     completion: ['完播率', '完播', 'completion'],
+    avgWatch: ['平均播放时长', '人均播放时长', '人均观看时长', 'avgwatch'],
     recommend: ['推荐', '推荐量', '推荐数', 'recommend'],
     likes: ['喜欢', '点赞', '赞', 'likes', 'like'],
     comments: ['评论量', '评论数', '评论', 'comments', 'comment'],
@@ -512,7 +521,9 @@ function parseTableRows(rows, type, platform) {
     if (!normDate || !platform) continue;
 
     if (type === 'video') {
-      const title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
+      let title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
+      // 空白标题 → 占位符「空标题」，保证内容与数据照常录入
+      if (!title) title = platform === '小红书' ? '空标题' : (platform + ' ' + normDate + ' 作品');
       const views = colViews >= 0 ? parseIntNum(cells[colViews]) : 0;
       const completion = colCompletion >= 0 ? parseCompletion(cells[colCompletion]) : null;
       // 小红书：人均观看时长（秒）；视频号：推荐数
@@ -552,7 +563,7 @@ function parseTableRows(rows, type, platform) {
 
       let summary = `播放${formatNum(views)}`;
       if (completion !== null) summary += ` 完播${completion}%`;
-      if (avgWatch !== null) summary += ` 人均观看${avgWatch}s`;
+      if (avgWatch !== null) summary += ` 均播${avgWatch}s`;
       if (recommend > 0) summary += ` 推荐${recommend}`;
       results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${content.title}」${summary}</div>`);
     } else {
@@ -633,7 +644,11 @@ function normalizeDate(s) {
 
 function parseIntNum(v) {
   if (v === undefined || v === null) return 0;
-  return parseInt(String(v).replace(/[^\d]/g, '')) || 0;
+  // 保留数字与小数点（兼容 "10.0" 这类带 .0 的值）；原 /[^\d]/g 会把 . 去掉导致 "10.0"→"100"
+  const cleaned = String(v).replace(/[^\d.]/g, '');
+  if (!cleaned) return 0;
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : Math.round(num);
 }
 
 // 完播率解析：支持 35.6%、0.356、35.6 等
@@ -743,16 +758,21 @@ function renderContentItem(c) {
       hasData = true;
       const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
       const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
-      // 第二行：小红书=人均观看时长，其他=完播率
+      // 第二行：小红书=均播时长，其他=完播率
       const secondLine = c.platform === '小红书'
-        ? `<div class="content-data-item"><span>人均观看</span><b>${avgWatch}</b></div>`
+        ? `<div class="content-data-item"><span>均播</span><b>${avgWatch}</b></div>`
         : `<div class="content-data-item"><span>完播</span><b>${completion}</b></div>`;
+      // 抖音/视频号额外显示「均播」（有数据时）
+      const avgWatchLine = (c.platform === '视频号' || c.platform === '抖音') && avgWatch !== '-'
+        ? `<div class="content-data-item"><span>均播</span><b>${avgWatch}</b></div>`
+        : '';
       // 第三行（收藏位）：视频号=推荐，其他=收藏
       const favLine = c.platform === '视频号'
         ? `<div class="content-data-item"><span>推荐</span><b>${formatNum(s.recommend)}</b></div>`
         : `<div class="content-data-item"><span>收藏</span><b>${formatNum(s.favorites)}</b></div>`;
       dataHtml = `<div class="content-data-item"><span>播放</span><b>${formatNum(s.views)}</b></div>
         ${secondLine}
+        ${avgWatchLine}
         <div class="content-data-item"><span>点赞</span><b>${formatNum(s.likes)}</b></div>
         <div class="content-data-item"><span>评论</span><b>${formatNum(s.comments)}</b></div>
         ${favLine}

@@ -9,8 +9,15 @@ function renderContent() {
   html += `<div class="filter-pills">
     <span class="filter-pill ${!contentFilterType ? 'active' : ''}" onclick="filterContent('all',this)">全部</span>
     <span class="filter-pill ${contentFilterType === 'today' ? 'active' : ''}" onclick="filterContent('today',this)">今日</span>
-    ${VIDEO_PLATFORMS.map(p => `<span class="filter-pill ${contentFilterType === p ? 'active' : ''}" onclick="filterContent('${p}',this)">${p}</span>`).join('')}
-    ${ARTICLE_PLATFORMS.map(p => `<span class="filter-pill ${contentFilterType === p ? 'active' : ''}" onclick="filterContent('${p}',this)">${p}</span>`).join('')}
+    <select class="filter-select" id="platformFilterSelect" onchange="filterPlatformSelect(this.value)" aria-label="平台筛选">
+      <option value="">平台筛选</option>
+      <optgroup label="短视频平台">
+        ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
+      </optgroup>
+      <optgroup label="文书平台">
+        ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
+      </optgroup>
+    </select>
     <span class="filter-pill sort-views ${contentSortByViews === 'desc' ? 'active-desc' : contentSortByViews === 'asc' ? 'active-asc' : ''}" onclick="toggleSortViews()">${contentSortByViews === 'desc' ? '播放量 ↓' : contentSortByViews === 'asc' ? '播放量 ↑' : '播放量'}</span>
   </div>`;
 
@@ -24,9 +31,6 @@ function renderContent() {
   if (filtered.length === 0) html += `<div class="empty-state"><div class="empty-icon">${searchKeyword ? '&#128270;' : '+'}</div><p>${searchKeyword ? '未找到匹配内容' : '暂无登记记录，点击右下角 + 号登记'}</p></div>`;
   else filtered.forEach(c => html += renderContentItem(c));
   html += '</div></div></div>';
-
-  // 解析表格模块：解析平台导出的数据表，并入登记内容数据
-  html += renderTableParser();
 
   return html;
 }
@@ -45,11 +49,11 @@ function openDataModal(contentId) {
 function renderVideoDataModal(c) {
   const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
   const pf = c.platform;
-  // 按平台动态选择第二行字段：抖音/快手/视频号=完播率，小红书=人均观看时长
+  // 按平台动态选择第二行字段：抖音/快手/视频号=完播率，小红书=平均播放时长（三平台同义：均播时长）
   const secondField = pf === '小红书'
-    ? `<div class="form-group"><label>人均观看时长(秒)</label><input type="number" id="statAvgWatch" value="${s && s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch : ''}" min="0" step="0.1"></div>`
+    ? `<div class="form-group"><label>平均播放时长(秒)</label><input type="number" id="statAvgWatch" value="${s && s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch : ''}" min="0" step="0.1"></div>`
     : `<div class="form-group"><label>完播率(%)</label><input type="number" id="statCompletion" value="${s && s.completionRate !== null && s.completionRate !== undefined ? s.completionRate : ''}" min="0" max="100" step="0.1"></div>`;
-  // 第三行：视频号显示「推荐」替代「收藏」
+  // 第三行：视频号显示「推荐」替代「收藏」；保持每行 2 个（form-row 是 2 列 Grid）
   const thirdRow = pf === '视频号'
     ? `<div class="form-row">
         <div class="form-group"><label>推荐</label><input type="number" id="statRecommend" value="${s ? s.recommend : ''}" min="0"></div>
@@ -58,6 +62,15 @@ function renderVideoDataModal(c) {
     : `<div class="form-row">
         <div class="form-group"><label>收藏</label><input type="number" id="statFavorites" value="${s ? s.favorites : ''}" min="0"></div>
         <div class="form-group"><label>分享</label><input type="number" id="statShares" value="${s ? s.shares : ''}" min="0"></div>
+      </div>`;
+  // 第四行：抖音/视频号把「平均播放时长」与「涨粉」并排成 2 列；其他平台涨粉单行
+  const fourthRow = (pf === '视频号' || pf === '抖音')
+    ? `<div class="form-row">
+        <div class="form-group"><label>平均播放时长(秒)</label><input type="number" id="statAvgWatch" value="${s && s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch : ''}" min="0" step="0.1"></div>
+        <div class="form-group"><label>涨粉</label><input type="number" id="statFollowers" value="${s ? s.followers : ''}" min="0"></div>
+      </div>`
+    : `<div class="form-row">
+        <div class="form-group"><label>涨粉</label><input type="number" id="statFollowers" value="${s ? s.followers : ''}" min="0"></div>
       </div>`;
   return `<h3>${pf}数据录入</h3>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag video">${pf}</span> ${c.title}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
@@ -71,9 +84,7 @@ function renderVideoDataModal(c) {
       <div class="form-group"><label>评论</label><input type="number" id="statComments" value="${s ? s.comments : ''}" min="0"></div>
     </div>
     ${thirdRow}
-    <div class="form-row">
-      <div class="form-group"><label>涨粉</label><input type="number" id="statFollowers" value="${s ? s.followers : ''}" min="0"></div>
-    </div>
+    ${fourthRow}
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-save btn-danger" style="flex:0.6;" onclick="clearContentData()">清空</button>
@@ -163,6 +174,12 @@ function saveContentData() {
 
 function filterContent(filter, el) {
   contentFilterType = filter === 'all' ? '' : filter;
+  render();
+}
+
+// 平台筛选下拉：选中平台 → 按平台过滤；选回「平台筛选」空值 → 取消平台过滤
+function filterPlatformSelect(value) {
+  contentFilterType = value;
   render();
 }
 

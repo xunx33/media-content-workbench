@@ -10,6 +10,8 @@ function findLinkedTitle(record, type) {
 }
 
 function renderData() {
+  // 账号总数据已提升为独立 Tab「账号登记」，此处自愈历史遗留的 account 值
+  if (dataSubTab === 'account') dataSubTab = 'video';
   let html = '';
 
   // Sub-tabs
@@ -46,10 +48,15 @@ function renderData() {
 
 function switchDataTab(tab) { dataSubTab = tab; render(); }
 
-// ===== 周期状态：视频/文书各自记忆周/月选择 =====
-let dataPeriod = { video: 'month', article: 'month' };
+// ===== 周期状态：视频/文书/账号各自记忆周/月选择 =====
+let dataPeriod = { video: 'month', article: 'month', account: 'month' };
 function getCurPeriod() { return dataPeriod[dataSubTab] || 'month'; }
 function switchDataPeriod(p) { dataPeriod[dataSubTab] = p; render(); }
+
+// ===== 账号登记（独立 Tab）：不定时快照登记，当天记录=最新总数据，与上次记录对比 =====
+function renderAccountTab() {
+  return renderAccountData();
+}
 
 // 当前周期范围 + 上一周期范围（用于双柱对比）
 // 返回 { label, prevLabel, start, end, prevStart, prevEnd }
@@ -497,3 +504,200 @@ function deleteAiStat(id) {
   });
 }
 
+
+// ===== 账号总数据（视频平台账号级快照）=====
+// 快照式：每平台按日期记一条累计数据（日期以当天为准）
+const ACCOUNT_FIELDS = [
+  { key: 'posts', label: '发布量', ph: '累计发布数' },
+  { key: 'followers', label: '粉丝量', ph: '粉丝总数' },
+  { key: 'views', label: '总播放量', ph: '累计播放量' },
+  { key: 'likes', label: '总点赞量', ph: '累计点赞量' },
+  { key: 'comments', label: '总评论量', ph: '累计评论量' },
+  { key: 'shares', label: '总转发/分享', ph: '累计转发/分享' }
+];
+
+let accSelectedPlatform = '抖音'; // 记录表单当前选中的平台（标题右侧按钮切换）
+
+function selectAccountPlatform(p) { accSelectedPlatform = p; render(); }
+
+function renderAccountData() {
+  let html = '';
+
+  // 1. 记录表单（日期固定为今天=最新总数据快照；平台在标题右侧按钮选择；账号ID/备注随平台联动）
+  html += '<div class="card"><div class="card-title">记录账号数据 <span class="badge">今日 ' + getToday() + ' · 最新总数据</span>';
+  html += '<span class="platform-pill">' + VIDEO_PLATFORMS.map(function(p){ return '<button class="pill' + (p === accSelectedPlatform ? ' active' : '') + '" onclick="selectAccountPlatform(\'' + p + '\')">' + p + '</button>'; }).join('') + '</span>';
+  html += '</div>';
+  // 账号ID + 备注（随选中平台预填；保存按钮在备注同行右侧）
+  var accIdRec = accountIds.find(function(x){ return x.platform === accSelectedPlatform; });
+  // 显式 Grid 3 列：账号ID / 备注 / 保存。前两列 stretch 与内容同高，第三列 auto 宽度 + align-self:end 贴齐行底（与 input 底对齐）
+  html += '<div class="form-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;">';
+  html += '<div class="form-group" style="margin-bottom:0;"><label>' + accSelectedPlatform + ' 账号ID</label><input type="text" id="accAccountId" value="' + escapeHtml(accIdRec && accIdRec.accountId || '') + '" placeholder="未设置"></div>';
+  html += '<div class="form-group" style="margin-bottom:0;"><label>备注</label><input type="text" id="accAccountNote" value="' + escapeHtml(accIdRec && accIdRec.note || '') + '" placeholder="昵称/主页链接等（可选）"></div>';
+  html += '<div style="align-self:end;display:flex;justify-content:flex-end;">';
+  // 保存 — 主题主色；padding/font 与 input 同高（约 43px），贴齐 input 底边
+  html += '<button onclick="saveAccountIdOnly()" style="padding:11px 18px;background:linear-gradient(135deg, var(--accent), var(--accent-2));color:#fff;border:none;border-radius:var(--radius-xs);font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(91,140,255,0.3);">保存</button>';
+  html += '</div></div>';
+  // 已保存的账号ID（始终渲染表格，避免空/非空切换时跳动；每行带删除按钮）
+  var savedIds = accountIds.filter(function(r){ return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()); });
+  html += '<div style="margin:10px 0 2px;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">已保存的账号ID（' + savedIds.length + '/4）</div>';
+  html += '<table class="data-table"><thead><tr><th style="width:90px;">平台</th><th>账号ID</th><th>备注</th><th style="width:56px;"></th></tr></thead><tbody>';
+  var hasAny = false;
+  VIDEO_PLATFORMS.forEach(function(p) {
+    var sr = accountIds.find(function(x){ return x.platform === p; });
+    if (sr && ((sr.accountId && sr.accountId.trim()) || (sr.note && sr.note.trim()))) {
+      hasAny = true;
+      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td>' + escapeHtml(sr.accountId || '') + '</td><td>' + escapeHtml(sr.note || '') + '</td>';
+      html += '<td><button class="btn-delete-mini" onclick="deleteAccountId(\'' + p + '\')">删除</button></td></tr>';
+    }
+  });
+  if (!hasAny) {
+    html += '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:14px 0;">暂无，保存后显示在此处</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  // 分割线：账号ID区 与 指标登记区 分隔
+  html += '<div style="border-top:1px dashed var(--border);margin:12px 0;"></div>';
+  html += '<div class="form-row">' + ACCOUNT_FIELDS.map(function(f){ return '<div class="form-group"><label>' + f.label + '</label><input type="number" id="acc_' + f.key + '" min="0" placeholder="' + f.ph + '"></div>'; }).join('') + '</div>';
+  html += '<div class="toolbar" style="margin-top:8px;"><button class="btn-primary" onclick="saveAccountSnapshot()">保存账号数据（' + accSelectedPlatform + '）</button></div>';
+  html += '</div>';
+
+  // 2. 各平台最新快照汇总（最新=最近一次记录）
+  html += '<div class="card"><div class="card-title">各平台最新账号数据 <span class="badge">最新快照</span></div>';
+  html += '<table class="data-table"><thead><tr><th>平台</th><th>记录日期</th><th>发布量</th><th>粉丝量</th><th>总播放量</th><th>总点赞量</th><th>总评论量</th><th>总转发/分享</th></tr></thead><tbody>';
+  VIDEO_PLATFORMS.forEach(function(p) {
+    var r = latestAccountSnapshot(p);
+    if (r) {
+      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td>' + escapeHtml(r.date) + '</td>';
+      html += '<td>' + formatNum(r.posts) + '</td><td>' + formatNum(r.followers) + '</td><td>' + formatNum(r.views) + '</td>';
+      html += '<td>' + formatNum(r.likes) + '</td><td>' + formatNum(r.comments) + '</td><td>' + formatNum(r.shares) + '</td></tr>';
+    } else {
+      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td colspan="7" style="color:var(--text3);">暂无数据</td></tr>';
+    }
+  });
+  html += '</tbody></table></div>';
+
+  // 3. 粉丝量趋势（全量快照，2 列布局：4 平台两行）
+  html += '<div class="card"><div class="card-title">粉丝量趋势 <span class="badge">按平台快照</span></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
+  VIDEO_PLATFORMS.forEach(function(p) {
+    var pts = accountStats
+      .filter(function(s){ return s.platform === p && s.followers !== undefined && s.followers !== null; })
+      .sort(function(a,b){ return (a.date || '').localeCompare(b.date || ''); })
+      .map(function(s){ return { date: s.date, value: Number(s.followers) || 0 }; });
+    html += '<div>';
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + p + '</div>';
+    if (pts.length >= 2) {
+      html += renderTrendLine(pts, { color: '#2563eb' });
+    } else if (pts.length === 1) {
+      html += '<div class="trend-box"><div class="trend-single">共 <b style="color:var(--accent);">' + formatNum(pts[0].value) + '</b></div></div>';
+    } else {
+      html += '<div class="trend-box"><div class="trend-single" style="color:var(--text3);">暂无数据</div></div>';
+    }
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // 4. 历史记录（全部快照，含与上次记录对比）
+  var sorted = accountStats.slice().sort(function(a,b){ return (b.date || '').localeCompare(a.date || ''); });
+  html += '<div class="card"><div class="card-title">历史记录 <span class="badge">' + sorted.length + '条</span></div>';
+  if (sorted.length === 0) {
+    html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无账号数据记录，从上方表单开始记录</p>';
+  } else {
+    html += '<table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th>较上次记录</th><th></th></tr></thead><tbody>';
+    sorted.forEach(function(r) {
+      html += '<tr><td>' + escapeHtml(r.date) + '</td><td><span class="platform-tag video">' + escapeHtml(r.platform) + '</span></td>';
+      html += '<td>' + formatNum(r.posts) + '</td><td>' + formatNum(r.followers) + '</td><td>' + formatNum(r.views) + '</td>';
+      html += '<td>' + formatNum(r.likes) + '</td><td>' + formatNum(r.comments) + '</td><td>' + formatNum(r.shares) + '</td>';
+      html += '<td style="font-size:12px;">' + accountDeltaStr(r) + '</td>';
+      html += '<td><button class="btn-delete-mini" onclick="deleteAccountSnapshot(\'' + r.id + '\')">删除</button></td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+
+  return html;
+}
+
+// 与上次记录对比：同平台早于当前记录且日期最近的一条，逐项计算差值
+function accountDeltaStr(r) {
+  var prev = null;
+  accountStats.forEach(function(s) {
+    if (s.platform === r.platform && (s.date || '') < (r.date || '') && (!prev || (s.date || '') > (prev.date || ''))) prev = s;
+  });
+  if (!prev) return '<span style="color:var(--text3);">首条记录</span>';
+  var parts = [];
+  var pairs = [['posts','发布'],['followers','粉丝'],['views','播放'],['likes','点赞'],['comments','评论'],['shares','转发']];
+  pairs.forEach(function(pair) {
+    var d = (Number(r[pair[0]]) || 0) - (Number(prev[pair[0]]) || 0);
+    if (d !== 0) {
+      var color = d > 0 ? 'var(--green)' : 'var(--red)';
+      parts.push('<span style="color:' + color + ';">' + pair[1] + (d > 0 ? '+' : '') + formatNum(d) + '</span>');
+    }
+  });
+  if (parts.length === 0) return '<span style="color:var(--text3);">持平</span>';
+  return parts.join(' · ');
+}
+
+// 某平台最近一条快照（默认全量；可传入过滤后的列表，如当前周期内）
+function latestAccountSnapshot(platform, list) {
+  var arr = list || accountStats;
+  var best = null;
+  arr.forEach(function(s) {
+    if (s.platform === platform && (!best || (s.date || '') > (best.date || ''))) best = s;
+  });
+  return best;
+}
+
+// 保存：日期=当天，平台=标题右侧按钮选中的平台；同日同平台指标覆盖（账号ID由独立按钮保存）
+function saveAccountSnapshot() {
+  var date = getToday();
+  var platform = accSelectedPlatform;
+  var vals = {};
+  ACCOUNT_FIELDS.forEach(function(f) { vals[f.key] = Math.max(0, parseInt(document.getElementById('acc_' + f.key).value, 10) || 0); });
+  if (ACCOUNT_FIELDS.every(function(f){ return vals[f.key] === 0; })) { showToast('请至少填写一项指标数据'); return; }
+  // 记录时间（导出时标注数据时效）
+  var now = new Date();
+  var recordedAt = date + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  var existing = accountStats.find(function(s){ return s.platform === platform && s.date === date; });
+  if (existing) { Object.assign(existing, vals); existing.recordedAt = recordedAt; }
+  else { accountStats.push(Object.assign({ id: Date.now(), date: date, platform: platform, recordedAt: recordedAt }, vals)); }
+  saveData('accountStats', accountStats); render(); showToast('账号数据已保存');
+}
+
+// 单独保存当前平台的账号ID/备注（两字段都空则删除该平台记录）
+function saveAccountIdOnly() {
+  var platform = accSelectedPlatform;
+  var accountId = (document.getElementById('accAccountId').value || '').trim();
+  var note = (document.getElementById('accAccountNote').value || '').trim();
+  var existing = accountIds.find(function(x){ return x.platform === platform; });
+  if (existing) { existing.accountId = accountId; existing.note = note; }
+  else if (accountId || note) { accountIds.push({ id: Date.now() + Math.random(), platform: platform, accountId: accountId, note: note }); }
+  accountIds = accountIds.filter(function(r){ return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()); });
+  saveData('accountIds', accountIds); render(); showToast('账号ID已保存');
+}
+
+// 删除指定平台的账号ID记录
+function deleteAccountId(platform) {
+  var existing = accountIds.find(function(x){ return x.platform === platform; });
+  if (!existing) { showToast('该平台暂无账号ID'); return; }
+  showConfirm({
+    title: '确认删除',
+    desc: '确定删除' + platform + '的账号ID记录吗？',
+    danger: true,
+    onOk: function() {
+      accountIds = accountIds.filter(function(r){ return r.platform !== platform; });
+      saveData('accountIds', accountIds); render(); showToast(platform + '账号ID已删除');
+    }
+  });
+}
+
+function deleteAccountSnapshot(id) {
+  showConfirm({
+    title: '确认删除',
+    desc: '确定删除这条账号数据记录吗？',
+    danger: true,
+    onOk: function() {
+      accountStats = accountStats.filter(function(s){ return s.id != id && s.id != Number(id); });
+      saveData('accountStats', accountStats); render(); showToast('已删除');
+    }
+  });
+}

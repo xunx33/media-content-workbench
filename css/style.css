@@ -965,3 +965,38 @@ a { color: var(--accent); text-decoration: none; }
 .btn-delete-mini:hover { background: rgba(248,113,113,0.22); border-color: var(--red); }
 .btn-delete-mini:active { transform: scale(0.95); }
 
+
+/* ===== 账号总数据：平台按钮式选择（标题右侧） ===== */
+.platform-pill {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.platform-pill .pill {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--text2);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all .15s;
+}
+.platform-pill .pill:hover { border-color: var(--accent); color: var(--accent); }
+.platform-pill .pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ===== 内容登记：平台筛选下拉 ===== */
+.filter-select {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px;
+  border: 1px solid var(--border-strong); background: var(--bg-2); color: var(--text2);
+  cursor: pointer; font-weight: 500; outline: none; max-width: 160px;
+}
+.filter-select:hover { border-color: var(--accent); color: var(--text); }
+.filter-select:focus { border-color: var(--accent); }
