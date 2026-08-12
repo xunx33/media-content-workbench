@@ -17,6 +17,29 @@ function safeUrl(url) {
   return '';
 }
 
+// ===== 乱码检测（导入/解析后校验，防止非 UTF-8 源数据混入）=====
+// 文本是否含 U+FFFD 替换符（非 UTF-8 编码按 UTF-8 解码损坏的典型特征）
+function hasCorruptChar(text) {
+  if (text === undefined || text === null) return false;
+  return String(text).indexOf('\uFFFD') >= 0;
+}
+// 统计数组中含乱码文本字段的记录数；platform 不在合法平台列表也视为异常
+function countCorruptRecords(list, fields) {
+  let n = 0;
+  (list || []).forEach(r => {
+    if (!r || typeof r !== 'object') return;
+    let bad = false;
+    fields.forEach(f => {
+      if (bad) return;
+      const v = r[f];
+      if (f === 'platform' && v && ALL_PLATFORMS.indexOf(v) === -1) { bad = true; return; }
+      if (hasCorruptChar(v)) bad = true;
+    });
+    if (bad) n++;
+  });
+  return n;
+}
+
 // ===== CONFIG =====
 const VIDEO_PLATFORMS = ['抖音', '快手', '小红书', '视频号'];
 const ARTICLE_PLATFORMS = ['百家号', '公众号', '知乎', '企鹅号', '搜狐号', '官网'];
@@ -241,6 +264,7 @@ let editId = null;
 let overviewMonth = new Date();
 let searchKeyword = '';
 let contentFilterType = '';
+let contentDateFilter = '';   // 内容登记日期筛选：''=全部 | today | yesterday | week | month
 let contentSortByViews = '';
 let contentFoldOpen = true;
 

@@ -467,6 +467,8 @@ function detectPlatformMismatch(rows, selectedPlatform) {
 // 统一解析行数据
 function parseTableRows(rows, type, platform) {
   if (rows.length < 2) { showToast('数据至少需要表头+一行数据'); return null; }
+  // 记录起始长度：解析后检测本次新增内容的乱码
+  const startC = contents.length, startS = stats.length, startA = aiStats.length;
 
   // 根据平台选择对应的表头规则
   const rules = type === 'video'
@@ -595,6 +597,11 @@ function parseTableRows(rows, type, platform) {
   saveData('contents', contents);
   saveData('stats', stats);
   saveData('aiStats', aiStats);
+  // 乱码检测：本次新增内容/数据/文书记录的标题与平台
+  const newCorrupt = countCorruptRecords(contents.slice(startC), ['title', 'platform'])
+    + countCorruptRecords(stats.slice(startS), ['title', 'platform'])
+    + countCorruptRecords(aiStats.slice(startA), ['title', 'platform']);
+  if (newCorrupt > 0) showToast('⚠️ 本次解析出 ' + newCorrupt + ' 条乱码记录：源表格可能不是 UTF-8 编码，建议改用 xlsx 或另存为 UTF-8 再导入');
   return { parsedCount, contentCreatedCount, results };
 }
 
@@ -698,9 +705,23 @@ function getFilteredContents() {
     );
   }
 
-  // Apply filter type（'' = 全部 | 'today' | 具体平台名）
-  if (contentFilterType === 'today') filtered = filtered.filter(c => c.createdAt === today);
-  else if (contentFilterType && ALL_PLATFORMS.includes(contentFilterType)) filtered = filtered.filter(c => c.platform === contentFilterType);
+  // Apply date range filter（''=全部 | today | yesterday | week | month）
+  if (contentDateFilter === 'today') filtered = filtered.filter(c => c.createdAt === today);
+  else if (contentDateFilter === 'yesterday') {
+    const y = getDayStr(new Date(Date.now() - 86400000));
+    filtered = filtered.filter(c => c.createdAt === y);
+  } else if (contentDateFilter === 'week') {
+    const d = new Date();
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // 本周一
+    const monday = getDayStr(d);
+    filtered = filtered.filter(c => c.createdAt >= monday && c.createdAt <= today);
+  } else if (contentDateFilter === 'month') {
+    const m = today.slice(0, 7);
+    filtered = filtered.filter(c => (c.createdAt || '').startsWith(m));
+  }
+
+  // Apply platform filter（具体平台名）
+  if (contentFilterType && ALL_PLATFORMS.includes(contentFilterType)) filtered = filtered.filter(c => c.platform === contentFilterType);
 
   // 播放量排序：排除文书平台，只显示视频内容并按播放量排序（无数据排最后）
   if (contentSortByViews === 'desc' || contentSortByViews === 'asc') {
@@ -721,10 +742,11 @@ function getFilteredContents() {
   return filtered;
 }
 
-function handleSearch(value) {
-  searchKeyword = value.trim();
-  clearTimeout(window._searchTimer);
-  window._searchTimer = setTimeout(() => render(), 200);
+// 手动搜索：读取输入框内容触发（回车 或 点搜索按钮），不随输入实时搜索
+function doSearch() {
+  const input = document.getElementById('searchInput');
+  searchKeyword = input ? input.value.trim() : '';
+  render();
 }
 
 function clearSearch() {

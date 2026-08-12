@@ -81,6 +81,17 @@ function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth() + de
 function goToday() { currentMonth = new Date(); selectedDate = getToday(); render(); }
 function selectDay(date) { selectedDate = date; render(); }
 
+// 从数据复盘折线图点击数据点跳转：切到发布日历并定位到该日期所在月、选中该日
+function goCalendarDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) { showToast('无效日期'); return; }
+  currentMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+  selectedDate = dateStr;
+  currentTab = 'calendar';
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'calendar'));
+  render();
+}
+
 // 折叠/展开登记内容列表（状态存 contentFoldOpen，render 后自动应用）
 function toggleContentFold() {
   contentFoldOpen = !contentFoldOpen;

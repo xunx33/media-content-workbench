@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#2563eb">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="css/style.css?v=20260811e">
+<link rel="stylesheet" href="css/style.css?v=20260812t">
 </head>
 <body>
 
@@ -31,7 +31,7 @@
 <div class="backup-bar">
   <div class="backup-group">
     <div class="export-dropdown">
-      <button class="backup-btn export-trigger" onclick="toggleExportMenu(event)">导出表格 ▾</button>
+      <button class="backup-btn export-trigger" onclick="toggleExportMenu(event)">导出数据 ▾</button>
       <div class="export-menu" id="exportMenu">
         <button class="export-item" onclick="doExport('all')">全部数据</button>
         <button class="export-item" onclick="doExport('week')">本周数据</button>
@@ -58,16 +58,16 @@
 
 <!-- ===== 依赖顺序加载：store(数据) → ui(通用) → views → export/sample → app(入口) ===== -->
 <!-- ?v= 版本号：改动 JS/CSS 后请同步更新，避免浏览器缓存旧文件 -->
-<script src="js/store.js?v=20260811f"></script>
-<script src="js/ui.js?v=20260808b"></script>
-<script src="js/views/today.js?v=20260811w"></script>
-<script src="js/views/calendar.js?v=20260808b"></script>
-<script src="js/views/overview.js?v=20260811h"></script>
-<script src="js/views/content.js?v=20260811w"></script>
-<script src="js/views/table-parser.js?v=20260811w"></script>
-<script src="js/views/data.js?v=20260811z"></script>
-<script src="js/export.js?v=20260811z"></script>
-<script src="js/sample-migration.js?v=20260811y"></script>
+<script src="js/store.js?v=20260812s"></script>
+<script src="js/ui.js?v=20260812s"></script>
+<script src="js/views/today.js?v=20260812s"></script>
+<script src="js/views/calendar.js?v=20260812s"></script>
+<script src="js/views/overview.js?v=20260812s"></script>
+<script src="js/views/content.js?v=20260812s"></script>
+<script src="js/views/table-parser.js?v=20260812s"></script>
+<script src="js/views/data.js?v=20260812s"></script>
+<script src="js/export.js?v=20260812v"></script>
+<script src="js/sample-migration.js?v=20260812s"></script>
 <script src="js/app.js?v=20260811h"></script>
 </body>
 </html>

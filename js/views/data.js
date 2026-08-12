@@ -183,7 +183,8 @@ function deleteReview(id) {
 }
 
 // 双柱对比柱形图：当前周期实心柱 + 上期半透明柱
-function renderDualBarChart(labels, currVals, prevVals, barClass, fmt) {
+// curLabel/prevLabel 跟随当前周期（本周/上周、本月/上月）
+function renderDualBarChart(labels, currVals, prevVals, barClass, fmt, curLabel = '本期', prevLabel = '上期') {
   const maxV = Math.max(...currVals, ...prevVals, 1);
   let html = '<div class="bar-chart">';
   labels.forEach((label, i) => {
@@ -192,11 +193,11 @@ function renderDualBarChart(labels, currVals, prevVals, barClass, fmt) {
     const ph = Math.max(Math.round(pv / maxV * 100), 3);
     html += `<div class="bar-col">
       <div class="bar-pair">
-        <div class="bar-pair-item" title="本月 ${fmt(v)}">
+        <div class="bar-pair-item" title="${curLabel} ${fmt(v)}">
           <div class="bar-value">${fmt(v)}</div>
           <div class="bar ${barClass}" style="height:${h}%"></div>
         </div>
-        <div class="bar-pair-item" title="上月 ${fmt(pv)}">
+        <div class="bar-pair-item" title="${prevLabel} ${fmt(pv)}">
           <div class="bar-value prev">${fmt(pv)}</div>
           <div class="bar ${barClass} prev" style="height:${ph}%"></div>
         </div>
@@ -210,8 +211,8 @@ function renderDualBarChart(labels, currVals, prevVals, barClass, fmt) {
 
 // 近 N 天趋势折线图（纯 SVG 自绘，零依赖）
 // points: [{date:'YYYY-MM-DD', value:number}] 按日期升序
-// 返回 SVG 折线 + 结束值标注；数据不足 2 天时返回空
-function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, height = 160 } = {}) {
+// 返回 SVG 折线 + 结束值标注；数据不足 2 天时返回空；onClick=全局函数名（点击数据点跳转，如跳发布日历）
+function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, height = 160, onClick = null } = {}) {
   const data = points.filter(p => p && p.value !== undefined && p.value !== null);
   if (data.length < 2) {
     if (data.length === 1) {
@@ -249,10 +250,18 @@ function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, hei
     : rise < 0
       ? `<span class="trend-down">▼ ${fmt(Math.abs(rise))} (${risePct}%)</span>`
       : `<span class="trend-flat">— 持平</span>`;
-  // 数值标签：标注最大最小和最后
-  const valLabels = [];
-  if (last.value !== maxV) valLabels.push({ x: last.x, y: last.y, v: last.value });
-  if (last.value === maxV && data.length > 1) valLabels.push({ x: last.x, y: last.y, v: last.value });
+  // 数值标注：局部峰值点（比左右都高）+ 最后一点；峰值过多时取最高的 5 个
+  const peakIdxs = [];
+  for (let i = 1; i < data.length - 1; i++) {
+    if (data[i].value > data[i-1].value && data[i].value >= data[i+1].value) peakIdxs.push(i);
+  }
+  if (peakIdxs.length > 5) {
+    peakIdxs.sort((a, b) => data[b].value - data[a].value);
+    peakIdxs.length = 5;
+  }
+  const labeledIdxs = new Set(peakIdxs);
+  labeledIdxs.add(data.length - 1); // 最后一点始终标注
+  const valLabels = [...labeledIdxs].sort((a, b) => a - b).map(i => pts[i]);
 
   return `<div class="trend-box">
     <div class="trend-head"><span class="trend-label">${first.date} ~ ${last.date}</span>${trendBadge}</div>
@@ -265,8 +274,11 @@ function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, hei
       </defs>
       <path d="${area}" fill="url(#trendFill)"/>
       <path d="${path}" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-      ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" />`).join('')}
-      <text x="${last.x.toFixed(1)}" y="${(last.y - 8).toFixed(1)}" text-anchor="end" font-size="22" font-weight="700" fill="${color}">${fmt(last.value)}</text>
+      ${pts.map(p => {
+        const click = onClick ? ` onclick="${onClick}('${p.date}')"` : '';
+        return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}"${click}><title>${p.date} · 总播放 ${fmt(p.value)}</title></circle>`;
+      }).join('')}
+      ${valLabels.map(p => `<text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="18" font-weight="700" fill="${color}" style="paint-order:stroke;stroke:var(--bg);stroke-width:4px;">${fmt(p.value)}</text>`).join('')}
       ${labels.map(l => `<text x="${l.x.toFixed(1)}" y="${(VBH - 10).toFixed(1)}" text-anchor="middle" font-size="18" fill="var(--text3)">${l.date.slice(5)}</text>`).join('')}
     </svg>
   </div>`;
@@ -324,18 +336,16 @@ function renderVideoData(period) {
   currStats.forEach(s => { if (platformViews[s.platform] !== undefined) platformViews[s.platform] += s.views; });
   prevStats.forEach(s => { if (prevPlatformViews[s.platform] !== undefined) prevPlatformViews[s.platform] += s.views; });
   html += renderChartLegend('video', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(VIDEO_PLATFORMS, VIDEO_PLATFORMS.map(p => platformViews[p]), VIDEO_PLATFORMS.map(p => prevPlatformViews[p]), 'video', formatNum);
+  html += renderDualBarChart(VIDEO_PLATFORMS, VIDEO_PLATFORMS.map(p => platformViews[p]), VIDEO_PLATFORMS.map(p => prevPlatformViews[p]), 'video', formatNum, ranges.label, ranges.prevLabel);
   html += '</div>';
 
-  // 播放量趋势折线图（跟随周期：周=本周7天，月=近30天）
+  // 播放量趋势折线图（跟随周期：周=本周一~今天，月=近30天）
   const isWeek = (period || 'month') === 'week';
-  const trendDays = isWeek ? 7 : 30;
+  const trendDays = isWeek ? ((new Date().getDay() + 6) % 7) + 1 : 30;
   const trendTitle = isWeek ? '本周播放量趋势' : '近30天播放量趋势';
-  // 周模式按本周一~今天取数据（今天之前的天也展示为0）；月模式近30天
-  const trendPts = isWeek
-    ? aggregateDaily(stats.filter(s => isVideo(s.platform)), s => s.views || 0, 7, new Date())
-    : aggregateDaily(stats.filter(s => isVideo(s.platform)), s => s.views || 0, 30);
-  html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${ranges.label}${isWeek ? '' : ''}</span></div>${renderTrendLine(trendPts, { color: 'var(--orange)' })}</div>`;
+  // 周模式窗口=本周一~今天（与周期范围一致，不含上周数据）；月模式近30天
+  const trendPts = aggregateDaily(stats.filter(s => isVideo(s.platform)), s => s.views || 0, trendDays, new Date());
+  html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${isWeek ? '本周' : '近30天'} · 4平台合计 · 点击数据点跳转当日</span></div>${renderTrendLine(trendPts, { color: 'var(--orange)', onClick: 'goCalendarDate' })}</div>`;
 
   // 未关联记录（录了数据但找不到对应内容）— 折叠面板
   const orphanStats = [...currStats].filter(s => findLinkedTitle(s, 'video') === null).sort((a,b) => b.date.localeCompare(a.date));
@@ -418,7 +428,7 @@ function renderArticleData(period) {
   currAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) aiCounts[ai]++; }); });
   prevAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevAiCounts[ai]++; }); });
   html += renderChartLegend('article', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(AI_ENGINES, AI_ENGINES.map(ai => aiCounts[ai]), AI_ENGINES.map(ai => prevAiCounts[ai]), 'article', n => n);
+  html += renderDualBarChart(AI_ENGINES, AI_ENGINES.map(ai => aiCounts[ai]), AI_ENGINES.map(ai => prevAiCounts[ai]), 'article', n => n, ranges.label, ranges.prevLabel);
   html += '</div>';
 
   // 文书平台被收录情况（平台视角柱形图，当前周期 vs 上期）
@@ -437,18 +447,19 @@ function renderArticleData(period) {
     }
   });
   html += renderChartLegend('article', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(ARTICLE_PLATFORMS, ARTICLE_PLATFORMS.map(p => platformCounts[p]), ARTICLE_PLATFORMS.map(p => prevPlatformCounts[p]), 'article', n => n);
+  html += renderDualBarChart(ARTICLE_PLATFORMS, ARTICLE_PLATFORMS.map(p => platformCounts[p]), ARTICLE_PLATFORMS.map(p => prevPlatformCounts[p]), 'article', n => n, ranges.label, ranges.prevLabel);
   html += '</div>';
 
-  // AI 收录数趋势折线图（跟随周期：周=本周7天，月=近30天）
+  // AI 收录数趋势折线图（跟随周期：周=本周一~今天，月=近30天）
   const aiIsWeek = (period || 'month') === 'week';
+  const aiTrendDays = aiIsWeek ? ((new Date().getDay() + 6) % 7) + 1 : 30;
   const aiTrendPts = aggregateDaily(aiStats.filter(s => isArticle(s.platform)), s => {
     let n = 0;
     AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) n++; });
     return n;
-  }, aiIsWeek ? 7 : 30);
+  }, aiTrendDays, new Date());
   const aiTrendTitle = aiIsWeek ? '本周 AI 收录数趋势' : '近30天 AI 收录数趋势';
-  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${ranges.label}</span></div>${renderTrendLine(aiTrendPts, { color: 'var(--purple)', fmt: n => n })}</div>`;
+  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'}</span></div>${renderTrendLine(aiTrendPts, { color: 'var(--purple)', fmt: n => n })}</div>`;
 
   // 未关联记录（AI收录但找不到对应内容）
   const orphanAi = [...currAiStats].filter(s => findLinkedTitle(s, 'article') === null).sort((a,b) => b.date.localeCompare(a.date));
@@ -527,64 +538,96 @@ function renderAccountData() {
   html += '<div class="card"><div class="card-title">记录账号数据 <span class="badge">今日 ' + getToday() + ' · 最新总数据</span>';
   html += '<span class="platform-pill">' + VIDEO_PLATFORMS.map(function(p){ return '<button class="pill' + (p === accSelectedPlatform ? ' active' : '') + '" onclick="selectAccountPlatform(\'' + p + '\')">' + p + '</button>'; }).join('') + '</span>';
   html += '</div>';
-  // 账号ID + 备注（随选中平台预填；保存按钮在备注同行右侧）
-  var accIdRec = accountIds.find(function(x){ return x.platform === accSelectedPlatform; });
-  // 显式 Grid 3 列：账号ID / 备注 / 保存。前两列 stretch 与内容同高，第三列 auto 宽度 + align-self:end 贴齐行底（与 input 底对齐）
+  // 账号ID + 备注（输入框始终为空，避免预填导致保存后内容"看着没清"；已保存内容见下方表格）
   html += '<div class="form-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;">';
-  html += '<div class="form-group" style="margin-bottom:0;"><label>' + accSelectedPlatform + ' 账号ID</label><input type="text" id="accAccountId" value="' + escapeHtml(accIdRec && accIdRec.accountId || '') + '" placeholder="未设置"></div>';
-  html += '<div class="form-group" style="margin-bottom:0;"><label>备注</label><input type="text" id="accAccountNote" value="' + escapeHtml(accIdRec && accIdRec.note || '') + '" placeholder="昵称/主页链接等（可选）"></div>';
+  html += '<div class="form-group" style="margin-bottom:0;"><label>' + accSelectedPlatform + ' 账号ID</label><input type="text" id="accAccountId" placeholder="未设置"></div>';
+  html += '<div class="form-group" style="margin-bottom:0;"><label>备注</label><input type="text" id="accAccountNote" placeholder="昵称/主页链接等（可选）"></div>';
   html += '<div style="align-self:end;display:flex;justify-content:flex-end;">';
   // 保存 — 主题主色；padding/font 与 input 同高（约 43px），贴齐 input 底边
   html += '<button onclick="saveAccountIdOnly()" style="padding:11px 18px;background:linear-gradient(135deg, var(--accent), var(--accent-2));color:#fff;border:none;border-radius:var(--radius-xs);font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(91,140,255,0.3);">保存</button>';
   html += '</div></div>';
   // 已保存的账号ID（始终渲染表格，避免空/非空切换时跳动；每行带删除按钮）
   var savedIds = accountIds.filter(function(r){ return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()); });
-  html += '<div style="margin:10px 0 2px;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">已保存的账号ID（' + savedIds.length + '/4）</div>';
+  html += '<div style="margin:10px 0 2px;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">已保存的账号ID（' + savedIds.length + '条）</div>';
   html += '<table class="data-table"><thead><tr><th style="width:90px;">平台</th><th>账号ID</th><th>备注</th><th style="width:56px;"></th></tr></thead><tbody>';
-  var hasAny = false;
-  VIDEO_PLATFORMS.forEach(function(p) {
-    var sr = accountIds.find(function(x){ return x.platform === p; });
-    if (sr && ((sr.accountId && sr.accountId.trim()) || (sr.note && sr.note.trim()))) {
-      hasAny = true;
-      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td>' + escapeHtml(sr.accountId || '') + '</td><td>' + escapeHtml(sr.note || '') + '</td>';
-      html += '<td><button class="btn-delete-mini" onclick="deleteAccountId(\'' + p + '\')">删除</button></td></tr>';
-    }
-  });
-  if (!hasAny) {
+  if (savedIds.length === 0) {
     html += '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:14px 0;">暂无，保存后显示在此处</td></tr>';
+  } else {
+    // 按平台顺序（同平台多条按保存先后）展示所有记录
+    savedIds.slice().sort(function(a,b){
+      var ia = VIDEO_PLATFORMS.indexOf(a.platform), ib = VIDEO_PLATFORMS.indexOf(b.platform);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.id - b.id;
+    }).forEach(function(sr) {
+      html += '<tr><td><span class="platform-tag video">' + escapeHtml(sr.platform) + '</span></td><td>' + escapeHtml(sr.accountId || '') + '</td><td>' + escapeHtml(sr.note || '') + '</td>';
+      html += '<td><button class="btn-delete-mini" onclick="deleteAccountId(\'' + sr.id + '\')">删除</button></td></tr>';
+    });
   }
   html += '</tbody></table></div>';
   // 分割线：账号ID区 与 指标登记区 分隔
   html += '<div style="border-top:1px dashed var(--border);margin:12px 0;"></div>';
+  // 账号选择（该平台已登记的账号；无账号时仅「未指定账号」）
+  var accRecs = accountIds.filter(function(x){ return x.platform === accSelectedPlatform; });
+  html += '<div class="form-row">';
+  html += '<div class="form-group"><label>账号</label><select id="accAccountRef"><option value="">未指定账号</option>';
+  accRecs.forEach(function(rec) {
+    html += '<option value="' + rec.id + '">' + escapeHtml(rec.accountId || '') + (rec.note ? '（' + escapeHtml(rec.note) + '）' : '') + '</option>';
+  });
+  html += '</select></div></div>';
   html += '<div class="form-row">' + ACCOUNT_FIELDS.map(function(f){ return '<div class="form-group"><label>' + f.label + '</label><input type="number" id="acc_' + f.key + '" min="0" placeholder="' + f.ph + '"></div>'; }).join('') + '</div>';
   html += '<div class="toolbar" style="margin-top:8px;"><button class="btn-primary" onclick="saveAccountSnapshot()">保存账号数据（' + accSelectedPlatform + '）</button></div>';
   html += '</div>';
 
-  // 2. 各平台最新快照汇总（最新=最近一次记录）
-  html += '<div class="card"><div class="card-title">各平台最新账号数据 <span class="badge">最新快照</span></div>';
-  html += '<table class="data-table"><thead><tr><th>平台</th><th>记录日期</th><th>发布量</th><th>粉丝量</th><th>总播放量</th><th>总点赞量</th><th>总评论量</th><th>总转发/分享</th></tr></thead><tbody>';
+  // 2. 各平台最新快照汇总（按「平台+账号」每行，取该账号最新一次记录）
+  html += '<div class="card"><div class="card-title">各平台最新账号数据 <span class="badge">按账号最新快照</span></div>';
+  html += '<table class="data-table"><thead><tr><th>平台</th><th>账号</th><th>记录日期</th><th>发布量</th><th>粉丝量</th><th>总播放量</th><th>总点赞量</th><th>总评论量</th><th>总转发/分享</th></tr></thead><tbody>';
   VIDEO_PLATFORMS.forEach(function(p) {
-    var r = latestAccountSnapshot(p);
-    if (r) {
-      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td>' + escapeHtml(r.date) + '</td>';
-      html += '<td>' + formatNum(r.posts) + '</td><td>' + formatNum(r.followers) + '</td><td>' + formatNum(r.views) + '</td>';
-      html += '<td>' + formatNum(r.likes) + '</td><td>' + formatNum(r.comments) + '</td><td>' + formatNum(r.shares) + '</td></tr>';
-    } else {
-      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td colspan="7" style="color:var(--text3);">暂无数据</td></tr>';
+    var recs = accountIds.filter(function(x){ return x.platform === p; });
+    var any = false;
+    if (recs.length > 0) {
+      recs.forEach(function(rec) {
+        var r = latestAccountSnapshot(p, rec.id);
+        any = true;
+        html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td>' + escapeHtml(rec.accountId || '') + '</td>';
+        if (r) {
+          html += '<td>' + escapeHtml(r.date) + '</td><td>' + formatNum(r.posts) + '</td><td>' + formatNum(r.followers) + '</td><td>' + formatNum(r.views) + '</td>';
+          html += '<td>' + formatNum(r.likes) + '</td><td>' + formatNum(r.comments) + '</td><td>' + formatNum(r.shares) + '</td></tr>';
+        } else {
+          html += '<td colspan="7" style="color:var(--text3);">暂无数据</td></tr>';
+        }
+      });
+    }
+    // 未指定账号的快照单独一行（旧数据或没选账号记录的）
+    var orphan = latestUnspecifiedAccount(p);
+    if (orphan) {
+      any = true;
+      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td style="color:var(--text3);">未指定账号</td><td>' + escapeHtml(orphan.date) + '</td>';
+      html += '<td>' + formatNum(orphan.posts) + '</td><td>' + formatNum(orphan.followers) + '</td><td>' + formatNum(orphan.views) + '</td>';
+      html += '<td>' + formatNum(orphan.likes) + '</td><td>' + formatNum(orphan.comments) + '</td><td>' + formatNum(orphan.shares) + '</td></tr>';
+    }
+    if (!any) {
+      html += '<tr><td><span class="platform-tag video">' + p + '</span></td><td colspan="8" style="color:var(--text3);">暂无数据</td></tr>';
     }
   });
   html += '</tbody></table></div>';
 
-  // 3. 粉丝量趋势（全量快照，2 列布局：4 平台两行）
-  html += '<div class="card"><div class="card-title">粉丝量趋势 <span class="badge">按平台快照</span></div>';
+  // 3. 粉丝量趋势（按账号分组：每账号一条折线，2 列网格）
+  html += '<div class="card"><div class="card-title">粉丝量趋势 <span class="badge">按账号快照</span></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
+  var trendGroups = [];
   VIDEO_PLATFORMS.forEach(function(p) {
+    var recs = accountIds.filter(function(x){ return x.platform === p; });
+    recs.forEach(function(rec) {
+      trendGroups.push({ platform: p, label: rec.accountId || ('账号#' + rec.id), ref: rec.id });
+    });
+    if (latestUnspecifiedAccount(p)) trendGroups.push({ platform: p, label: '未指定账号', ref: null });
+  });
+  trendGroups.forEach(function(g) {
     var pts = accountStats
-      .filter(function(s){ return s.platform === p && s.followers !== undefined && s.followers !== null; })
+      .filter(function(s){ return s.platform === g.platform && String(s.accountRef || '') === String(g.ref || '') && s.followers !== undefined && s.followers !== null; })
       .sort(function(a,b){ return (a.date || '').localeCompare(b.date || ''); })
       .map(function(s){ return { date: s.date, value: Number(s.followers) || 0 }; });
     html += '<div>';
-    html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + p + '</div>';
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + escapeHtml(g.platform) + ' · ' + escapeHtml(g.label) + '</div>';
     if (pts.length >= 2) {
       html += renderTrendLine(pts, { color: '#2563eb' });
     } else if (pts.length === 1) {
@@ -602,9 +645,10 @@ function renderAccountData() {
   if (sorted.length === 0) {
     html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无账号数据记录，从上方表单开始记录</p>';
   } else {
-    html += '<table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th>较上次记录</th><th></th></tr></thead><tbody>';
+    html += '<table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>账号</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th>较上次记录</th><th></th></tr></thead><tbody>';
     sorted.forEach(function(r) {
       html += '<tr><td>' + escapeHtml(r.date) + '</td><td><span class="platform-tag video">' + escapeHtml(r.platform) + '</span></td>';
+      html += '<td style="font-size:12px;">' + escapeHtml(accountLabel(r.accountRef)) + '</td>';
       html += '<td>' + formatNum(r.posts) + '</td><td>' + formatNum(r.followers) + '</td><td>' + formatNum(r.views) + '</td>';
       html += '<td>' + formatNum(r.likes) + '</td><td>' + formatNum(r.comments) + '</td><td>' + formatNum(r.shares) + '</td>';
       html += '<td style="font-size:12px;">' + accountDeltaStr(r) + '</td>';
@@ -617,11 +661,11 @@ function renderAccountData() {
   return html;
 }
 
-// 与上次记录对比：同平台早于当前记录且日期最近的一条，逐项计算差值
+// 与上次记录对比：同平台同账号早于当前记录且日期最近的一条，逐项计算差值
 function accountDeltaStr(r) {
   var prev = null;
   accountStats.forEach(function(s) {
-    if (s.platform === r.platform && (s.date || '') < (r.date || '') && (!prev || (s.date || '') > (prev.date || ''))) prev = s;
+    if (s.platform === r.platform && String(s.accountRef || '') === String(r.accountRef || '') && (s.date || '') < (r.date || '') && (!prev || (s.date || '') > (prev.date || ''))) prev = s;
   });
   if (!prev) return '<span style="color:var(--text3);">首条记录</span>';
   var parts = [];
@@ -637,55 +681,77 @@ function accountDeltaStr(r) {
   return parts.join(' · ');
 }
 
-// 某平台最近一条快照（默认全量；可传入过滤后的列表，如当前周期内）
-function latestAccountSnapshot(platform, list) {
+// 某平台（可选绑定账号 ref）最近一条快照；ref 不传 = 不限账号取最新
+function latestAccountSnapshot(platform, ref, list) {
   var arr = list || accountStats;
   var best = null;
   arr.forEach(function(s) {
-    if (s.platform === platform && (!best || (s.date || '') > (best.date || ''))) best = s;
+    var refOk = (ref === undefined || ref === null || ref === '') ? true : String(s.accountRef || '') === String(ref);
+    if (s.platform === platform && refOk && (!best || (s.date || '') > (best.date || ''))) best = s;
   });
   return best;
 }
 
-// 保存：日期=当天，平台=标题右侧按钮选中的平台；同日同平台指标覆盖（账号ID由独立按钮保存）
+// 该平台「未指定账号」快照（accountRef 为空，或指向不存在的账号记录）
+function latestUnspecifiedAccount(platform) {
+  var refs = accountIds.filter(function(x){ return x.platform === platform; }).map(function(x){ return String(x.id); });
+  var best = null;
+  accountStats.forEach(function(s) {
+    if (s.platform !== platform) return;
+    var refStr = String(s.accountRef || '');
+    if (refStr && refs.indexOf(refStr) >= 0) return; // 已归属某账号
+    if (!best || (s.date || '') > (best.date || '')) best = s;
+  });
+  return best;
+}
+
+// 账号显示名：未指定/无记录 → 「未指定账号」
+function accountLabel(ref) {
+  if (ref === undefined || ref === null || ref === '') return '未指定账号';
+  var rec = accountIds.find(function(x){ return String(x.id) === String(ref); });
+  return rec && rec.accountId ? rec.accountId : '未指定账号';
+}
+
+// 保存：日期=当天，平台=标题右侧按钮选中的平台，账号=表单下拉选中的账号；
+// 同日同平台同账号覆盖，否则新增（账号ID由独立按钮保存）
 function saveAccountSnapshot() {
   var date = getToday();
   var platform = accSelectedPlatform;
+  var accountRef = (document.getElementById('accAccountRef').value || '').trim() || null;
   var vals = {};
   ACCOUNT_FIELDS.forEach(function(f) { vals[f.key] = Math.max(0, parseInt(document.getElementById('acc_' + f.key).value, 10) || 0); });
   if (ACCOUNT_FIELDS.every(function(f){ return vals[f.key] === 0; })) { showToast('请至少填写一项指标数据'); return; }
   // 记录时间（导出时标注数据时效）
   var now = new Date();
   var recordedAt = date + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  var existing = accountStats.find(function(s){ return s.platform === platform && s.date === date; });
+  var existing = accountStats.find(function(s){ return s.platform === platform && s.date === date && String(s.accountRef || '') === String(accountRef || ''); });
   if (existing) { Object.assign(existing, vals); existing.recordedAt = recordedAt; }
-  else { accountStats.push(Object.assign({ id: Date.now(), date: date, platform: platform, recordedAt: recordedAt }, vals)); }
+  else { accountStats.push(Object.assign({ id: Date.now(), date: date, platform: platform, accountRef: accountRef, recordedAt: recordedAt }, vals)); }
   saveData('accountStats', accountStats); render(); showToast('账号数据已保存');
 }
 
 // 单独保存当前平台的账号ID/备注（两字段都空则删除该平台记录）
+// 保存账号ID：每次新增一条记录（一个平台可登记多个账号，不覆盖已有记录）
 function saveAccountIdOnly() {
   var platform = accSelectedPlatform;
   var accountId = (document.getElementById('accAccountId').value || '').trim();
   var note = (document.getElementById('accAccountNote').value || '').trim();
-  var existing = accountIds.find(function(x){ return x.platform === platform; });
-  if (existing) { existing.accountId = accountId; existing.note = note; }
-  else if (accountId || note) { accountIds.push({ id: Date.now() + Math.random(), platform: platform, accountId: accountId, note: note }); }
-  accountIds = accountIds.filter(function(r){ return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()); });
-  saveData('accountIds', accountIds); render(); showToast('账号ID已保存');
+  if (!accountId && !note) { showToast('请填写账号ID或备注'); return; }
+  accountIds.push({ id: Date.now() + Math.random(), platform: platform, accountId: accountId, note: note });
+  saveData('accountIds', accountIds); render(); showToast(platform + '账号ID已保存');
 }
 
-// 删除指定平台的账号ID记录
-function deleteAccountId(platform) {
-  var existing = accountIds.find(function(x){ return x.platform === platform; });
-  if (!existing) { showToast('该平台暂无账号ID'); return; }
+// 删除单条账号ID记录（按记录 id）
+function deleteAccountId(id) {
+  var rec = accountIds.find(function(x){ return String(x.id) === String(id); });
+  if (!rec) { showToast('该记录不存在'); return; }
   showConfirm({
     title: '确认删除',
-    desc: '确定删除' + platform + '的账号ID记录吗？',
+    desc: '确定删除' + rec.platform + '的这条账号ID记录吗？',
     danger: true,
     onOk: function() {
-      accountIds = accountIds.filter(function(r){ return r.platform !== platform; });
-      saveData('accountIds', accountIds); render(); showToast(platform + '账号ID已删除');
+      accountIds = accountIds.filter(function(r){ return String(r.id) !== String(id); });
+      saveData('accountIds', accountIds); render(); showToast(rec.platform + '账号ID已删除');
     }
   });
 }

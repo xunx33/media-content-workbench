@@ -3,12 +3,19 @@ function renderContent() {
   let html = `<div class="card"><div class="card-title">内容登记 <span class="badge" id="contentCount">${filtered.length}条</span></div>`;
   html += `<div class="search-box">
     <span class="search-icon">&#128269;</span>
-    <input type="text" id="searchInput" placeholder="搜索标题/选题/平台/链接..." value="${searchKeyword}" oninput="handleSearch(this.value)">
+    <input type="text" id="searchInput" placeholder="搜索标题/选题/平台/链接...（输入后按回车或点搜索）" value="${searchKeyword}" onkeydown="if(event.key==='Enter')doSearch()">
     ${searchKeyword ? `<button class="search-clear" onclick="clearSearch()">清除</button>` : ''}
+    <button class="search-btn" onclick="doSearch()">搜索</button>
   </div>`;
   html += `<div class="filter-pills">
-    <span class="filter-pill ${!contentFilterType ? 'active' : ''}" onclick="filterContent('all',this)">全部</span>
-    <span class="filter-pill ${contentFilterType === 'today' ? 'active' : ''}" onclick="filterContent('today',this)">今日</span>
+    <span class="filter-pill ${!contentFilterType && !contentDateFilter ? 'active' : ''}" onclick="filterContent('all',this)">全部</span>
+    <select class="filter-select" id="dateFilterSelect" onchange="filterDateSelect(this.value)" aria-label="日期筛选">
+      <option value="">日期筛选</option>
+      <option value="today" ${contentDateFilter === 'today' ? 'selected' : ''}>今日</option>
+      <option value="yesterday" ${contentDateFilter === 'yesterday' ? 'selected' : ''}>昨日</option>
+      <option value="week" ${contentDateFilter === 'week' ? 'selected' : ''}>本周</option>
+      <option value="month" ${contentDateFilter === 'month' ? 'selected' : ''}>本月</option>
+    </select>
     <select class="filter-select" id="platformFilterSelect" onchange="filterPlatformSelect(this.value)" aria-label="平台筛选">
       <option value="">平台筛选</option>
       <optgroup label="短视频平台">
@@ -174,6 +181,13 @@ function saveContentData() {
 
 function filterContent(filter, el) {
   contentFilterType = filter === 'all' ? '' : filter;
+  if (filter === 'all') contentDateFilter = ''; // 点「全部」同时清掉日期筛选
+  render();
+}
+
+// 日期筛选下拉：今日/昨日/本周/本月；选回「日期筛选」空值 → 取消日期过滤
+function filterDateSelect(value) {
+  contentDateFilter = value;
   render();
 }
 

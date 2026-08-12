@@ -142,21 +142,24 @@ a { color: var(--accent); text-decoration: none; }
   background: var(--accent-soft);
 }
 
-/* 导出下拉菜单 */
+/* 导出下拉菜单：与触发按钮等宽、方形容器、选项用分割线分隔 */
 .export-dropdown { position: relative; display: inline-block; }
 .export-trigger { display: inline-flex; align-items: center; gap: 2px; }
 .export-menu {
-  display: none; position: absolute; top: 100%; left: 0; margin-top: 6px;
+  min-width: 130px;
+  display: none; position: absolute; top: 100%; left: 0; right: 0;
+  margin-top: 6px; padding: 4px 0;
   background: var(--card-solid); border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xs); box-shadow: var(--shadow);
-  z-index: 60; min-width: 132px; overflow: hidden;
+  border-radius: 0; box-shadow: var(--shadow);
+  z-index: 60; overflow: hidden;
 }
 .export-menu.open { display: block; animation: overlayIn 0.18s var(--ease); }
 .export-item {
   display: block; width: 100%; text-align: left; padding: 10px 14px;
-  background: transparent; border: none; color: var(--text);
-  font-size: 13px; cursor: pointer; white-space: nowrap;
+  background: transparent; border: none; border-bottom: 1px solid var(--border);
+  color: var(--text); font-size: 13px; cursor: pointer; white-space: nowrap;
 }
+.export-item:last-child { border-bottom: none; }
 .export-item:hover { background: var(--accent-soft); color: var(--text); }
 #importFile { display: none; }
 
@@ -1000,3 +1003,16 @@ a { color: var(--accent); text-decoration: none; }
 }
 .filter-select:hover { border-color: var(--accent); color: var(--text); }
 .filter-select:focus { border-color: var(--accent); }
+
+/* 折线图数据点：hover 高亮反馈（与柱形图 title 同机制，补充视觉提示） */
+.trend-svg circle { cursor: pointer; transition: r .12s ease, stroke-width .12s ease, fill-opacity .12s ease; }
+.trend-svg circle:hover { r: 8; fill-opacity: 1; stroke: var(--text); stroke-width: 2.5; }
+
+/* 内容登记搜索：手动触发按钮（回车/点击搜索，不随输入实时搜） */
+.search-box .search-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff; border: none; padding: 5px 14px; border-radius: 7px;
+  font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+  transition: all 0.2s var(--ease);
+}
+.search-box .search-btn:hover { filter: brightness(1.1); }

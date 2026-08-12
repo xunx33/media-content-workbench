@@ -97,10 +97,11 @@ function buildSampleData(today) {
   };
   let aid = 1;
   const accountStats = [];
+  const ACC_REF = { '抖音': 501, '快手': 502, '小红书': 503, '视频号': 504 }; // 关联下方账号ID示例记录
   VIDEO_PLATFORMS.forEach((p) => {
     const b = accBase[p];
     dates.forEach((date, di) => {
-      accountStats.push({ id: aid++, date: date, recordedAt: date + ' 10:00', platform: p, posts: b.posts[di], followers: b.followers[di], views: b.views[di], likes: b.likes[di], comments: b.comments[di], shares: b.shares[di] });
+      accountStats.push({ id: aid++, date: date, recordedAt: date + ' 10:00', platform: p, accountRef: ACC_REF[p], posts: b.posts[di], followers: b.followers[di], views: b.views[di], likes: b.likes[di], comments: b.comments[di], shares: b.shares[di] });
     });
   });
 

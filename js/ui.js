@@ -72,10 +72,22 @@ function saveContent() {
   const topic = document.getElementById('cTopic').value.trim();
   const url = document.getElementById('cUrl').value.trim();
   if (!title) { showToast('请输入标题'); return; }
+  if (url && !/^https?:\/\//i.test(url)) { showToast('链接格式错误：需以 http:// 或 https:// 开头'); return; }
   let savedId = null;
   if (editId) {
     const c = contents.find(x => x.id == editId || x.id == Number(editId));
-    if (c) { c.title = title; c.platform = platform; c.topic = topic; c.url = url; c.createdAt = date; savedId = c.id; }
+    if (c) {
+      c.title = title; c.platform = platform; c.topic = topic; c.url = url; c.createdAt = date; savedId = c.id;
+      // 同步统计表标题副本（避免导出/复盘读到旧标题）
+      let statChanged = false;
+      stats.forEach(s => {
+        if (s.contentId == c.id || s.contentId == Number(c.id) || (s.platform === c.platform && s.date === c.createdAt)) { s.title = title; statChanged = true; }
+      });
+      aiStats.forEach(s => {
+        if (s.contentId == c.id || s.contentId == Number(c.id) || (s.platform === c.platform && s.date === c.createdAt)) { s.title = title; statChanged = true; }
+      });
+      if (statChanged) { saveData('stats', stats); saveData('aiStats', aiStats); }
+    }
   } else {
     savedId = Date.now();
     contents.push({ id: savedId, title, platform, topic, url, createdAt: date });
@@ -108,7 +120,10 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
   pendingLinkTaskId = null;
 }
-document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+// 弹窗退出方式：仅「取消」按钮或键盘 ESC；点击空白处不关闭
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
 
 // ===== NAV =====
 document.querySelectorAll('.nav-tab').forEach(tab => {
