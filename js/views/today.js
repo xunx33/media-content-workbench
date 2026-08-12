@@ -14,12 +14,12 @@ function renderToday() {
   </div>`;
 
   // 短视频平台（全部 4 个有内容）
-  html += '<div style="font-size:13px;color:#fdba74;margin-bottom:6px;font-weight:600;">短视频平台（全部 4 个有内容）</div><ul class="today-list">';
+  html += '<div style="font-size:13px;color:var(--video-orange-light);margin-bottom:6px;font-weight:600;">短视频平台（全部 4 个有内容）</div><ul class="today-list">';
   VIDEO_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'video'));
   html += '</ul>';
 
   // 文书平台（至少 3 个平台有内容）
-  html += '<div style="font-size:13px;color:#c4b5fd;margin:12px 0 6px;font-weight:600;">文书平台（至少 3 个平台有内容）</div><ul class="today-list">';
+  html += '<div style="font-size:13px;color:var(--article-purple-light);margin:12px 0 6px;font-weight:600;">文书平台（至少 3 个平台有内容）</div><ul class="today-list">';
   ARTICLE_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'article'));
   html += '</ul>';
 
@@ -71,7 +71,7 @@ function renderContentDetail(content) {
   const safeLink = safeUrl(content.url);
   let html = `<div class="content-detail-item">
     <div class="task-detail-row"><span class="detail-label">标题</span><span>${escapeHtml(content.title)}</span></div>
-    ${safeLink ? `<div class="task-detail-row"><span class="detail-label">链接</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" style="color:#7da7ff;word-break:break-all;">${escapeHtml(content.url)}</a></div>` : ''}
+    ${safeLink ? `<div class="task-detail-row"><span class="detail-label">链接</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" style="color:var(--link-blue);word-break:break-all;">${escapeHtml(content.url)}</a></div>` : ''}
     <div class="task-detail-row"><span class="detail-label">日期</span><span>${content.createdAt || ''}${content.topic ? ' · 选题：' + escapeHtml(content.topic) : ''}</span></div>`;
 
   // 数据摘要（视频 / AI收录，按平台动态显示）
@@ -96,7 +96,7 @@ function renderContentDetail(content) {
 
   // 操作入口：数据录入 / 编辑 / 删除
   html += `<div class="task-detail-actions">
-    <button class="btn-publish" onclick="openDataModal('${content.id}')">数据录入</button>
+    <button class="btn-data-entry" onclick="openDataModal('${content.id}')">数据录入</button>
     <button class="btn-edit" onclick="editContent('${content.id}')">编辑</button>
     <button class="btn-delete" onclick="deleteContent('${content.id}')">删除</button>
   </div>`;

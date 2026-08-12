@@ -46,9 +46,9 @@ function renderCalendar() {
     const counts = getDayCounts(selectedDate);
     const isPast = selectedDate < todayStr;
     html += `<div class="day-detail"><h4>${selectedDate} 发布任务</h4>`;
-    html += '<div style="font-size:12px;color:#fdba74;margin-bottom:4px;font-weight:600;">短视频平台（全部 4 个有内容）</div>';
+    html += '<div style="font-size:12px;color:var(--video-orange-light);margin-bottom:4px;font-weight:600;">短视频平台（全部 4 个有内容）</div>';
     VIDEO_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'video'));
-    html += '<div style="font-size:12px;color:#c4b5fd;margin:8px 0 4px;font-weight:600;">文书平台（至少 3 个平台有内容）</div>';
+    html += '<div style="font-size:12px;color:var(--article-purple-light);margin:8px 0 4px;font-weight:600;">文书平台（至少 3 个平台有内容）</div>';
     ARTICLE_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'article'));
     html += '</div>';
   }

@@ -163,10 +163,21 @@ function saveReview() {
   const problems = document.getElementById('reviewProblems').value.trim();
   const plans = document.getElementById('reviewPlans').value.trim();
   if (!highlights && !problems && !plans) { showToast('请至少填写一项内容'); return; }
-  // 同日同周期同类型覆盖
-  const existing = reviews.find(r => r.date === date && r.period === period && r.type === type);
-  if (existing) { existing.highlights = highlights; existing.problems = problems; existing.plans = plans; }
-  else reviews.push({ id: Date.now(), type, period, date, highlights, problems, plans });
+
+  // 只保存最新的「本周 / 本月」复盘：
+  // 1) 同周期(period) + 同类型(type) 直接覆盖 —— 每次保存即覆盖旧日期的旧数据
+  // 2) 丢弃不在当前周 / 当前月的旧复盘，确保只留存最新本周、本月
+  const weekRange = getPeriodRanges('week');
+  const monthRange = getPeriodRanges('month');
+  const inWeek = d => d >= weekRange.start && d <= weekRange.end;
+  const inMonth = d => d >= monthRange.start && d <= monthRange.end;
+  reviews = reviews.filter(r => {
+    if (r.period === period && r.type === type) return false;          // 覆盖同类旧记录
+    if (r.period === 'week' && !inWeek(r.date || '')) return false;    // 旧周复盘丢弃
+    if (r.period === 'month' && !inMonth(r.date || '')) return false;  // 旧月复盘丢弃
+    return true;
+  });
+  reviews.push({ id: Date.now(), type, period, date, highlights, problems, plans });
   saveData('reviews', reviews); render(); showToast('复盘已保存');
 }
 
@@ -345,7 +356,7 @@ function renderVideoData(period) {
   const trendTitle = isWeek ? '本周播放量趋势' : '近30天播放量趋势';
   // 周模式窗口=本周一~今天（与周期范围一致，不含上周数据）；月模式近30天
   const trendPts = aggregateDaily(stats.filter(s => isVideo(s.platform)), s => s.views || 0, trendDays, new Date());
-  html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${isWeek ? '本周' : '近30天'} · 4平台合计 · 点击数据点跳转当日</span></div>${renderTrendLine(trendPts, { color: 'var(--orange)', onClick: 'goCalendarDate' })}</div>`;
+  html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${isWeek ? '本周' : '近30天'} · 4平台合计 · 点击数据点跳转当日</span></div>${renderTrendLine(trendPts, { color: '#fb923c', onClick: 'goCalendarDate' })}</div>`;
 
   // 未关联记录（录了数据但找不到对应内容）— 折叠面板
   const orphanStats = [...currStats].filter(s => findLinkedTitle(s, 'video') === null).sort((a,b) => b.date.localeCompare(a.date));
@@ -459,7 +470,7 @@ function renderArticleData(period) {
     return n;
   }, aiTrendDays, new Date());
   const aiTrendTitle = aiIsWeek ? '本周 AI 收录数趋势' : '近30天 AI 收录数趋势';
-  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'}</span></div>${renderTrendLine(aiTrendPts, { color: 'var(--purple)', fmt: n => n })}</div>`;
+  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n })}</div>`;
 
   // 未关联记录（AI收录但找不到对应内容）
   const orphanAi = [...currAiStats].filter(s => findLinkedTitle(s, 'article') === null).sort((a,b) => b.date.localeCompare(a.date));
@@ -544,7 +555,7 @@ function renderAccountData() {
   html += '<div class="form-group" style="margin-bottom:0;"><label>备注</label><input type="text" id="accAccountNote" placeholder="昵称/主页链接等（可选）"></div>';
   html += '<div style="align-self:end;display:flex;justify-content:flex-end;">';
   // 保存 — 主题主色；padding/font 与 input 同高（约 43px），贴齐 input 底边
-  html += '<button onclick="saveAccountIdOnly()" style="padding:11px 18px;background:linear-gradient(135deg, var(--accent), var(--accent-2));color:#fff;border:none;border-radius:var(--radius-xs);font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(91,140,255,0.3);">保存</button>';
+  html += '<button class="btn-save" onclick="saveAccountIdOnly()" style="padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;">保存</button>';
   html += '</div></div>';
   // 已保存的账号ID（始终渲染表格，避免空/非空切换时跳动；每行带删除按钮）
   var savedIds = accountIds.filter(function(r){ return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()); });
@@ -629,7 +640,7 @@ function renderAccountData() {
     html += '<div>';
     html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + escapeHtml(g.platform) + ' · ' + escapeHtml(g.label) + '</div>';
     if (pts.length >= 2) {
-      html += renderTrendLine(pts, { color: '#2563eb' });
+      html += renderTrendLine(pts, { color: '#5b8cff' });
     } else if (pts.length === 1) {
       html += '<div class="trend-box"><div class="trend-single">共 <b style="color:var(--accent);">' + formatNum(pts[0].value) + '</b></div></div>';
     } else {

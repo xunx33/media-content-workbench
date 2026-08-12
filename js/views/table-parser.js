@@ -836,7 +836,7 @@ function renderContentItem(c) {
       ${hasData ? dataHtml : '<div class="content-data-empty">暂无数据</div>'}
     </div>
     <div class="content-data-btn-wrap">
-      <button class="btn-publish" onclick="openDataModal('${c.id}')">数据录入</button>
+      <button class="btn-data-entry" onclick="openDataModal('${c.id}')">数据录入</button>
     </div>
   </div>`;
 

@@ -74,6 +74,8 @@ function checkWeeklyReminder() {
 // ===== PWA：注册 Service Worker（本地 localhost 或 https 才支持安装）=====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(e => console.warn('[SW] 注册失败:', e));
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => reg.update())  // 启动立刻检查 SW 版本，配合 sw.js 的 CACHE 升档让用户刷新就能拿到新 CSS
+      .catch(e => console.warn('[SW] 注册失败:', e));
   });
 }

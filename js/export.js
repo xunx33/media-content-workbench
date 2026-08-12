@@ -8,7 +8,7 @@ function exportData() {
 }
 
 // ===== 导出 Excel（HTML 表格，Excel 双击可直接打开）=====
-// 四张表：数据概览 / 内容登记 / 视频数据 / 文书收录数据
+// 报表含：数据概览 / 内容登记 / 视频数据 / 视频平台账号数据 / 文书AI收录情况（视频平台复盘记录在其上方、文书平台复盘记录在其下方，存在复盘记录才显示这两栏）
 // 整体按「日期 + 平台」分组，同一日期的单元格纵向合并；只显示登记条数，不显示任务完成
 // 支持导出范围：全部 / 本周（周一~周日）/ 本月（日历月），区间复用数据复盘页的 getPeriodRanges
 
@@ -152,7 +152,7 @@ function buildVideoSheet(ds) {
   return html;
 }
 
-// 文书收录数据：来自 aiStats
+// 文书AI收录情况：来自 aiStats
 function buildAiSheet(ds) {
   const aiStats = ds.aiStats;
   const map = {};
@@ -172,8 +172,34 @@ function buildAiSheet(ds) {
         return [escapeHtml(s.platform), escapeHtml(statTitle(s)), ...engineCells];
       })
   }));
-  return buildMergedTable('文书收录数据', ['日期', '平台', '标题', ...AI_ENGINES], groups,
+  return buildMergedTable('文书AI收录情况', ['日期', '平台', '标题', ...AI_ENGINES], groups,
     '✓ = 该平台内容已被对应 AI 引擎收录；空白 = 未收录');
+}
+
+// 复盘记录表：type='video' 视频平台复盘 / type='article' 文书平台复盘
+// 仅在导出数据里存在对应类型复盘记录时才生成（范围外或为空则不显示该栏）
+function buildReviewSheet(ds, type, title) {
+  const list = (ds.reviews || []).filter(r => r.type === type);
+  if (list.length === 0) return '';
+  const periodOrder = { week: 0, month: 1 };
+  list.sort((a, b) =>
+    ((periodOrder[a.period] ?? 9) - (periodOrder[b.period] ?? 9)) ||
+    String(a.date || '').localeCompare(String(b.date || '')));
+  const headers = ['复盘周期', '复盘日期', '数据小结与亮点分析', '问题与不足', '下期计划'];
+  let html = `<h2>${escapeHtml(title)}</h2>`;
+  html += '<table><thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>';
+  list.forEach(r => {
+    const periodLabel = r.period === 'week' ? '本周' : (r.period === 'month' ? '本月' : (r.period || ''));
+    html += `<tr>
+      <td style="font-weight:600;white-space:nowrap;">${escapeHtml(periodLabel)}</td>
+      <td style="white-space:nowrap;">${escapeHtml(r.date || '')}</td>
+      <td>${escapeHtml(r.highlights || '')}</td>
+      <td>${escapeHtml(r.problems || '')}</td>
+      <td>${escapeHtml(r.plans || '')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  return html;
 }
 
 // 视频平台账号数据（仅导出各平台最新一次记录，标注记录日期/时间；未登记账号ID时留空）
@@ -287,23 +313,33 @@ function buildReportHtml(scope, scopeLabel) {
     stats: stats.filter(s => inRange(s.date || '')),
     aiStats: aiStats.filter(s => inRange(s.date || '')),
     accountStats: accountStats.filter(s => inRange(s.date || '')),
+    reviews: reviews.filter(r => inRange(r.date || '')), // 复盘记录按日期纳入导出范围
     accountIds: accountIds, // 账号ID为静态信息，不按日期过滤
   };
-  const sections = [
+  // 复盘记录栏：有视频类复盘 → 在「文书AI收录情况」上方插入；有文书类复盘 → 在下方插入；都没有则不显示
+  const videoReviews = ds.reviews.filter(r => r.type === 'video');
+  const articleReviews = ds.reviews.filter(r => r.type === 'article');
+  const metaParts = ['数据概览', '内容登记', '视频数据', '视频平台账号数据', '文书AI收录情况'];
+  if (videoReviews.length) metaParts.push('视频平台复盘记录');
+  if (articleReviews.length) metaParts.push('文书平台复盘记录');
+  const sectionsArr = [
     buildOverviewSheet(ds),
     buildContentRegSheet(ds),
     buildVideoSheet(ds),
     buildAccountSheet(ds),
-    buildAiSheet(ds),   // 文书收录数据放最下方
-  ].join('');
+  ];
+  if (videoReviews.length) sectionsArr.push(buildReviewSheet(ds, 'video', '视频平台复盘记录'));
+  sectionsArr.push(buildAiSheet(ds));   // 文书AI收录情况
+  if (articleReviews.length) sectionsArr.push(buildReviewSheet(ds, 'article', '文书平台复盘记录'));
+  const sections = sectionsArr.join('');
   const rangeText = range ? `（${range.start} ~ ${range.end}）` : '';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>新媒体工作台数据报表_${scopeLabel}_${getToday()}</title>
 <style>
 body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; margin: 20px; color: #1f2937; line-height: 1.5; }
-h1 { color: #1f2937; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
-h2 { color: #2563eb; border-bottom: 2px solid #93c5fd; padding-bottom: 5px; margin-top: 30px; }
+h1 { color: #1f2937; border-bottom: 3px solid #5b8cff; padding-bottom: 10px; }
+h2 { color: #5b8cff; border-bottom: 2px solid #93c5fd; padding-bottom: 5px; margin-top: 30px; }
 h3 { color: #374151; }
 table { border-collapse: collapse; width: 100%; margin: 10px 0 20px; font-size: 13px; }
 th, td { border: 1px solid #d1d5db; padding: 7px 11px; text-align: left; }
@@ -313,7 +349,7 @@ tr:nth-child(even) td { background: #f9fafb; }
 </style>
 </head><body>
 <h1>📊 新媒体工作台数据报表（${scopeLabel}${rangeText}）</h1>
-<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　报表含：数据概览 · 内容登记 · 视频数据 · 视频平台账号数据 · 文书收录数据</p>
+<p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　报表含：${metaParts.join(' · ')}</p>
 ${sections}
 </body></html>`;
   return html;
@@ -331,7 +367,12 @@ function exportExcel(scope) {
   a.download = `新媒体工作台_${scopeLabel}_${getToday()}.xls`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast(`已导出${scopeLabel}Excel 报表（数据概览/内容登记/视频数据/视频平台账号数据/文书收录数据）`);
+  const hasVReview = reviews.some(r => r.type === 'video');
+  const hasAReview = reviews.some(r => r.type === 'article');
+  const toastParts = ['数据概览/内容登记/视频数据/视频平台账号数据/文书AI收录情况'];
+  if (hasVReview) toastParts.push('视频平台复盘记录');
+  if (hasAReview) toastParts.push('文书平台复盘记录');
+  showToast(`已导出${scopeLabel}Excel 报表（${toastParts.join('/')}）`);
 }
 
 // 打印预览：打开 HTML 报表新窗口
@@ -380,7 +421,7 @@ function clearAllData() {
     <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据、账号总数据），此操作不可恢复！<br><br>建议先导出备份。</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save" style="background:linear-gradient(135deg,#f87171,#ef4444);" onclick="confirmClear()">确认清空</button>
+      <button class="btn-danger" onclick="confirmClear()">确认清空</button>
     </div>`;
   document.getElementById('modalOverlay').classList.add('active');
 }

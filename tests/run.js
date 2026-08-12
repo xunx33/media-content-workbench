@@ -218,6 +218,52 @@ test('导出写出的 7 个字段与导入读取的字段完全一致', () => {
 });
 
 // ============================================================
+// 测试 4：导出报表含复盘记录栏，且相对「文书AI收录情况」位置正确
+//  - 视频平台复盘记录 在 文书AI收录情况 上方
+//  - 文书平台复盘记录 在 文书AI收录情况 下方
+//  - 无复盘记录时两栏都不显示
+// 以 <h2> 章节标题作为定位锚点（meta 行也会含这些文字，plain indexOf 会误判）
+// ============================================================
+console.log('\n[4] 导出报表复盘记录栏位置');
+function buildReportHtmlWithReviews(reviewsData) {
+  const sandbox = makeSandbox();
+  vm.createContext(sandbox);
+  let code = '';
+  for (const f of RENDER_LOAD_FILES) {
+    code += '\n;// === ' + f + ' ===\n' + fs.readFileSync(path.join(JS_DIR, f), 'utf8');
+  }
+  const inject = `
+    ;(function(){
+      reviews = ${JSON.stringify(reviewsData)};
+      globalThis.__HTML__ = buildReportHtml('all', '全量');
+    })();
+  `;
+  vm.runInContext(code + inject, sandbox);
+  return sandbox.__HTML__ || '';
+}
+test('有复盘时视频复盘在文书AI收录情况上方、文书复盘在下方', () => {
+  const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
+  const html = buildReportHtmlWithReviews([
+    { id:1, type:'video', period:'week', date: today, highlights:'视频亮点', problems:'视频问题', plans:'视频计划' },
+    { id:2, type:'article', period:'month', date: today, highlights:'文书亮点', problems:'文书问题', plans:'文书计划' },
+  ]);
+  const iVideo = html.indexOf('<h2>视频平台复盘记录');
+  const iAi = html.indexOf('<h2>文书AI收录情况');
+  const iArticle = html.indexOf('<h2>文书平台复盘记录');
+  assert.ok(iVideo >= 0, '未出现「视频平台复盘记录」栏');
+  assert.ok(iAi >= 0, '未出现「文书AI收录情况」栏');
+  assert.ok(iArticle >= 0, '未出现「文书平台复盘记录」栏');
+  assert.ok(iVideo < iAi, '视频平台复盘记录 应在 文书AI收录情况 上方');
+  assert.ok(iAi < iArticle, '文书平台复盘记录 应在 文书AI收录情况 下方');
+});
+test('无复盘记录时两栏都不显示', () => {
+  const html = buildReportHtmlWithReviews([]);
+  assert.ok(html.indexOf('<h2>视频平台复盘记录</h2>') < 0, '无复盘时不应出现视频平台复盘记录栏');
+  assert.ok(html.indexOf('<h2>文书平台复盘记录</h2>') < 0, '无复盘时不应出现文书平台复盘记录栏');
+  assert.ok(html.indexOf('<h2>文书AI收录情况') >= 0, '无复盘时文书AI收录情况栏仍应存在');
+});
+
+// ============================================================
 // 汇总
 // ============================================================
 console.log(`\n结果：通过 ${passed} 项，失败 ${failed} 项`);

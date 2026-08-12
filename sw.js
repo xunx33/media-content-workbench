@@ -4,7 +4,8 @@
 //  - 页面导航（/index.html）network-first，离线时降级到缓存壳
 //  - 静态资源（css/js/图标）stale-while-revalidate（先给缓存、后台更新）
 // 版本号：改前端资源记得同步升 CACHE 版本，否则用户一直拿旧壳
-const CACHE = 'mcb-shell-v2';
+// 流程：每次对 css/js/html 做了用户可见的改动 → 升这个 → 升 index.html 里的 ?v= → app.js 也升级触发 reg.update()
+const CACHE = 'mcb-shell-v5';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
