@@ -145,9 +145,9 @@ function renderReviewPanel(period) {
           <button class="btn-delete-mini" onclick="deleteReview('${r.id}')" title="删除复盘">删除</button>
         </div>
         <div class="review-item-date">${r.date}</div>
-        ${r.highlights ? `<div class="review-item-line"><span style="color:var(--green);">小结与亮点：</span>${r.highlights}</div>` : ''}
-        ${r.problems ? `<div class="review-item-line"><span style="color:var(--red);">问题：</span>${r.problems}</div>` : ''}
-        ${r.plans ? `<div class="review-item-line"><span style="color:var(--purple);">计划：</span>${r.plans}</div>` : ''}
+        ${r.highlights ? `<div class="review-item-line"><span style="color:var(--green);">小结与亮点：</span>${escapeHtml(r.highlights)}</div>` : ''}
+        ${r.problems ? `<div class="review-item-line"><span style="color:var(--red);">问题：</span>${escapeHtml(r.problems)}</div>` : ''}
+        ${r.plans ? `<div class="review-item-line"><span style="color:var(--purple);">计划：</span>${escapeHtml(r.plans)}</div>` : ''}
       </div>`;
     });
   }

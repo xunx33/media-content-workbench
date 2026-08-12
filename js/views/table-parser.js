@@ -83,10 +83,10 @@ function refreshPendingPreview() {
   const platform = document.getElementById('parserPlatform').value;
   const detect = detectPlatformMismatch(pendingParserRows, platform);
   const warnHtml = detect.mismatch
-    ? `<br><span style="color:var(--red);font-weight:600;">⚠️ 表头特征疑似「${detect.likelyPlatform}」平台导出，与所选「${platform}」不匹配，请确认平台选择是否正确（可在导入时强制继续）</span>`
+    ? `<br><span style="color:var(--red);font-weight:600;">⚠️ 表头特征疑似「${escapeHtml(detect.likelyPlatform)}」平台导出，与所选「${platform}」不匹配，请确认平台选择是否正确（可在导入时强制继续）</span>`
     : '';
   preview.style.display = 'block';
-  preview.innerHTML = `📄 [${platform}] ${pendingParserFileName}：读取到 <b>${pendingParserRows.length - 1}</b> 行数据，表头：<code style="font-size:11px;">${(getHeaderRow(pendingParserRows) || []).slice(0,8).join(' / ')}</code><br><span style="color:var(--yellow);">已暂存，确认无误后点击下方「导入解析」开始导入。</span>${warnHtml}`;
+  preview.innerHTML = `📄 [${platform}] ${escapeHtml(pendingParserFileName)}：读取到 <b>${pendingParserRows.length - 1}</b> 行数据，表头：<code style="font-size:11px;">${(getHeaderRow(pendingParserRows) || []).slice(0,8).map(h => escapeHtml(h)).join(' / ')}</code><br><span style="color:var(--yellow);">已暂存，确认无误后点击下方「导入解析」开始导入。</span>${warnHtml}`;
   if (wrap) wrap.style.display = 'flex';
 }
 
@@ -567,7 +567,7 @@ function parseTableRows(rows, type, platform) {
       if (completion !== null) summary += ` 完播${completion}%`;
       if (avgWatch !== null) summary += ` 均播${avgWatch}s`;
       if (recommend > 0) summary += ` 推荐${recommend}`;
-      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${content.title}」${summary}</div>`);
+      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${escapeHtml(content.title)}」${summary}</div>`);
     } else {
       const ai = {};
       AI_ENGINES.forEach(eng => {
@@ -590,7 +590,7 @@ function parseTableRows(rows, type, platform) {
       parsedCount++;
       linkTaskToContent(platform, normDate, content.id);
       const yesCount = AI_ENGINES.filter(e => ai[e]).length;
-      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${content.title}」AI收录${yesCount}/6</div>`);
+      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${escapeHtml(content.title)}」AI收录${yesCount}/6</div>`);
     }
   }
 

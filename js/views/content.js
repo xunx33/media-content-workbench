@@ -3,7 +3,7 @@ function renderContent() {
   let html = `<div class="card"><div class="card-title">内容登记 <span class="badge" id="contentCount">${filtered.length}条</span></div>`;
   html += `<div class="search-box">
     <span class="search-icon">&#128269;</span>
-    <input type="text" id="searchInput" placeholder="搜索标题/选题/平台/链接...（输入后按回车或点搜索）" value="${searchKeyword}" onkeydown="if(event.key==='Enter')doSearch()">
+    <input type="text" id="searchInput" placeholder="搜索标题/选题/平台/链接...（输入后按回车或点搜索）" value="${escapeHtml(searchKeyword)}" onkeydown="if(event.key==='Enter')doSearch()">
     ${searchKeyword ? `<button class="search-clear" onclick="clearSearch()">清除</button>` : ''}
     <button class="search-btn" onclick="doSearch()">搜索</button>
   </div>`;
@@ -80,8 +80,8 @@ function renderVideoDataModal(c) {
         <div class="form-group"><label>涨粉</label><input type="number" id="statFollowers" value="${s ? s.followers : ''}" min="0"></div>
       </div>`;
   return `<h3>${pf}数据录入</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag video">${pf}</span> ${c.title}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
-    <div class="form-group"><label>作品标题/描述（可选）</label><input type="text" id="statTitle" value="${s && s.title ? s.title : ''}" placeholder="与登记内容一致时留空即可"></div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag video">${pf}</span> ${escapeHtml(c.title)}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
+    <div class="form-group"><label>作品标题/描述（可选）</label><input type="text" id="statTitle" value="${escapeHtml(s && s.title ? s.title : '')}" placeholder="与登记内容一致时留空即可"></div>
     <div class="form-row">
       <div class="form-group"><label>播放量</label><input type="number" id="statViews" value="${s ? s.views : ''}" min="0"></div>
       ${secondField}
@@ -103,7 +103,7 @@ function renderAiDataModal(c) {
   const s = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
   const savedAi = (s && s.ai) || {};
   return `<h3>文书AI收录录入</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag article">${c.platform}</span> ${c.title}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag article">${c.platform}</span> ${escapeHtml(c.title)}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
     <div class="form-group"><label>AI 收录情况（勾选已收录）</label>
       <div class="ai-checks" id="aiChecks">
         ${AI_ENGINES.map(eng => `<div class="ai-check-item ${savedAi[eng] ? 'checked' : ''}" data-ai="${eng}" onclick="toggleAiCheck(this)"><div class="check-box">${savedAi[eng] ? '&#10003;' : ''}</div><span>${eng}</span></div>`).join('')}
