@@ -875,6 +875,7 @@ function renderContentItem(c) {
   </div>`;
 
   return `<div class="content-item ${type}">
+    <div class="platform-initial ${type}">${PLATFORM_SHORT[c.platform] || (c.platform ? c.platform.charAt(0) : '')}</div>
     <div class="content-main">${leftHtml}</div>
     ${rightHtml}
   </div>`;

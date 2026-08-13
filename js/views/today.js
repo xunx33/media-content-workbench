@@ -41,11 +41,12 @@ function renderPlatformTodayItem(platform, count, date, type) {
   let html = `<li class="today-item ${count > 0 ? 'has-detail' : ''}">
     <div class="today-item-row">
       <span class="left">
-        <span class="platform-tag ${type}">${platform}</span>
+        <span class="platform-initial ${type}">${PLATFORM_SHORT[platform] || (platform ? platform.charAt(0) : '')}</span><span class="platform-tag ${type}">${platform}</span>
         ${count > 0
           ? `<span style="color:var(--green);font-size:12px;font-weight:600;">已发 ${count} 条</span><span class="expand-toggle" onclick="toggleTaskDetail(this)">&#9660;</span>`
           : `<span style="color:var(--text3);font-size:12px;">未登记</span>`}
       </span>
+      <span class="status-dot ${count > 0 ? 'done' : 'pending'}" title="${count > 0 ? '已登记' : '未登记'}"></span>
       <button class="btn-done" onclick="openAddModal('${platform}', null, '${date}')">+1</button>
     </div>`;
   if (count > 0) {
