@@ -119,14 +119,13 @@ function buildSampleData(today) {
     { id: 302, type: 'video', period: 'week', date: D0, highlights: '抖音防晒选题播放量破万，粉丝量稳步上升', problems: '小红书完播率偏低', plans: '尝试竖版封面+前3秒钩子' },
   ];
 
-  // tasks 由 render→ensureDailyTasks 自动生成（本月→今天全平台）
-  return { tasks: [], contents, stats, aiStats, reviews, accountStats, accountIds };
+  return { contents, stats, aiStats, reviews, accountStats, accountIds };
 }
 
 // 静默重置示例（不弹确认框，供版本迁移用）
 function fillSampleDataSilent() {
   const s = buildSampleData(getToday());
-  tasks = s.tasks; contents = s.contents; stats = s.stats; aiStats = s.aiStats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds;
-  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
+  contents = s.contents; stats = s.stats; aiStats = s.aiStats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds;
+  saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
   render(); showToast('已重置为最新示例数据');
 }

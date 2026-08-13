@@ -94,7 +94,7 @@ function openWorkbench(port) {
     } else {
       // 被其他程序占了：明确报错 + 给出解决建议
       line('✗', c.red, `端口 ${PORT} 被其他程序占用（${procName || '未知'}，PID: ${pid || '?'}）`);
-      line(' ', c.gray, `换端口启动：set PORT=3001 && start.bat`);
+      line(' ', c.gray, `换端口启动：set PORT=3001 && ViewStart.bat`);
       console.log('');
       await pressEnter();
       process.exit(1);

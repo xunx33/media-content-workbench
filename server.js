@@ -1,5 +1,5 @@
 // ===== 本地数据服务 =====
-// 功能：静态文件服务 + JSON 数据读写 API（替代 localStorage 和 CloudBase）
+// 功能：静态文件服务 + JSON 数据读写 API（替代 localStorage）
 // 端口：3000（可用环境变量 PORT 覆盖）
 // 存储：./data/*.json（每个 key 一个文件）
 // 依赖：仅 Node.js 内置模块（http/fs/path）

@@ -1,25 +1,16 @@
 function renderToday() {
   const today = getToday();
   const counts = getDayCounts(today);
-  const videoDone = VIDEO_PLATFORMS.filter(p => counts[p] > 0).length;
-  const articleDone = ARTICLE_PLATFORMS.filter(p => counts[p] > 0).length;
-  const complete = isDayComplete(today);
 
   let html = '<div class="today-section"><h3>今日待办</h3>';
 
-  // 当日完成状态条
-  html += `<div class="today-progress" style="background:${complete ? 'rgba(52,211,153,0.12)' : 'var(--bg-2)'};border:1px solid ${complete ? 'rgba(52,211,153,0.35)' : 'var(--border)'};border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
-    <span style="font-size:13px;font-weight:600;color:${complete ? 'var(--green)' : 'var(--text)'};">${complete ? '✅ 今日任务已完成' : '今日任务进行中'}</span>
-    <span style="font-size:12px;color:var(--text2);">短视频 ${videoDone}/${VIDEO_PLATFORMS.length} · 文书 ${articleDone}/${ARTICLE_PLATFORMS.length}</span>
-  </div>`;
-
-  // 短视频平台（全部 4 个有内容）
-  html += '<div style="font-size:13px;color:var(--video-orange-light);margin-bottom:6px;font-weight:600;">短视频平台（全部 4 个有内容）</div><ul class="today-list">';
+  // 短视频平台（全部 4 个）
+  html += '<div style="font-size:13px;color:var(--video-orange-light);margin-bottom:6px;font-weight:600;">短视频平台</div><ul class="today-list">';
   VIDEO_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'video'));
   html += '</ul>';
 
-  // 文书平台（至少 3 个平台有内容）
-  html += '<div style="font-size:13px;color:var(--article-purple-light);margin:12px 0 6px;font-weight:600;">文书平台（至少 3 个平台有内容）</div><ul class="today-list">';
+  // 文书平台
+  html += '<div style="font-size:13px;color:var(--article-purple-light);margin:12px 0 6px;font-weight:600;">文书平台</div><ul class="today-list">';
   ARTICLE_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'article'));
   html += '</ul>';
 
@@ -29,6 +20,7 @@ function renderToday() {
   const todayContents = contents.filter(c => c.createdAt === today);
   const vTotal = todayContents.filter(c => isVideo(c.platform)).length;
   const aTotal = todayContents.filter(c => isArticle(c.platform)).length;
+  const videoDone = VIDEO_PLATFORMS.filter(p => todayContents.some(c => c.platform === p)).length;
   html += `<div class="card"><div class="card-title">今日发布概览</div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-value">${vTotal}</div><div class="stat-label">短视频条数</div></div>
@@ -118,22 +110,5 @@ function toggleTaskDetail(arrowEl) {
   } else {
     detail.classList.add('open');
     arrowEl.style.transform = 'rotate(180deg)';
-  }
-}
-
-// 登记内容成功后，保证任务锚点存在（完成状态以登记为准，动态计算）
-function linkTaskToContent(platform, date, contentId) {
-  let t = tasks.find(x => x.date === date && x.platform === platform);
-  if (!t) {
-    t = {
-      id: Date.now() + Math.random(),
-      date, platform,
-      type: isVideo(platform) ? 'video' : 'article',
-      done: false, linked: false,
-      contentId: contentId || null,
-      target: DAILY_TARGET
-    };
-    tasks.push(t);
-    saveData('tasks', tasks);
   }
 }

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""用 GBK 编码生成项目内两个启动 bat（启动工作台.bat 静默版 / start.bat 可见诊断版）：
+"""用 GBK 编码生成项目内两个启动 bat（StartWorkbench.bat 静默版 / ViewStart.bat 可见诊断版）：
 优先打开桌面 PWA 快捷方式，否则回退浏览器。
 跨设备可用：ROOT 取本脚本所在目录。cmd 在中文 Windows 默认代码页 936(GBK)，UTF-8 写中文会乱码，故必须存成 GBK。
 用法：python make_bats.py
@@ -20,7 +20,7 @@ pwa_common = (
 def head():
     return '@echo off\r\n'
 
-# 1. 静默版 启动工作台.bat（桌面 .lnk 指向它）
+# 1. 静默版 StartWorkbench.bat（桌面 .lnk 指向它）
 silent = head() + (
     'cd /d %~dp0\r\n'
     'set MCB_SILENT=1\r\n'
@@ -28,7 +28,7 @@ silent = head() + (
     'ping -n 3 127.0.0.1 >nul\r\n'
 ) + pwa_common + 'exit /b\r\n'
 
-# 2. 可见诊断版 start.bat
+# 2. 可见诊断版 ViewStart.bat
 visible = head() + (
     'cd /d %~dp0\r\n'
     'set MCB_SILENT=1\r\n'
@@ -47,6 +47,6 @@ def write_gbk(path, content):
         f.write(data)
     print('written:', path, len(data), 'bytes (GBK)')
 
-write_gbk(os.path.join(ROOT, '启动工作台.bat'), silent)
-write_gbk(os.path.join(ROOT, 'start.bat'), visible)
+write_gbk(os.path.join(ROOT, 'StartWorkbench.bat'), silent)
+write_gbk(os.path.join(ROOT, 'ViewStart.bat'), visible)
 print('DONE')

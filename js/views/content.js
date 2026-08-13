@@ -162,7 +162,6 @@ function saveContentData() {
     if (existing) Object.assign(existing, statData);
     else stats.push({ id: Date.now() + Math.random(), ...statData });
     saveData('stats', stats);
-    markTaskRecorded(c.platform, c.createdAt);
   } else {
     const ai = {};
     document.querySelectorAll('#aiChecks .ai-check-item').forEach(el => {
@@ -172,7 +171,6 @@ function saveContentData() {
     if (existing) { existing.ai = ai; existing.contentId = c.id; }
     else aiStats.push({ id: Date.now() + Math.random(), platform: c.platform, date: c.createdAt, title: c.title, ai, contentId: c.id });
     saveData('aiStats', aiStats);
-    markTaskRecorded(c.platform, c.createdAt);
   }
   pendingDataContentId = null;
   closeModal(); render();
@@ -206,26 +204,16 @@ function toggleSortViews() {
 function deleteContent(id) {
   showConfirm({
     title: '确认删除',
-    desc: '确定删除这条记录吗？删除后不可恢复。<br><br><span style="color:var(--text3);">关联的发布任务将回到「未登记」状态，可重新登记。</span>',
+    desc: '确定删除这条记录吗？删除后不可恢复。',
     danger: true,
     onOk: () => {
       const numId = Number(id);
       contents = contents.filter(c => c.id != id && c.id != numId);
-      // 解除任务关联：linked 重置，contentId 清空（任务保留完成状态，重新显示「登记链接」）
-      let taskChanged = false;
-      tasks.forEach(t => {
-        if (t.contentId !== null && t.contentId !== undefined && (t.contentId == id || t.contentId == numId)) {
-          t.contentId = null;
-          t.linked = false;
-          taskChanged = true;
-        }
-      });
-      if (taskChanged) saveData('tasks', tasks);
       // 同步清理关联的视频数据 / AI收录数据
       stats = stats.filter(s => !(s.contentId == id || s.contentId == numId));
       aiStats = aiStats.filter(s => !(s.contentId == id || s.contentId == numId));
       saveData('stats', stats); saveData('aiStats', aiStats);
-      saveData('contents', contents); render(); showToast('已删除，任务已回到未登记状态');
+      saveData('contents', contents); render(); showToast('已删除');
     }
   });
 }

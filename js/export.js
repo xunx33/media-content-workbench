@@ -1,6 +1,6 @@
 function exportData() {
-  const data = { version: 3, exportedAt: new Date().toISOString(), tasks, contents, stats, aiStats, reviews, accountStats, accountIds };
-  const counts = `任务${tasks.length}·内容${contents.length}·视频${stats.length}·文书${aiStats.length}·复盘${reviews.length}·账号数据${accountStats.length}·账号ID${accountIds.length}`;
+  const data = { version: 4, exportedAt: new Date().toISOString(), contents, stats, aiStats, reviews, accountStats, accountIds };
+  const counts = `内容${contents.length}·视频${stats.length}·文书${aiStats.length}·复盘${reviews.length}·账号数据${accountStats.length}·账号ID${accountIds.length}`;
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `新媒体工作台_${getToday()}.json`; a.click();
@@ -290,8 +290,8 @@ function openExportChoice(scope) {
     <h3>导出${scopeLabel}数据</h3>
     <p class="confirm-text">选择导出格式：</p>
     <div class="modal-actions" style="flex-direction:column;gap:8px;align-items:stretch;">
-      <button class="btn-save" onclick="exportExcel('${scope}'); closeModal();">📊 Excel表格（.xls格式报表，可手动修改）</button>
-      <button class="btn-save" style="background:linear-gradient(135deg,var(--accent-2),var(--accent));" onclick="printReport('${scope}'); closeModal();">🖨️ HTML格式（网页格式，Ctrl+P 可直接打印或导出PDF格式）</button>
+      <button class="btn-save" style="background:linear-gradient(135deg,var(--green),#10b981);" onclick="exportExcel('${scope}'); closeModal();">📊 Excel表格（.xls格式报表，可手动修改）</button>
+      <button class="btn-save" style="background:linear-gradient(135deg,var(--accent-2),var(--accent));" onclick="printReport('${scope}'); closeModal();">🖨️ HTML网页（网页端直开，可打印或存为PDF）</button>
       <button class="btn-cancel" onclick="closeModal()">取消</button>
     </div>`;
   document.getElementById('modalOverlay').classList.add('active');
@@ -393,7 +393,6 @@ function importData(event) {
     try {
       const data = JSON.parse(e.target.result);
       const picked = [];
-      if (data.tasks)    { tasks = data.tasks;           saveData('tasks', tasks);           picked.push('任务' + tasks.length); }
       if (data.contents) { contents = data.contents;     saveData('contents', contents);     picked.push('内容' + contents.length); }
       if (data.stats)    { stats = data.stats;           saveData('stats', stats);           picked.push('视频' + stats.length); }
       if (data.aiStats)  { aiStats = data.aiStats;       saveData('aiStats', aiStats);       picked.push('文书' + aiStats.length); }
@@ -427,9 +426,9 @@ function clearAllData() {
 }
 
 function confirmClear() {
-  tasks = []; contents = []; stats = []; aiStats = []; reviews = []; accountStats = []; accountIds = [];
-  saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
-  selectedDate = null; closeModal(); ensureDailyTasks(); render();
+  contents = []; stats = []; aiStats = []; reviews = []; accountStats = []; accountIds = [];
+  saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
+  selectedDate = null; closeModal(); render();
   showToast('已清空，已重置今日任务');
 }
 
@@ -440,8 +439,8 @@ function fillSampleData() {
     danger: true,
     onOk: () => {
       const s = buildSampleData(getToday());
-      tasks = s.tasks; contents = s.contents; stats = s.stats; aiStats = s.aiStats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds;
-      saveData('tasks', tasks); saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
+      contents = s.contents; stats = s.stats; aiStats = s.aiStats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds;
+      saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
       render(); showToast('已重置示例数据（最近3天）');
     }
   });

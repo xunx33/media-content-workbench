@@ -387,17 +387,9 @@ function saveStat() {
   if (existing) { existing.views = views; existing.likes = likes; existing.shares = shares; existing.comments = comments; }
   else stats.push({ id: Date.now(), platform, date, views, likes, shares, comments });
   saveData('stats', stats);
-  markTaskRecorded(platform, date);
-  render(); showToast(platform + ' 数据已保存，链路进度已更新');
+  render(); showToast(platform + ' 数据已保存');
 }
 
-// 数据保存成功后，确保任务链路完整（recorded 改为计算属性，不再存储）
-function markTaskRecorded(platform, date) {
-  const t = tasks.find(x => x.date === date && x.platform === platform);
-  if (t) {
-    if (!t.linked) { t.linked = true; saveData('tasks', tasks); }
-  }
-}
 
 function deleteStat(id) {
   showConfirm({
@@ -510,8 +502,7 @@ function saveAiStat() {
   if (existing) { existing.ai = ai; existing.title = title || existing.title; }
   else aiStats.push({ id: Date.now(), platform, date, title, ai });
   saveData('aiStats', aiStats);
-  markTaskRecorded(platform, date);
-  render(); showToast(platform + ' AI收录数据已保存，链路进度已更新');
+  render(); showToast(platform + ' AI收录数据已保存');
 }
 
 function deleteAiStat(id) {

@@ -93,8 +93,6 @@ function saveContent() {
     contents.push({ id: savedId, title, platform, topic, url, createdAt: date });
   }
   saveData('contents', contents); closeModal();
-  // 任务锚点同步（完成状态以登记为准，动态计算；此调用仅保证日历锚点存在）
-  linkTaskToContent(platform, date, savedId);
   pendingLinkTaskId = null;
   render();
   showToast(editId ? '已更新' : '已登记');
@@ -120,7 +118,7 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
   pendingLinkTaskId = null;
 }
-// 弹窗退出方式：仅「取消」按钮或键盘 ESC；点击空白处不关闭
+// 弹窗退出方式：仅「取消」按钮或键盘ESC；点击空白处不关闭
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeModal();
 });

@@ -118,7 +118,7 @@ test('hasCorruptChar 识别 U+FFFD 乱码替换符', () => {
 // ============================================================
 const PAYLOAD = '<img src=x onerror=alert(1)>';
 const MAL_URL = 'javascript:alert(1)';
-const KNOWN_DATA_FIELDS = ['tasks', 'contents', 'stats', 'aiStats', 'reviews', 'accountStats', 'accountIds'];
+const KNOWN_DATA_FIELDS = ['contents', 'stats', 'aiStats', 'reviews', 'accountStats', 'accountIds'];
 
 const HARNESS = `
 ;(function(){
@@ -206,7 +206,7 @@ test('导出写出的 7 个字段与导入读取的字段完全一致', () => {
   let m;
   const readRe = /data\.([A-Za-z_$][\w$]*)/g;
   while ((m = readRe.exec(src))) if (KNOWN_DATA_FIELDS.includes(m[1])) importRead.add(m[1]);
-  const restoreRe = /\b(tasks|contents|stats|aiStats|reviews|accountStats|accountIds)\s*=\s*[a-zA-Z_$][\w$]*\.(tasks|contents|stats|aiStats|reviews|accountStats|accountIds)/g;
+  const restoreRe = /\b(contents|stats|aiStats|reviews|accountStats|accountIds)\s*=\s*[a-zA-Z_$][\w$]*\.(contents|stats|aiStats|reviews|accountStats|accountIds)/g;
   while ((m = restoreRe.exec(src))) { importRead.add(m[1]); importRead.add(m[2]); }
 
   const missing = KNOWN_DATA_FIELDS.filter(k => !importRead.has(k));

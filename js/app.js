@@ -1,6 +1,5 @@
 // ===== 渲染入口 =====
 function render() {
-  ensureDailyTasks();
   const html = {
     today: renderToday,
     calendar: renderCalendar,
@@ -17,7 +16,7 @@ function render() {
 
 // 数据积累 30 条时，温和提示导出备份
 function checkBackupReminder() {
-  const total = tasks.length + contents.length + stats.length + aiStats.length;
+  const total = contents.length + stats.length + aiStats.length;
   if (total >= 30 && !localStorage.getItem(STORAGE_KEY + 'backup_reminded')) {
     localStorage.setItem(STORAGE_KEY + 'backup_reminded', '1');
     showToast('数据已积累30条，建议导出备份');
@@ -61,7 +60,7 @@ function checkWeeklyReminder() {
 
 // ===== 启动：等 store.js 数据加载完成再渲染 =====
 (async () => {
-  // 等待 store.js 的异步初始化（loadData + ensureDailyTasks + migrateStatsData）
+  // 等待 store.js 的异步初始化（loadData + migrateStatsData）
   if (window.storeReady) {
     try { await window.storeReady; } catch (e) { console.error('store 初始化失败', e); }
   }

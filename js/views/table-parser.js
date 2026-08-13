@@ -1,6 +1,8 @@
 function renderTableParser() {
   const videoCount = stats.length;
-  let html = `<div class="card"><div class="card-title">解析数据表格 <span class="badge">视频数据 ${videoCount}条</span></div>`;
+  const videoContents = contents.filter(c => isVideo(c.platform)).length;
+  const missCount = Math.max(videoContents - videoCount, 0);
+  let html = `<div class="card"><div class="card-title">解析数据表格 <span class="badge">视频内容 ${videoContents}条 · 已录数据 ${videoCount}条${missCount > 0 ? ` · 未录 ${missCount}条` : ''}</span></div>`;
   html += `<p style="font-size:12px;color:var(--text2);margin-bottom:10px;">选择<b>平台</b>后上传该平台导出的数据表（支持 <b>.xlsx</b> / <b>.csv</b> / <b>.tsv</b> / <b>.txt</b>），文件先<b>暂存</b>，确认无误后点「<b>导入解析</b>」：内容自动登记 + 数据自动填充，并同步到发布日历。</p>`;
 
   // 平台选择（仅 4 个短视频平台）；切换平台时刷新帮助说明 + 重检测暂存文件的匹配警告
@@ -116,6 +118,19 @@ async function handleParserFile(file) {
       if (rows.length === 0) { showToast('文件未解析到数据'); return; }
     }
 
+    // 上传即拦截：非平台数据表 / 缺少关键列 直接拒绝，不进入暂存
+    const detect = detectInvalidTable(rows, platform);
+    if (detect.invalid) {
+      preview.style.display = 'block';
+      preview.innerHTML = `❌ <b>${escapeHtml(file.name)}</b> 不是可导入的平台数据表：${escapeHtml(detect.reason)}<br><span style="font-size:11px;color:var(--text3);">请上传所选平台（${escapeHtml(platform)}）导出的数据表，或检查平台选择是否正确。</span>`;
+      pendingParserRows = null;
+      pendingParserFileName = '';
+      const wrap = document.getElementById('parserImportWrap');
+      if (wrap) wrap.style.display = 'none';
+      showToast('已拦截：不是有效的平台数据表');
+      return;
+    }
+
     // 暂存文件，等待用户确认后导入（预览含平台匹配检测，统一走 refreshPendingPreview）
     pendingParserRows = rows;
     pendingParserFileName = file.name;
@@ -133,6 +148,12 @@ async function handleParserFile(file) {
 function confirmImport() {
   if (!pendingParserRows) { showToast('请先上传文件'); return; }
   const platform = document.getElementById('parserPlatform').value;
+  // 兜底拦截：非平台数据表（上传时已检测，此处防止绕过）
+  const invalid = detectInvalidTable(pendingParserRows, platform);
+  if (invalid.invalid) {
+    showToast('已拦截：' + invalid.reason);
+    return;
+  }
   const detect = detectPlatformMismatch(pendingParserRows, platform);
   if (detect.mismatch) {
     showConfirm({
@@ -417,6 +438,21 @@ const PLATFORM_SIGNATURES = {
   '视频号': ['视频ID', '转发聊天和朋友圈', '设为铃声', '企微', '关注量']
 };
 
+// 检测是否为可导入的平台数据表（非平台表格/缺少关键列 → 拦截）
+function detectInvalidTable(rows, platform) {
+  if (!rows || rows.length === 0) return { invalid: true, reason: '文件为空，未读取到任何行' };
+  const header = getHeaderRow(rows).map(h => String(h || ''));
+  // 1) 平台签名特征：4 个平台的关键词全部不命中 → 不是任何短视频平台导出的数据表
+  const sigTotal = Object.values(PLATFORM_SIGNATURES).reduce(
+    (sum, kws) => sum + kws.filter(kw => header.some(h => h.includes(kw))).length, 0);
+  if (sigTotal === 0) return { invalid: true, reason: '表头不含任何平台数据特征，不是短视频平台导出的数据表' };
+  // 2) 缺少日期列（日期是每条数据的必填定位）
+  const rules = PLATFORM_HEADERS[platform] || PLATFORM_HEADERS['抖音'];
+  const hasDate = (rules.date || []).some(kw => header.some(h => h.includes(kw)));
+  if (!hasDate) return { invalid: true, reason: '表头缺少日期/时间列（应含「发布时间/日期/时间」），不是有效的数据表' };
+  return { invalid: false };
+}
+
 // 取真实表头行：自动扫描前 5 行，找出"最像表头"的行（按命中的字段词种类去重计数）
 // 兼容小红书第1行是"最多导出..."提示语（13列同一词只算1种），也兼容用户未切换平台下拉的情况
 function getHeaderRow(rows) {
@@ -561,7 +597,6 @@ function parseTableRows(rows, type, platform) {
       parsedCount++;
       if (autoCreated) contentCreatedCount++;
       // 任务联动：该平台当日任务自动完成 + 标记已登记链接
-      linkTaskToContent(platform, normDate, content.id);
 
       let summary = `播放${formatNum(views)}`;
       if (completion !== null) summary += ` 完播${completion}%`;
@@ -588,7 +623,6 @@ function parseTableRows(rows, type, platform) {
       if (existing) { existing.ai = ai; existing.contentId = content.id; }
       else aiStats.push({ id: Date.now() + Math.random(), platform, date: normDate, title: content.title, ai, contentId: content.id });
       parsedCount++;
-      linkTaskToContent(platform, normDate, content.id);
       const yesCount = AI_ENGINES.filter(e => ai[e]).length;
       results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${escapeHtml(content.title)}」AI收录${yesCount}/6</div>`);
     }

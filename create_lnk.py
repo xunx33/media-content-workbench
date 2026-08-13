@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 desktop = shell.SHGetFolderPath(0, shellcon.CSIDL_DESKTOPDIRECTORY, None, 0)
 lnk_path = os.path.join(desktop, '新媒体工作台（启动）.lnk')
 
-bat_path = os.path.join(ROOT, '启动工作台.bat')
+bat_path = os.path.join(ROOT, 'StartWorkbench.bat')
 icon_path = os.path.join(ROOT, 'icons', 'icon-512.ico')
 if not os.path.exists(bat_path):
     print('FAIL 找不到:', bat_path)
