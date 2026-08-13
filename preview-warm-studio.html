@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>新媒体工作台 · 暖色工作室预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* —— 暖色工作室·暗色：用暖炭黑底 + 单一暖金强调色，彻底去掉蓝紫/毛玻璃/发光 —— */
+    --bg:#14110d; --bg-2:#1a150f;
+    --surface:#241d16; --surface-2:#2c231a;
+    --border:rgba(245,222,179,0.13); --border-strong:rgba(245,222,179,0.26);
+    --text:#f3ead9; --text-2:#c9b89c; --text-3:#8f7f68;
+    --accent:#d9a441;        /* 主操作：暖金（代替原来的蓝紫渐变） */
+    --accent-ink:#1a150f;    /* 暖金按钮上的文字色 */
+    --video:#ef9a4d;         /* 视频平台语义色（暖橙） */
+    --article:#b98ab0;       /* 文书平台语义色（暖梅紫，比原紫更暖） */
+    --green:#8fbf7a;         /* 成功/已录入：暖鼠尾草绿 */
+    --red:#d9745f;           /* 危险/删除：陶土红 */
+    --radius:14px; --radius-sm:9px;
+    --shadow:0 6px 22px rgba(0,0,0,0.45);
+    --serif:"Noto Serif SC","Songti SC","STSong",serif;
+    --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:var(--sans); color:var(--text);
+    background:
+      radial-gradient(1100px 650px at 82% -8%, rgba(217,164,65,0.10), transparent 60%),
+      radial-gradient(820px 560px at -6% 8%, rgba(185,138,176,0.07), transparent 55%),
+      linear-gradient(180deg,var(--bg),var(--bg-2));
+    background-attachment:fixed; min-height:100vh;
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    padding-bottom:60px;
+  }
+  /* 细颗粒纹理，增加“手工感”，避免纯平板的 AI 感 */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.035;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  .wrap{position:relative; z-index:1; max-width:760px; margin:0 auto; padding:18px 16px;}
+
+  /* ===== 顶栏 ===== */
+  .topbar{
+    display:flex; align-items:center; gap:12px;
+    padding:16px 18px; margin-bottom:18px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+  }
+  .logo{
+    width:42px;height:42px;border-radius:11px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-weight:700;font-size:20px;color:var(--accent-ink);
+    background:linear-gradient(180deg,#e8b65a,#cf9433); /* 仅 logo 用一点点立体，不是全站渐变 */
+  }
+  .brand h1{font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:.5px;}
+  .brand .sub{font-size:11px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;}
+  .tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;}
+  .tab{
+    font-size:13px;color:var(--text-2);padding:7px 13px;border-radius:20px;cursor:pointer;
+    border:1px solid transparent;transition:.2s;
+  }
+  .tab:hover{color:var(--text);background:var(--surface-2);}
+  .tab.active{color:var(--accent-ink);background:var(--accent);font-weight:600;}
+
+  /* ===== 卡片 ===== */
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px; margin-bottom:16px; box-shadow:var(--shadow);
+  }
+  .card-title{
+    font-family:var(--serif); font-size:16px; font-weight:600; color:var(--text);
+    display:flex;align-items:center;gap:9px;margin-bottom:14px;
+  }
+  .card-title::before{content:"";width:3px;height:16px;border-radius:3px;background:var(--accent);}
+  .badge{font-size:10px;padding:2px 9px;border-radius:10px;background:rgba(217,164,65,.16);color:var(--accent);font-weight:600;margin-left:4px;}
+
+  /* ===== 数据概览：等宽数字 + 实色面板 ===== */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .stat{
+    background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:15px 12px;text-align:center;
+  }
+  .stat .v{font-family:var(--mono);font-size:25px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1.1;}
+  .stat .v.warm{color:var(--video);}
+  .stat .l{font-size:11px;color:var(--text-2);margin-top:6px;letter-spacing:.3px;}
+
+  /* ===== 今日待办：平台行 ===== */
+  .today-head{font-family:var(--serif);font-size:15px;color:var(--accent);margin-bottom:10px;font-weight:600;}
+  .row{
+    display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--radius-sm);
+    background:var(--surface-2);border:1px solid var(--border);margin-bottom:8px;
+  }
+  .row:last-child{margin-bottom:0;}
+  .pico{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--accent-ink);}
+  .pico.v{background:#ef9a4d;} .pico.a{background:#b98ab0;}
+  .pname{font-size:14px;font-weight:600;flex:1;}
+  .ptag{font-size:11px;padding:2px 9px;border-radius:11px;font-weight:500;}
+  .ptag.v{background:rgba(239,154,77,.16);color:var(--video);border:1px solid rgba(239,154,77,.24);}
+  .ptag.a{background:rgba(185,138,176,.16);color:var(--article);border:1px solid rgba(185,138,176,.24);}
+  .dot{width:9px;height:9px;border-radius:50%;}
+  .dot.done{background:var(--green);} .dot.pending{background:var(--text-3);}
+
+  /* ===== 内容列表：左侧色条区分视频/文书 ===== */
+  .ci{
+    display:flex;gap:12px;background:var(--surface-2);border:1px solid var(--border);
+    border-left:3px solid var(--border);border-radius:var(--radius-sm);padding:13px 14px;margin-bottom:9px;
+  }
+  .ci.v{border-left-color:var(--video);} .ci.a{border-left-color:var(--article);}
+  .ci .main{flex:1;min-width:0;}
+  .ci .t{font-size:14px;font-weight:600;}
+  .ci .m{font-size:12px;color:var(--text-2);margin-top:3px;}
+  .ci .acts{display:flex;gap:7px;flex-shrink:0;align-items:center;}
+
+  /* ===== 按钮：实色、无渐变、无发光 ===== */
+  .btn{
+    font-family:var(--sans);font-size:12px;font-weight:600;border:none;cursor:pointer;
+    padding:6px 14px;border-radius:8px;transition:.18s;line-height:1.4;
+  }
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{background:#e7b559;}
+  .btn-entry{background:var(--green);color:#16210f;}
+  .btn-entry:hover{background:#9fce8a;}
+  .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border-strong);}
+  .btn-ghost:hover{color:var(--text);border-color:var(--accent);}
+  .btn-danger{background:rgba(217,116,95,.16);color:var(--red);border:1px solid rgba(217,116,95,.34);}
+  .btn-danger:hover{background:rgba(217,116,95,.26);}
+
+  /* ===== 柱状图：暖色，无霓虹 ===== */
+  .chart{display:flex;align-items:flex-end;gap:14px;height:120px;padding:8px 0 0;}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;}
+  .bar{width:100%;max-width:34px;border-radius:6px 6px 0 0;}
+  .bar.v{background:var(--video);} .bar.a{background:var(--article);}
+  .col .lab{font-size:10px;color:var(--text-2);}
+
+  .note{
+    font-size:12px;color:var(--text-3);line-height:1.7;margin-top:6px;
+    border-left:3px solid var(--accent);padding:10px 12px;background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="logo">新</div>
+    <div class="brand">
+      <h1>新媒体工作台</h1>
+      <div class="sub">Content Studio</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active">概览</div>
+      <div class="tab">内容登记</div>
+      <div class="tab">数据</div>
+      <div class="tab">日历</div>
+      <div class="tab">账号</div>
+    </div>
+  </div>
+
+  <!-- 数据概览 -->
+  <div class="card">
+    <div class="card-title">数据概览 <span class="badge">本周</span></div>
+    <div class="stats">
+      <div class="stat"><div class="v warm">12</div><div class="l">短视频条数</div></div>
+      <div class="stat"><div class="v">18</div><div class="l">文书条数</div></div>
+      <div class="stat"><div class="v warm">128.4k</div><div class="l">本周播放</div></div>
+      <div class="stat"><div class="v">73%</div><div class="l">AI 收录率</div></div>
+    </div>
+  </div>
+
+  <!-- 今日待办 -->
+  <div class="card">
+    <div class="card-title">今日待办</div>
+    <div class="today-head">短视频平台</div>
+    <div class="row"><div class="pico v">抖</div><div class="pname">抖音</div><span class="ptag v">视频</span><span class="dot done"></span></div>
+    <div class="row"><div class="pico v">快</div><div class="pname">快手</div><span class="ptag v">视频</span><span class="dot done"></span></div>
+    <div class="row"><div class="pico v">红</div><div class="pname">小红书</div><span class="ptag v">视频</span><span class="dot pending"></span></div>
+    <div class="row"><div class="pico v">视</div><div class="pname">视频号</div><span class="ptag v">视频</span><span class="dot pending"></span></div>
+    <div class="today-head" style="margin-top:14px;">文书平台</div>
+    <div class="row"><div class="pico a">公</div><div class="pname">公众号</div><span class="ptag a">文书</span><span class="dot done"></span></div>
+    <div class="row"><div class="pico a">知</div><div class="pname">知乎</div><span class="ptag a">文书</span><span class="dot pending"></span></div>
+  </div>
+
+  <!-- 内容登记列表 -->
+  <div class="card">
+    <div class="card-title">内容登记 <span class="badge">最近</span></div>
+    <div class="ci v">
+      <div class="main">
+        <div class="t">夏日防晒好物开箱 vlog</div>
+        <div class="m">抖音 · 测评选题 · 播放 12.5k</div>
+      </div>
+      <div class="acts"><button class="btn btn-entry">数据录入</button><button class="btn btn-ghost">编辑</button></div>
+    </div>
+    <div class="ci a">
+      <div class="main">
+        <div class="t">如何用 AI 提升 10 倍工作效率</div>
+        <div class="m">公众号 · 干货选题 · DeepSeek/豆包 已收录</div>
+      </div>
+      <div class="acts"><button class="btn btn-entry">数据录入</button><button class="btn btn-danger">删除</button></div>
+    </div>
+  </div>
+
+  <!-- 趋势柱状图 -->
+  <div class="card">
+    <div class="card-title">各平台播放趋势</div>
+    <div class="chart">
+      <div class="col"><div class="bar v" style="height:62%"></div><div class="lab">抖音</div></div>
+      <div class="col"><div class="bar v" style="height:48%"></div><div class="lab">快手</div></div>
+      <div class="col"><div class="bar v" style="height:40%"></div><div class="lab">小红书</div></div>
+      <div class="col"><div class="bar v" style="height:28%"></div><div class="lab">视频号</div></div>
+      <div class="col"><div class="bar a" style="height:55%"></div><div class="lab">公众号</div></div>
+      <div class="col"><div class="bar a" style="height:44%"></div><div class="lab">知乎</div></div>
+    </div>
+  </div>
+
+  <div class="note">
+    预览说明：去除了蓝紫渐变、毛玻璃模糊与霓虹发光；底色由冷调藏蓝改为<strong>暖炭黑</strong>，主操作色改为单一<strong>暖金</strong>，
+    标题用<strong>宋体衬线</strong>、数字用<strong>等宽字体</strong>，面板为实色 + 发丝描边 + 极淡颗粒纹理。视频橙 / 文书梅紫作为语义色保留。
+    这只是静态预览，未改动项目任何文件。
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>新媒体工作台 · 按 preview 改造后的预览</title>
+<style>
+  :root{
+    --bg:#14110d; --bg-2:#1a150f;
+    --surface:#241d16; --surface-2:#2c231a; --surface-3:#34291e;
+    --border:rgba(245,222,179,0.13); --border-strong:rgba(245,222,179,0.26);
+    --text:#f3ead9; --text-2:#c9b89c; --text-3:#8f7f68;
+    --accent:#d9a441;        /* 主操作：暖金 */
+    --accent-ink:#1a150f;    /* 暖金按钮上的文字 */
+    --video:#ef9a4d; --article:#b98ab0;
+    --green:#8fbf7a; --red:#d9745f;
+    --radius:14px; --radius-sm:9px;
+    --shadow:0 6px 22px rgba(0,0,0,0.45);
+    --serif:"Songti SC","STSong","Noto Serif SC",serif;
+    --sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:var(--sans); color:var(--text);
+    background:
+      radial-gradient(1100px 650px at 82% -8%, rgba(217,164,65,0.10), transparent 60%),
+      radial-gradient(820px 560px at -6% 8%, rgba(185,138,176,0.07), transparent 55%),
+      linear-gradient(180deg,var(--bg),var(--bg-2));
+    background-attachment:fixed; min-height:100vh;
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    padding-bottom:60px;
+  }
+  /* 细颗粒 */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.035;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  .wrap{position:relative; z-index:1; max-width:760px; margin:0 auto; padding:14px 14px;}
+
+  /* ===== 顶栏：横向 logo + 标题 + 6 个暖金胶囊 TAB ===== */
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:14px 16px; margin-bottom:14px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    flex-wrap:wrap;
+  }
+  .logo{
+    width:42px;height:42px;border-radius:11px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-weight:700;font-size:20px;color:var(--accent-ink);
+    background:linear-gradient(180deg,#e8b65a,#cf9433);
+  }
+  .brand h1{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.5px;}
+  .brand .sub{font-size:10.5px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+  .nav-tabs{
+    display:flex;gap:5px; margin-left:auto; flex-wrap:wrap;
+    background:transparent; overflow:visible;
+    padding:0;
+  }
+  .nav-tabs::before,.nav-tabs::after{content:none; margin:0;}  /* 覆盖项目里居中前后的伪元素 */
+  .nav-tab{
+    font-size:13px;color:var(--text-2);padding:6px 12px;border-radius:18px;cursor:pointer;
+    border:1px solid transparent; transition:.2s;
+    user-select:none; position:static; flex:0 0 auto;
+    white-space:nowrap;
+  }
+  .nav-tab:hover{color:var(--text); background:var(--surface-2);}
+  .nav-tab.active{
+    color:var(--accent-ink); background:var(--accent); font-weight:600;
+  }
+  .nav-tab.active::after{content:none;}  /* 不再显示底部细线 */
+
+  /* ===== 备份栏：暖金描边胶囊组 ===== */
+  .backup-bar{
+    display:flex; flex-wrap:wrap; gap:7px; justify-content:center;
+    padding:10px 14px; margin-bottom:14px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius);
+  }
+  .backup-btn{
+    font-size:12px; padding:6px 13px; border-radius:18px;
+    border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text-2);
+    cursor:pointer; white-space:nowrap; transition:.2s;
+    font-family:var(--sans);
+  }
+  .backup-btn:hover{ color:var(--text); border-color:var(--accent); background:var(--accent-soft); }
+  .export-trigger::after{ content:" ▾"; opacity:.7; }
+  .backup-btn.primary{ background:var(--accent); color:var(--accent-ink); border-color:transparent; font-weight:600; }
+  .backup-btn.danger{ color:var(--red); border-color:rgba(217,116,95,.34); background:rgba(217,116,95,.10); }
+
+  /* ===== 卡片 ===== */
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .card-title{
+    font-family:var(--serif); font-size:16px; font-weight:600; color:var(--text);
+    display:flex; align-items:center; gap:9px; margin-bottom:14px;
+  }
+  .card-title::before{
+    content:""; width:3px; height:16px; border-radius:3px; background:var(--accent);
+  }
+  .badge{
+    font-size:10px; padding:2px 9px; border-radius:10px;
+    background:rgba(217,164,65,.16); color:var(--accent); font-weight:600; margin-left:4px;
+  }
+
+  /* ===== 数据概览：等宽数字 + 实色面板 ===== */
+  .stats-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+  .stat-card{
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:14px 10px; text-align:center;
+  }
+  .stat-value{font-family:var(--mono); font-size:24px; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.1;}
+  .stat-value.warm{ color:var(--video); }
+  .stat-label{font-size:11px; color:var(--text-2); margin-top:6px; letter-spacing:.3px;}
+
+  /* ===== 今日待办：分组小标题 + 卡片式行 ===== */
+  .today-group-head{
+    font-family:var(--serif); font-size:14px; font-weight:600;
+    margin-bottom:8px; letter-spacing:.3px;
+  }
+  .today-group-head.video{ color:var(--video); }
+  .today-group-head.article{ color:var(--article); }
+  .today-group-head + .today-group-head{ margin-top:14px; }
+
+  .today-list{ list-style:none; margin-bottom:10px; }
+  .today-item{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px; border-radius:var(--radius-sm);
+    background:var(--surface-2); border:1px solid var(--border);
+    margin-bottom:7px; font-size:14px;
+  }
+  .today-item:last-child{ margin-bottom:0; }
+  .today-item .left{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+
+  .platform-initial{
+    width:34px; height:34px; border-radius:9px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:14px; color:var(--accent-ink);
+    box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .platform-initial.video{ background:var(--video); }
+  .platform-initial.article{ background:var(--article); }
+
+  .platform-tag{
+    font-size:11px; padding:2px 9px; border-radius:11px; font-weight:500;
+    white-space:nowrap; letter-spacing:.2px;
+  }
+  .platform-tag.video{ background:rgba(239,154,77,.16); color:var(--video); border:1px solid rgba(239,154,77,.24); }
+  .platform-tag.article{ background:rgba(185,138,176,.16); color:var(--article); border:1px solid rgba(185,138,176,.24); }
+
+  .status-text{ font-size:12px; font-weight:500; }
+  .status-text.done{ color:var(--green); }
+  .status-text.pending{ color:var(--text-3); }
+
+  .expand-toggle{ color:var(--text-3); font-size:10px; cursor:pointer; padding:0 4px; }
+
+  .status-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .status-dot.done{ background:var(--green); }
+  .status-dot.pending{ background:var(--text-3); }
+
+  .btn-add{
+    font-family:var(--sans); font-size:12px; font-weight:600; border:none; cursor:pointer;
+    padding:5px 12px; border-radius:8px;
+    background:var(--green); color:#16210f; transition:.18s;
+    flex-shrink:0; line-height:1.4;
+  }
+  .btn-add:hover{ background:#9fce8a; }
+
+  /* ===== 解析表格：保留真实项目原有说明与选项，只套 preview 视觉 ===== */
+  .table-parser{ margin-top:8px; }
+  .form-group{ margin-bottom:12px; }
+  .form-group > label{ display:block; font-size:12px; color:var(--text-2); margin-bottom:6px; font-weight:500; }
+  .form-group select{
+    width:100%; font-family:var(--sans); font-size:13px; color:var(--text);
+    background:var(--surface-2); border:1px solid var(--border-strong);
+    border-radius:var(--radius-sm); padding:9px 10px; cursor:pointer;
+  }
+  .parser-help{
+    font-size:12px; color:var(--text-3); line-height:1.7;
+    background:var(--bg-2); border:1px solid var(--border);
+    border-radius:var(--radius-xs); padding:10px 12px;
+  }
+  .parser-help code{ font-family:var(--mono); font-size:11px; color:var(--video); background:rgba(239,154,77,.12); padding:1px 5px; border-radius:4px; }
+  .upload-zone{
+    border:2px dashed var(--border-strong); border-radius:var(--radius);
+    padding:22px; text-align:center; color:var(--text-2); background:var(--surface-2);
+    cursor:pointer; transition:.2s;
+  }
+  .upload-zone:hover{ border-color:var(--accent); color:var(--text); }
+  .upload-zone .upload-icon{ font-size:26px; color:var(--accent); margin-bottom:6px; }
+  .toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .btn-primary{
+    font-family:var(--sans); font-size:12px; font-weight:600; border:none; cursor:pointer;
+    padding:7px 16px; border-radius:8px; background:var(--accent); color:var(--accent-ink); transition:.18s;
+  }
+  .btn-primary:hover{ background:#e7b559; }
+  .btn-edit{
+    font-family:var(--sans); font-size:12px; font-weight:600; border:1px solid var(--border-strong); cursor:pointer;
+    padding:7px 16px; border-radius:8px; background:transparent; color:var(--text-2); transition:.18s;
+  }
+  .btn-edit:hover{ color:var(--text); border-color:var(--accent); }
+
+  /* ===== FAB ===== */
+  .fab{
+    position:fixed; right:22px; bottom:22px; width:54px; height:54px; border-radius:50%;
+    background:var(--accent); color:var(--accent-ink); font-size:28px; font-weight:300;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.5); border:none; cursor:pointer;
+  }
+
+  /* ===== Toast ===== */
+  .toast{
+    position:fixed; left:50%; bottom:90px; transform:translateX(-50%) translateY(12px);
+    background:var(--surface-2); color:var(--text); border:1px solid var(--border-strong);
+    padding:10px 20px; border-radius:20px; font-size:13px; z-index:2000;
+    box-shadow:var(--shadow); opacity:0; transition:.3s; pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .note{
+    font-size:12px;color:var(--text-3); line-height:1.7; margin-top:6px;
+    border-left:3px solid var(--accent); padding:10px 12px;
+    background:var(--surface); border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  code{font-family:var(--mono); background:var(--surface-2); padding:1px 5px; border-radius:4px; font-size:11.5px; color:var(--video);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="logo">新</div>
+    <div class="brand">
+      <h1>新媒体工作台</h1>
+      <div class="sub">Content Studio</div>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab active">今日待办</div>
+      <div class="nav-tab">内容登记</div>
+      <div class="nav-tab">账号登记</div>
+      <div class="nav-tab">数据复盘</div>
+      <div class="nav-tab">发布日历</div>
+      <div class="nav-tab">发布总览</div>
+    </div>
+  </div>
+
+  <!-- 备份栏（原 backup-bar，套 preview 风格） -->
+  <div class="backup-bar">
+    <button class="backup-btn export-trigger">导出数据</button>
+    <button class="backup-btn">本周数据</button>
+    <button class="backup-btn">本月数据</button>
+    <button class="backup-btn">导出JSON</button>
+    <button class="backup-btn">导入恢复</button>
+    <button class="backup-btn danger">清空数据</button>
+    <button class="backup-btn primary">重置示例</button>
+  </div>
+
+  <!-- 今日待办 -->
+  <div class="card">
+    <div class="card-title">今日待办</div>
+
+    <div class="today-group-head video">短视频平台</div>
+    <ul class="today-list">
+      <li class="today-item">
+        <div class="left">
+          <span class="platform-initial video">抖</span>
+          <span class="platform-tag video">视频</span>
+          <span style="font-weight:600;">抖音</span>
+          <span class="status-text done">已发 2 条</span>
+        </div>
+        <span class="status-dot done"></span>
+        <button class="btn-add">+1</button>
+      </li>
+      <li class="today-item">
+        <div class="left">
+          <span class="platform-initial video">快</span>
+          <span class="platform-tag video">视频</span>
+          <span style="font-weight:600;">快手</span>
+          <span class="status-text pending">未登记</span>
+        </div>
+        <span class="status-dot pending"></span>
+        <button class="btn-add">+1</button>
+      </li>
+      <li class="today-item">
+        <div class="left">
+          <span class="platform-initial video">红</span>
+          <span class="platform-tag video">视频</span>
+          <span style="font-weight:600;">小红书</span>
+          <span class="status-text pending">未登记</span>
+        </div>
+        <span class="status-dot pending"></span>
+        <button class="btn-add">+1</button>
+      </li>
+      <li class="today-item">
+        <div class="left">
+          <span class="platform-initial video">视</span>
+          <span class="platform-tag video">视频</span>
+          <span style="font-weight:600;">视频号</span>
+          <span class="status-text pending">未登记</span>
+        </div>
+        <span class="status-dot pending"></span>
+        <button class="btn-add">+1</button>
+      </li>
+    </ul>
+
+    <div class="today-group-head article">文书平台</div>
+    <ul class="today-list">
+      <li class="today-item">
+        <div class="left">
+          <span class="platform-initial article">公</span>
+          <span class="platform-tag article">文书</span>
+          <span style="font-weight:600;">公众号</span>
+          <span class="status-text done">已发 1 条</span>
+        </div>
+        <span class="status-dot done"></span>
+        <button class="btn-add">+1</button>
+      </li>
+      <li class="today-item">
+        <div class="left">
+          <span class="platform-initial article">知</span>
+          <span class="platform-tag article">文书</span>
+          <span style="font-weight:600;">知乎</span>
+          <span class="status-text pending">未登记</span>
+        </div>
+        <span class="status-dot pending"></span>
+        <button class="btn-add">+1</button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 今日发布概览 -->
+  <div class="card">
+    <div class="card-title">今日发布概览</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value warm">3</div><div class="stat-label">短视频条数</div></div>
+      <div class="stat-card"><div class="stat-value">1</div><div class="stat-label">文书条数</div></div>
+      <div class="stat-card"><div class="stat-value">4</div><div class="stat-label">今日总登记</div></div>
+      <div class="stat-card"><div class="stat-value warm">2/4</div><div class="stat-label">视频平台覆盖</div></div>
+    </div>
+  </div>
+
+  <!-- 解析表格：保留真实项目原有说明与全部选项 -->
+  <div class="card">
+    <div class="card-title">解析数据表格 <span class="badge">视频内容 3条 · 已录数据 2条 · 未录 1条</span></div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">选择<b>平台</b>后上传该平台导出的数据表（支持 <b>.xlsx</b> / <b>.csv</b> / <b>.tsv</b> / <b>.txt</b>），文件先<b>暂存</b>，确认无误后点「<b>导入解析</b>」：内容自动登记 + 数据自动填充，并同步到发布日历。</p>
+
+    <div class="form-group">
+      <label>数据表所属平台</label>
+      <select>
+        <option>抖音</option>
+        <option>快手</option>
+        <option>小红书</option>
+        <option>视频号</option>
+      </select>
+    </div>
+
+    <div class="form-group parser-help">
+      <b style="color:var(--text2);">说明：</b>各平台表头列名不同，抖音：作品名称｜发布时间｜播放量｜完播率｜点赞量｜评论量｜收藏量｜分享量；小红书：笔记标题｜发布时间｜阅读量｜互动量｜……（随所选平台高亮当前项）。完播率支持 0.35 / 20.6% / 35.6 三种格式，<code>--</code> 视为空；发布时间自动截取日期部分；视频号无收藏时记录「推荐」数。
+    </div>
+
+    <div class="form-group">
+      <label>上传表格文件</label>
+      <div class="upload-zone">
+        <div class="upload-icon">📄</div>
+        <div>点击选择文件，或拖拽到此处</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">支持 .xlsx / .csv / .tsv / .txt</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn-primary">导入解析</button>
+      <button class="btn-edit">取消</button>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong style="color:var(--accent);">预览说明：</strong>这套预览 <em>严格</em>按 <code>preview-warm-studio.html</code> 的视觉样式铺设，但保留了<strong>实际项目</strong>的：
+    <ul style="margin:6px 0 0 18px;">
+      <li>6 个 TAB 文案（保留 <code>data-tab</code>，没动切换逻辑）</li>
+      <li>备份栏（导出/导入/重置示例 等按钮）</li>
+      <li>解析表格上传区、底部 FAB、Toast</li>
+    </ul>
+    你看完点头，我就把这一套落到 <code>index.html</code> 顶栏结构 + <code>css/style.css</code>，<strong>不动任何 JS 业务逻辑与字段映射</strong>。
+  </div>
+
+</div>
+<button class="fab">+</button>
+<div class="toast">已导出全部数据 Excel 报表</div>
+</body>
+</html>
