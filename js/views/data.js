@@ -375,22 +375,6 @@ function renderVideoData(period) {
   return html;
 }
 
-function saveStat() {
-  const platform = document.getElementById('statPlatform').value;
-  const date = document.getElementById('statDate').value;
-  const views = parseInt(document.getElementById('statViews').value) || 0;
-  const likes = parseInt(document.getElementById('statLikes').value) || 0;
-  const shares = parseInt(document.getElementById('statShares').value) || 0;
-  const comments = parseInt(document.getElementById('statComments').value) || 0;
-  if (!date) { showToast('请选择日期'); return; }
-  const existing = stats.find(s => s.platform === platform && s.date === date);
-  if (existing) { existing.views = views; existing.likes = likes; existing.shares = shares; existing.comments = comments; }
-  else stats.push({ id: Date.now(), platform, date, views, likes, shares, comments });
-  saveData('stats', stats);
-  render(); showToast(platform + ' 数据已保存');
-}
-
-
 function deleteStat(id) {
   showConfirm({
     title: '确认删除',
@@ -487,22 +471,6 @@ function toggleAiCheck(el) {
   el.classList.toggle('checked');
   if (el.classList.contains('checked')) el.querySelector('.check-box').innerHTML = '&#10003;';
   else el.querySelector('.check-box').innerHTML = '';
-}
-
-function saveAiStat() {
-  const platform = document.getElementById('aiPlatform').value;
-  const date = document.getElementById('aiDate').value;
-  const title = document.getElementById('aiTitle').value.trim();
-  if (!date) { showToast('请选择日期'); return; }
-  const ai = {};
-  document.querySelectorAll('#aiChecks .ai-check-item').forEach(el => {
-    ai[el.dataset.ai] = el.classList.contains('checked');
-  });
-  const existing = aiStats.find(s => s.platform === platform && s.date === date);
-  if (existing) { existing.ai = ai; existing.title = title || existing.title; }
-  else aiStats.push({ id: Date.now(), platform, date, title, ai });
-  saveData('aiStats', aiStats);
-  render(); showToast(platform + ' AI收录数据已保存');
 }
 
 function deleteAiStat(id) {

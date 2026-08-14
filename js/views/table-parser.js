@@ -562,16 +562,16 @@ function parseTableRows(rows, type, platform) {
       let title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
       // 空白标题 → 占位符「空标题」，保证内容与数据照常录入
       if (!title) title = platform === '小红书' ? '空标题' : (platform + ' ' + normDate + ' 作品');
-      const views = colViews >= 0 ? parseIntNum(cells[colViews]) : null;
+      const views = colViews >= 0 ? cellNumOrNull(cells[colViews]) : null;
       const completion = colCompletion >= 0 ? parseCompletion(cells[colCompletion]) : null;
       // 小红书：人均观看时长（秒）；视频号：推荐数
       const avgWatch = colAvgWatch >= 0 ? parseAvgWatch(cells[colAvgWatch]) : null;
-      const recommend = colRecommend >= 0 ? parseIntNum(cells[colRecommend]) : null;
-      const likes = colLikes >= 0 ? parseIntNum(cells[colLikes]) : null;
-      const comments = colComments >= 0 ? parseIntNum(cells[colComments]) : null;
-      const favorites = colFavorites >= 0 ? parseIntNum(cells[colFavorites]) : null;
-      const shares = colShares >= 0 ? parseIntNum(cells[colShares]) : null;
-      const followers = colFollowers >= 0 ? parseIntNum(cells[colFollowers]) : null;
+      const recommend = colRecommend >= 0 ? cellNumOrNull(cells[colRecommend]) : null;
+      const likes = colLikes >= 0 ? cellNumOrNull(cells[colLikes]) : null;
+      const comments = colComments >= 0 ? cellNumOrNull(cells[colComments]) : null;
+      const favorites = colFavorites >= 0 ? cellNumOrNull(cells[colFavorites]) : null;
+      const shares = colShares >= 0 ? cellNumOrNull(cells[colShares]) : null;
+      const followers = colFollowers >= 0 ? cellNumOrNull(cells[colFollowers]) : null;
 
       // 内容登记：优先匹配已登记内容，没有则自动登记一条（标题取表格作品名，平台/日期从表格读取）
       let content = contents.find(c => c.platform === platform && c.createdAt === normDate);
@@ -695,6 +695,12 @@ function parseIntNum(v) {
   }
   const num = parseFloat(match[0]);
   return isNaN(num) ? 0 : Math.round(num);
+}
+
+// 表格单元格数字解析：空值/缺失 → null（与手动录入 numOrNull 一致：未录入留空）；有值 → parseIntNum
+function cellNumOrNull(v) {
+  if (v === undefined || v === null || String(v).trim() === '' || String(v).trim() === '--') return null;
+  return parseIntNum(v);
 }
 
 // 完播率解析：支持 35.6%、0.356、35.6 等

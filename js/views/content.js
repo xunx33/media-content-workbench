@@ -145,7 +145,7 @@ function saveContentData() {
     // 安全读取：弹窗按平台只渲染部分输入框（小红书无完播率、视频号无收藏），
     // 缺失的输入框直接返回空串，避免 null.value 抛异常导致保存失败
     const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-    // 空输入 → null（显示为「-」）；录入 0 → 0（显示「0」）；非法数字 → 0
+    // 空输入 → null（未录入留空）；录入 0 → 0；非法数字 → 0
     const numOrNull = raw => {
       const t = String(raw).trim();
       if (t === '') return null;
