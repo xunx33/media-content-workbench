@@ -223,7 +223,7 @@ function renderDualBarChart(labels, currVals, prevVals, barClass, fmt, curLabel 
 // 近 N 天趋势折线图（纯 SVG 自绘，零依赖）
 // points: [{date:'YYYY-MM-DD', value:number}] 按日期升序
 // 返回 SVG 折线 + 结束值标注；数据不足 2 天时返回空；onClick=全局函数名（点击数据点跳转，如跳发布日历）
-function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, height = 160, onClick = null } = {}) {
+function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, height = 160, onClick = null, label = '总播放' } = {}) {
   const data = points.filter(p => p && p.value !== undefined && p.value !== null);
   if (data.length < 2) {
     if (data.length === 1) {
@@ -287,7 +287,7 @@ function renderTrendLine(points, { color = 'var(--accent)', fmt = formatNum, hei
       <path d="${path}" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
       ${pts.map(p => {
         const click = onClick ? ` onclick="${onClick}('${p.date}')"` : '';
-        return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}"${click}><title>${p.date} · 总播放 ${fmt(p.value)}</title></circle>`;
+        return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}"${click}><title>${p.date} · ${label} ${fmt(p.value)}</title></circle>`;
       }).join('')}
       ${valLabels.map(p => `<text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="18" font-weight="700" fill="${color}" style="paint-order:stroke;stroke:var(--bg);stroke-width:4px;">${fmt(p.value)}</text>`).join('')}
       ${labels.map(l => `<text x="${l.x.toFixed(1)}" y="${(VBH - 10).toFixed(1)}" text-anchor="middle" font-size="18" fill="var(--text3)">${l.date.slice(5)}</text>`).join('')}
@@ -462,7 +462,7 @@ function renderArticleData(period) {
     return n;
   }, aiTrendDays, new Date());
   const aiTrendTitle = aiIsWeek ? '本周 AI 收录数趋势' : '近30天 AI 收录数趋势';
-  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n })}</div>`;
+  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n, label: '收录数' })}</div>`;
 
   // 未关联记录（AI收录但找不到对应内容）
   const orphanAi = [...currAiStats].filter(s => findLinkedTitle(s, 'article') === null).sort((a,b) => b.date.localeCompare(a.date));
@@ -641,19 +641,19 @@ function renderAccountData() {
   });
   html += '</div></div>';
 
-  // 4. 历史记录（全部快照，含与上次记录对比）
+  // 4. 历史记录（全部快照，每个数据格旁带与上一条记录的差值箭头）
   var sorted = accountStats.slice().sort(function(a,b){ return (b.date || '').localeCompare(a.date || ''); });
   html += '<div class="card"><div class="card-title">历史记录 <span class="badge">' + sorted.length + '条</span></div>';
   if (sorted.length === 0) {
     html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无账号数据记录，从上方表单开始记录</p>';
   } else {
-    html += '<table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>账号</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th>较上次记录</th><th></th></tr></thead><tbody>';
+    html += '<table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>账号</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th></th></tr></thead><tbody>';
     sorted.forEach(function(r) {
+      var prev = accountPrevSnapshot(r);
       html += '<tr><td>' + escapeHtml(r.date) + '</td><td><span class="platform-tag video">' + escapeHtml(r.platform) + '</span></td>';
       html += '<td style="font-size:12px;">' + escapeHtml(accountLabel(r.accountRef)) + '</td>';
-      html += '<td>' + formatNum(r.posts) + '</td><td>' + formatNum(r.followers) + '</td><td>' + formatNum(r.views) + '</td>';
-      html += '<td>' + formatNum(r.likes) + '</td><td>' + formatNum(r.comments) + '</td><td>' + formatNum(r.shares) + '</td>';
-      html += '<td style="font-size:12px;">' + accountDeltaStr(r) + '</td>';
+      html += '<td>' + accountDeltaCell(r, prev, 'posts') + '</td><td>' + accountDeltaCell(r, prev, 'followers') + '</td><td>' + accountDeltaCell(r, prev, 'views') + '</td>';
+      html += '<td>' + accountDeltaCell(r, prev, 'likes') + '</td><td>' + accountDeltaCell(r, prev, 'comments') + '</td><td>' + accountDeltaCell(r, prev, 'shares') + '</td>';
       html += '<td><button class="btn-delete-mini" onclick="deleteAccountSnapshot(\'' + r.id + '\')">删除</button></td></tr>';
     });
     html += '</tbody></table>';
@@ -663,24 +663,26 @@ function renderAccountData() {
   return html;
 }
 
-// 与上次记录对比：同平台同账号早于当前记录且日期最近的一条，逐项计算差值
-function accountDeltaStr(r) {
+// 与上次记录对比：同平台同账号早于当前记录且日期最近的一条（供历史记录表格逐格差值）
+function accountPrevSnapshot(r) {
   var prev = null;
   accountStats.forEach(function(s) {
     if (s.platform === r.platform && String(s.accountRef || '') === String(r.accountRef || '') && (s.date || '') < (r.date || '') && (!prev || (s.date || '') > (prev.date || ''))) prev = s;
   });
-  if (!prev) return '<span style="color:var(--text3);">首条记录</span>';
-  var parts = [];
-  var pairs = [['posts','发布'],['followers','粉丝'],['views','播放'],['likes','点赞'],['comments','评论'],['shares','转发']];
-  pairs.forEach(function(pair) {
-    var d = (Number(r[pair[0]]) || 0) - (Number(prev[pair[0]]) || 0);
-    if (d !== 0) {
-      var color = d > 0 ? 'var(--green)' : 'var(--red)';
-      parts.push('<span style="color:' + color + ';">' + pair[1] + (d > 0 ? '+' : '') + formatNum(d) + '</span>');
-    }
-  });
-  if (parts.length === 0) return '<span style="color:var(--text3);">持平</span>';
-  return parts.join(' · ');
+  return prev;
+}
+
+// 单个数据格：数值 + 与上一条记录的差值箭头（升↑绿 / 降↓红）；无上一条记录则只显数值
+function accountDeltaCell(r, prev, key) {
+  var val = formatNum(r[key]);
+  if (!prev) return val;
+  var cur = Number(r[key]) || 0;
+  var before = Number(prev[key]) || 0;
+  var d = cur - before;
+  if (d === 0) return val;
+  var arrow = d > 0 ? '↑' : '↓';
+  var color = d > 0 ? 'var(--green)' : 'var(--red)';
+  return val + ' <span class="acc-delta" style="color:' + color + ';">' + arrow + (d > 0 ? '+' : '') + formatNum(d) + '</span>';
 }
 
 // 某平台（可选绑定账号 ref）最近一条快照；ref 不传 = 不限账号取最新

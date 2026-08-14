@@ -1,13 +1,13 @@
 {
-  "name": "新媒体内容发布工作台",
-  "short_name": "新媒体工作台",
-  "description": "4短视频 + 6文书平台的内容登记与数据复盘工具",
+  "name": "新媒体数据工作台",
+  "short_name": "新媒体数据",
+  "description": "4短视频 + 6文书平台的数据登记、复盘与账号管理工具",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#2563eb",
-  "theme_color": "#2563eb",
+  "background_color": "#1a6fb5",
+  "theme_color": "#1a6fb5",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }

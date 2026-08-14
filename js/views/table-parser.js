@@ -562,16 +562,16 @@ function parseTableRows(rows, type, platform) {
       let title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
       // 空白标题 → 占位符「空标题」，保证内容与数据照常录入
       if (!title) title = platform === '小红书' ? '空标题' : (platform + ' ' + normDate + ' 作品');
-      const views = colViews >= 0 ? parseIntNum(cells[colViews]) : 0;
+      const views = colViews >= 0 ? parseIntNum(cells[colViews]) : null;
       const completion = colCompletion >= 0 ? parseCompletion(cells[colCompletion]) : null;
       // 小红书：人均观看时长（秒）；视频号：推荐数
       const avgWatch = colAvgWatch >= 0 ? parseAvgWatch(cells[colAvgWatch]) : null;
-      const recommend = colRecommend >= 0 ? parseIntNum(cells[colRecommend]) : 0;
-      const likes = colLikes >= 0 ? parseIntNum(cells[colLikes]) : 0;
-      const comments = colComments >= 0 ? parseIntNum(cells[colComments]) : 0;
-      const favorites = colFavorites >= 0 ? parseIntNum(cells[colFavorites]) : 0;
-      const shares = colShares >= 0 ? parseIntNum(cells[colShares]) : 0;
-      const followers = colFollowers >= 0 ? parseIntNum(cells[colFollowers]) : 0;
+      const recommend = colRecommend >= 0 ? parseIntNum(cells[colRecommend]) : null;
+      const likes = colLikes >= 0 ? parseIntNum(cells[colLikes]) : null;
+      const comments = colComments >= 0 ? parseIntNum(cells[colComments]) : null;
+      const favorites = colFavorites >= 0 ? parseIntNum(cells[colFavorites]) : null;
+      const shares = colShares >= 0 ? parseIntNum(cells[colShares]) : null;
+      const followers = colFollowers >= 0 ? parseIntNum(cells[colFollowers]) : null;
 
       // 内容登记：优先匹配已登记内容，没有则自动登记一条（标题取表格作品名，平台/日期从表格读取）
       let content = contents.find(c => c.platform === platform && c.createdAt === normDate);
@@ -685,10 +685,15 @@ function normalizeDate(s) {
 
 function parseIntNum(v) {
   if (v === undefined || v === null) return 0;
-  // 保留数字与小数点（兼容 "10.0" 这类带 .0 的值）；原 /[^\d]/g 会把 . 去掉导致 "10.0"→"100"
-  const cleaned = String(v).replace(/[^\d.]/g, '');
-  if (!cleaned) return 0;
-  const num = parseFloat(cleaned);
+  const s = String(v).trim();
+  if (!s) return 0;
+  // 严格校验：整数 或 小数（最多一个小数点），拦截 "1.2.3" / "1..2" / "1.2e3" 等脏数据
+  const match = s.match(/^-?(\d+\.?\d*|\.\d+)$/);
+  if (!match) {
+    console.warn('[parseIntNum] 非数字输入被拦截:', v);
+    return 0;
+  }
+  const num = parseFloat(match[0]);
   return isNaN(num) ? 0 : Math.round(num);
 }
 
@@ -798,6 +803,27 @@ function highlightText(text, keyword) {
   return safeText.replace(regex, '<span class="search-highlight">$1</span>');
 }
 
+// 统一数据栏显示：未录入(null/undefined/空) → 留空；录入 0 → '0'
+function fmtData(v) {
+  if (v === null || v === undefined || v === '') return '';
+  return formatNum(v);
+}
+
+// 平台适用性（与导出报表 VIDEO_METRIC_APPLY 保持一致）：
+// 完播率：抖音/快手/视频号；均播：抖音/小红书/视频号；收藏：抖音/快手/小红书；推荐：仅视频号
+const VIDEO_METRIC_APPLY_VIEW = {
+  '抖音':   { completionRate: true,  avgWatch: true,  favorites: true,  recommend: false },
+  '快手':   { completionRate: true,  avgWatch: false, favorites: true,  recommend: false },
+  '小红书': { completionRate: false, avgWatch: true,  favorites: true,  recommend: false },
+  '视频号': { completionRate: true,  avgWatch: true,  favorites: false, recommend: true },
+};
+// 平台不适用 → '-';适用时原样（未录入留空 / 0 / 数值）
+function metricView(pf, key, v) {
+  const apply = VIDEO_METRIC_APPLY_VIEW[pf];
+  if (apply && apply[key] === false) return '-';
+  return v;
+}
+
 function renderContentItem(c) {
   const type = isVideo(c.platform) ? 'video' : 'article';
   const kw = searchKeyword;
@@ -805,35 +831,25 @@ function renderContentItem(c) {
   const topicHtml = c.topic ? highlightText(c.topic, kw) : '';
   const platformHtml = highlightText(c.platform, kw);
 
-  // 已登记的数据（右侧数据栏，按平台动态显示）
+  // 已登记的数据（右侧数据栏，统一显示全部指标，不适用 → ❌）
   let dataHtml = '';
   let hasData = false;
   if (type === 'video') {
     const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
     if (s) {
       hasData = true;
-      const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
-      const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
-      // 第二行：小红书=均播时长，其他=完播率
-      const secondLine = c.platform === '小红书'
-        ? `<div class="content-data-item"><span>均播</span><b>${avgWatch}</b></div>`
-        : `<div class="content-data-item"><span>完播</span><b>${completion}</b></div>`;
-      // 抖音/视频号额外显示「均播」（有数据时）
-      const avgWatchLine = (c.platform === '视频号' || c.platform === '抖音') && avgWatch !== '-'
-        ? `<div class="content-data-item"><span>均播</span><b>${avgWatch}</b></div>`
-        : '';
-      // 第三行（收藏位）：视频号=推荐，其他=收藏
-      const favLine = c.platform === '视频号'
-        ? `<div class="content-data-item"><span>推荐</span><b>${formatNum(s.recommend)}</b></div>`
-        : `<div class="content-data-item"><span>收藏</span><b>${formatNum(s.favorites)}</b></div>`;
-      dataHtml = `<div class="content-data-item"><span>播放</span><b>${formatNum(s.views)}</b></div>
-        ${secondLine}
-        ${avgWatchLine}
-        <div class="content-data-item"><span>点赞</span><b>${formatNum(s.likes)}</b></div>
-        <div class="content-data-item"><span>评论</span><b>${formatNum(s.comments)}</b></div>
-        ${favLine}
-        <div class="content-data-item"><span>分享</span><b>${formatNum(s.shares)}</b></div>
-        <div class="content-data-item"><span>涨粉</span><b>${formatNum(s.followers)}</b></div>`;
+      // 适用指标：未录入留空；不适用由 metricView 显示 '-'
+      const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '';
+      const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '';
+      dataHtml = `<div class="content-data-item"><span>播放</span><b>${fmtData(s.views)}</b></div>
+        <div class="content-data-item"><span>完播</span><b>${metricView(c.platform, 'completionRate', completion)}</b></div>
+        <div class="content-data-item"><span>均播</span><b>${metricView(c.platform, 'avgWatch', avgWatch)}</b></div>
+        <div class="content-data-item"><span>点赞</span><b>${fmtData(s.likes)}</b></div>
+        <div class="content-data-item"><span>评论</span><b>${fmtData(s.comments)}</b></div>
+        <div class="content-data-item"><span>收藏</span><b>${metricView(c.platform, 'favorites', fmtData(s.favorites))}</b></div>
+        <div class="content-data-item"><span>推荐</span><b>${metricView(c.platform, 'recommend', fmtData(s.recommend))}</b></div>
+        <div class="content-data-item"><span>分享</span><b>${fmtData(s.shares)}</b></div>
+        <div class="content-data-item"><span>涨粉</span><b>${fmtData(s.followers)}</b></div>`;
     }
   } else {
     const s = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));

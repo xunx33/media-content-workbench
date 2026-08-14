@@ -76,7 +76,7 @@ function openWorkbench(port) {
 
 (async () => {
   console.log('');
-  console.log(`  ${c.bold}${c.cyan}新媒体内容发布工作台${c.reset}`);
+  console.log(`  ${c.bold}${c.cyan}新媒体数据工作台${c.reset}`);
   console.log(`  ${c.gray}================================${c.reset}`);
   console.log('');
 

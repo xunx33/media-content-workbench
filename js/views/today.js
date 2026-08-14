@@ -71,13 +71,17 @@ function renderContentDetail(content) {
   if (type === 'video') {
     const s = stats.find(x => x.contentId == content.id || x.contentId == Number(content.id));
     if (s) {
+      // 摘要为单行文本，未录入用「-」占位保持可读（与数据栏网格逻辑不同）
+      const fmtSum = v => (v === null || v === undefined || v === '') ? '-' : formatNum(v);
       const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
       const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
       const secondItem = content.platform === '小红书'
         ? '均播' + avgWatch
-        : ((content.platform === '视频号' || content.platform === '抖音') && avgWatch !== '-' ? '完播' + completion + '·均播' + avgWatch : '完播' + completion);
-      const favItem = content.platform === '视频号' ? '推荐' + formatNum(s.recommend) : '收藏' + formatNum(s.favorites);
-      html += `<div class="task-detail-row"><span class="detail-label">数据</span><span>播放${formatNum(s.views)} · ${secondItem} · 点赞${formatNum(s.likes)} · 评论${formatNum(s.comments)} · ${favItem} · 分享${formatNum(s.shares)} · 涨粉${formatNum(s.followers)}</span></div>`;
+        : (content.platform === '视频号' || content.platform === '抖音')
+          ? '完播' + completion + '·均播' + avgWatch
+          : '完播' + completion;
+      const favItem = content.platform === '视频号' ? '推荐' + fmtSum(s.recommend) : '收藏' + fmtSum(s.favorites);
+      html += `<div class="task-detail-row"><span class="detail-label">数据</span><span>播放${fmtSum(s.views)} · ${secondItem} · 点赞${fmtSum(s.likes)} · 评论${fmtSum(s.comments)} · ${favItem} · 分享${fmtSum(s.shares)} · 涨粉${fmtSum(s.followers)}</span></div>`;
     }
   } else {
     const s = aiStats.find(x => x.contentId == content.id || x.contentId == Number(content.id));

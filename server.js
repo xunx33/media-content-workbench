@@ -48,7 +48,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API：POST /api/data/{key} → 写入（原子写：先写临时文件再 rename 替换）
-    if (req.method === 'POST' && url.startsWith('/api/data/')) {
+    if (req.method === 'POST' && url.startsWith('/api/data/') && url !== '/api/data/batch') {
       const key = url.replace('/api/data/', '').replace(/[^a-zA-Z0-9_]/g, '');
       let body = '';
       req.on('data', chunk => body += chunk);
@@ -64,6 +64,51 @@ const server = http.createServer(async (req, res) => {
           res.writeHead(200); res.end('OK');
         } catch (e) {
           res.writeHead(500); res.end('Write failed');
+        }
+      });
+      return;
+    }
+
+    // API：POST /api/data/batch → 批量写入（原子：先全部写 tmp，再全部 rename）
+    // 请求体：[{ "key": "contents", "val": [...] }, ...]
+    // 失败时回滚（删除已写入的 tmp 文件），保证跨文件一致性
+    if (req.method === 'POST' && url === '/api/data/batch') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        let updates;
+        try { updates = JSON.parse(body); } catch (e) {
+          res.writeHead(400); res.end('Invalid JSON'); return;
+        }
+        if (!Array.isArray(updates) || updates.length === 0) {
+          res.writeHead(400); res.end('Empty batch'); return;
+        }
+        // 校验所有 key 合法
+        for (const { key } of updates) {
+          if (!key || !/^[a-zA-Z0-9_]+$/.test(key)) {
+            res.writeHead(400); res.end('Invalid key: ' + key); return;
+          }
+        }
+        // 第一阶段：全部写入 tmp 文件
+        const tmpFiles = [];
+        try {
+          for (const { key, val } of updates) {
+            const target = path.join(DATA_DIR, key + '.json');
+            const tmp = target + '.tmp';
+            fs.writeFileSync(tmp, JSON.stringify(val));
+            tmpFiles.push({ tmp, target });
+          }
+          // 第二阶段：全部 rename 替换（Windows 上 rename 是原子的）
+          for (const { tmp, target } of tmpFiles) {
+            fs.renameSync(tmp, target);
+          }
+          res.writeHead(200); res.end('OK');
+        } catch (e) {
+          // 回滚：清理已写入的 tmp 文件
+          for (const { tmp } of tmpFiles) {
+            try { fs.unlinkSync(tmp); } catch {}
+          }
+          res.writeHead(500); res.end('Batch write failed: ' + e.message);
         }
       });
       return;
@@ -96,7 +141,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log('==============================================');
-  console.log(`✓ 工作台服务已启动`);
+  console.log(`✓ 新媒体数据工作台服务已启动`);
   console.log(`✓ 访问地址: http://localhost:${PORT}`);
   console.log(`✓ 数据存储: ${DATA_DIR}`);
   console.log(`✓ 关闭服务: Ctrl+C`);

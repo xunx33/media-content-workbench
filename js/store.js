@@ -79,6 +79,27 @@ async function saveData(key, val) {
   delete _inflightSaves[key];
 }
 
+// 批量保存（跨文件原子：后端先写全部 tmp，再全部 rename，失败自动回滚）
+// updates: [{ key, val }, ...]
+async function saveDataBatch(updates) {
+  // 等待所有 key 的未完成保存
+  for (const { key } of updates) {
+    if (_inflightSaves[key]) {
+      try { await _inflightSaves[key]; } catch (e) {}
+    }
+  }
+  const p = fetch('/api/data/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  }).catch(e => console.warn('[saveDataBatch] 失败:', e));
+  // 标记所有 key 为进行中
+  updates.forEach(({ key }) => { _inflightSaves[key] = p; });
+  try { await p; } catch (e) {}
+  // 清除标记
+  updates.forEach(({ key }) => { delete _inflightSaves[key]; });
+}
+
 // ===== STATE（异步初始化） =====
 let contents = [];
 let stats = [];       // video stats: views/likes/shares/comments

@@ -145,18 +145,25 @@ function saveContentData() {
     // 安全读取：弹窗按平台只渲染部分输入框（小红书无完播率、视频号无收藏），
     // 缺失的输入框直接返回空串，避免 null.value 抛异常导致保存失败
     const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    // 空输入 → null（显示为「-」）；录入 0 → 0（显示「0」）；非法数字 → 0
+    const numOrNull = raw => {
+      const t = String(raw).trim();
+      if (t === '') return null;
+      const n = Number(t);
+      return isNaN(n) ? 0 : n;
+    };
     const title = (gv('statTitle').trim()) || c.title;
-    const views = parseInt(gv('statViews')) || 0;
+    const views = numOrNull(gv('statViews'));
     const completionInput = gv('statCompletion');
     const completionRate = completionInput !== '' ? parseFloat(completionInput) : null;
     const avgWatchInput = gv('statAvgWatch');
     const avgWatch = avgWatchInput !== '' ? parseFloat(avgWatchInput) : null;
-    const recommend = parseInt(gv('statRecommend')) || 0;
-    const likes = parseInt(gv('statLikes')) || 0;
-    const comments = parseInt(gv('statComments')) || 0;
-    const favorites = parseInt(gv('statFavorites')) || 0;
-    const shares = parseInt(gv('statShares')) || 0;
-    const followers = parseInt(gv('statFollowers')) || 0;
+    const recommend = numOrNull(gv('statRecommend'));
+    const likes = numOrNull(gv('statLikes'));
+    const comments = numOrNull(gv('statComments'));
+    const favorites = numOrNull(gv('statFavorites'));
+    const shares = numOrNull(gv('statShares'));
+    const followers = numOrNull(gv('statFollowers'));
     const existing = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
     const statData = { platform: c.platform, date: c.createdAt, title, views, completionRate, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: c.id };
     if (existing) Object.assign(existing, statData);
@@ -209,11 +216,16 @@ function deleteContent(id) {
     onOk: () => {
       const numId = Number(id);
       contents = contents.filter(c => c.id != id && c.id != numId);
-      // 同步清理关联的视频数据 / AI收录数据
-      stats = stats.filter(s => !(s.contentId == id || s.contentId == numId));
-      aiStats = aiStats.filter(s => !(s.contentId == id || s.contentId == numId));
-      saveData('stats', stats); saveData('aiStats', aiStats);
-      saveData('contents', contents); render(); showToast('已删除');
+      // 同步清理关联的视频数据 / AI收录数据（batch 原子保存）
+      const newStats = stats.filter(s => !(s.contentId == id || s.contentId == numId));
+      const newAiStats = aiStats.filter(s => !(s.contentId == id || s.contentId == numId));
+      saveDataBatch([
+        { key: 'contents', val: contents },
+        { key: 'stats', val: newStats },
+        { key: 'aiStats', val: newAiStats }
+      ]);
+      render();
+      showToast('已删除');
     }
   });
 }

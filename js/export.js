@@ -3,7 +3,7 @@ function exportData() {
   const counts = `内容${contents.length}·视频${stats.length}·文书${aiStats.length}·复盘${reviews.length}·账号数据${accountStats.length}·账号ID${accountIds.length}`;
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `新媒体工作台_${getToday()}.json`; a.click();
+  const a = document.createElement('a'); a.href = url; a.download = `新媒体数据工作台_${getToday()}.json`; a.click();
   URL.revokeObjectURL(url); showToast(`已导出：${counts}`);
 }
 
@@ -17,12 +17,12 @@ function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// 数字单元格：数字原样输出（含 0），null/undefined/空 → 空字符串
+// 数字单元格：数字原样输出（含 0），null/undefined/空 → 留空（未录入）
 function cellNum(v) {
   if (typeof v === 'number') return v;
   if (v === null || v === undefined || v === '') return '';
   const n = Number(v);
-  return isNaN(n) ? v : n;
+  return isNaN(n) ? '' : n;
 }
 
 // 各视频平台「适用」的指标：不适用的指标在报表中留白，而非显示 0；有数据时（含 0）照实输出
@@ -33,10 +33,10 @@ const VIDEO_METRIC_APPLY = {
   '小红书': { completionRate: false, avgWatch: true,  favorites: true,  recommend: false },
   '视频号': { completionRate: true,  avgWatch: true,  favorites: false, recommend: true },
 };
-// 视频指标：平台不适用该项时留白（例如快手不记均播、小红书不记完播率）；适用时 cellNum 输出——0 显示 0、无值留空
+// 视频指标：平台不适用该项时显示「-」（例如快手不记均播、小红书不记完播率）；适用时 cellNum 输出——0 显示 0、无值留空
 function videoMetric(s, key) {
   const apply = VIDEO_METRIC_APPLY[s.platform];
-  if (apply && apply[key] === false) return '';
+  if (apply && apply[key] === false) return '-';
   return cellNum(s[key]);
 }
 
@@ -335,7 +335,7 @@ function buildReportHtml(scope, scopeLabel) {
   const rangeText = range ? `（${range.start} ~ ${range.end}）` : '';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<title>新媒体工作台数据报表_${scopeLabel}_${getToday()}</title>
+<title>新媒体数据工作台数据报表_${scopeLabel}_${getToday()}</title>
 <style>
 body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; margin: 20px; color: #1f2937; line-height: 1.5; }
 h1 { color: #1f2937; border-bottom: 3px solid #5b8cff; padding-bottom: 10px; }
@@ -348,7 +348,7 @@ tr:nth-child(even) td { background: #f9fafb; }
 .meta { color: #6b7280; font-size: 14px; margin: 5px 0; }
 </style>
 </head><body>
-<h1>📊 新媒体工作台数据报表（${scopeLabel}${rangeText}）</h1>
+<h1>📊 新媒体数据工作台数据报表（${scopeLabel}${rangeText}）</h1>
 <p class="meta">导出时间：${new Date().toLocaleString('zh-CN')}　|　报表含：${metaParts.join(' · ')}</p>
 ${sections}
 </body></html>`;
@@ -364,7 +364,7 @@ function exportExcel(scope) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `新媒体工作台_${scopeLabel}_${getToday()}.xls`;
+  a.download = `新媒体数据工作台_${scopeLabel}_${getToday()}.xls`;
   a.click();
   URL.revokeObjectURL(url);
   const hasVReview = reviews.some(r => r.type === 'video');
@@ -427,7 +427,15 @@ function clearAllData() {
 
 function confirmClear() {
   contents = []; stats = []; aiStats = []; reviews = []; accountStats = []; accountIds = [];
-  saveData('contents', contents); saveData('stats', stats); saveData('aiStats', aiStats); saveData('reviews', reviews); saveData('accountStats', accountStats); saveData('accountIds', accountIds);
+  // 全部清空（batch 原子保存）
+  saveDataBatch([
+    { key: 'contents', val: [] },
+    { key: 'stats', val: [] },
+    { key: 'aiStats', val: [] },
+    { key: 'reviews', val: [] },
+    { key: 'accountStats', val: [] },
+    { key: 'accountIds', val: [] }
+  ]);
   selectedDate = null; closeModal(); render();
   showToast('已清空，已重置今日任务');
 }
