@@ -61,10 +61,12 @@ function renderPlatformTodayItem(platform, count, date, type) {
 }
 
 // 单条内容详情：标题/链接/日期+选题 + 数据摘要 + 操作（数据录入/编辑/删除）
+// 布局：左侧信息列（flex:1）+ 右侧竖排操作按钮，避免按钮挤压内容列宽度
 function renderContentDetail(content) {
   const type = isVideo(content.platform) ? 'video' : 'article';
   const safeLink = safeUrl(content.url);
   let html = `<div class="content-detail-item">
+    <div class="task-detail-info">
     <div class="task-detail-row"><span class="detail-label">标题</span><span>${escapeHtml(content.title)}</span></div>
     ${safeLink ? `<div class="task-detail-row"><span class="detail-label">链接</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" style="color:var(--link-blue);word-break:break-all;">${escapeHtml(content.url)}</a></div>` : ''}
     <div class="task-detail-row"><span class="detail-label">日期</span><span>${content.createdAt || ''}${content.topic ? ' · 选题：' + escapeHtml(content.topic) : ''}</span></div>`;
@@ -92,8 +94,9 @@ function renderContentDetail(content) {
       html += `<div class="task-detail-row"><span class="detail-label">AI收录</span><span>${yes.length > 0 ? yes.join('、') : '暂无收录'}</span></div>`;
     }
   }
+  html += '</div>';
 
-  // 操作入口：数据录入 / 编辑 / 删除
+  // 操作入口：数据录入 / 编辑 / 删除（右侧竖排）
   html += `<div class="task-detail-actions">
     <button class="btn-data-entry" onclick="openDataModal('${content.id}')">数据录入</button>
     <button class="btn-edit" onclick="editContent('${content.id}')">编辑</button>

@@ -375,11 +375,14 @@ a { color: var(--accent); text-decoration: none; }
 }
 .task-detail.open { display: block; }
 .content-detail-item {
+  display: flex; align-items: flex-start; gap: 12px;
   padding: 8px 0;
   border-bottom: 1px dashed var(--border);
 }
 .content-detail-item:last-child { border-bottom: none; }
 .content-detail-item:first-child { padding-top: 0; }
+/* 左侧信息列：占满剩余宽度，不被右侧按钮挤压 */
+.task-detail-info { flex: 1; min-width: 0; }
 .task-detail-row {
   display: flex; gap: 8px; padding: 3px 0;
   color: var(--text2); line-height: 1.5;
@@ -387,13 +390,14 @@ a { color: var(--accent); text-decoration: none; }
 .task-detail-row .detail-label {
   flex-shrink: 0; width: 52px; color: var(--text3); font-weight: 500;
 }
+/* 右侧操作按钮：竖排，无分割线，不占内容列宽度 */
 .task-detail-actions {
-  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px;
-  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px;
+  flex-shrink: 0; margin-top: 2px;
 }
 .task-detail-actions button {
-  font-size: 11px; padding: 4px 10px; border-radius: 6px;
-  border: none; cursor: pointer; font-weight: 500;
+  font-size: 11px; padding: 4px 12px; border-radius: 6px;
+  border: none; cursor: pointer; font-weight: 500; white-space: nowrap;
   transition: all 0.2s var(--ease);
 }
 
@@ -943,6 +947,11 @@ a { color: var(--accent); text-decoration: none; }
   .calendar-day .dot { width: 4px; height: 4px; }
   .stat-card .stat-value { font-size: 21px; }
   .card { padding: 15px; }
+  /* 窄屏：内容详情操作按钮更紧凑，信息列保持可读宽度 */
+  .content-detail-item { gap: 8px; }
+  .task-detail-actions { gap: 4px; }
+  .task-detail-actions button { padding: 3px 8px; font-size: 10.5px; }
+  .task-detail-row .detail-label { width: 46px; }
 }
 
 /* Toast */
