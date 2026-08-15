@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-bat_path = os.path.join(ROOT, 'StartWorkbench.bat')
+bat_path = os.path.join(ROOT, 'Start.bat')
 icon_path = os.path.join(ROOT, 'icons', 'icon-512.ico')
 
 if not os.path.exists(bat_path):

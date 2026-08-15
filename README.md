@@ -50,10 +50,10 @@
 
 ### 启动（Windows）
 
-双击 **`StartWorkbench.bat`**（静默启动，桌面快捷方式「新媒体数据工作台」同效），浏览器自动打开工作台。
+双击 **`Start.bat`**（静默启动：服务后台隐藏运行，无任何窗口，桌面快捷方式「新媒体数据工作台」同效），浏览器自动打开工作台。
 
 - 端口默认 **3000**；服务已在运行时重复启动会自动复用
-- 出问题排查用 **`ViewStart.bat`**（窗口不自动关闭，能看到启动信息）
+- 出问题排查用 **`ViewStart.bat`**（前台运行，服务日志直接显示在窗口，Ctrl+C 停止，窗口不自动关闭）
 
 ### 启动（macOS / Linux）
 
@@ -162,8 +162,9 @@ media-data-workbench/
 ├── start-ui.js             # 启动器（端口检测 / 后台拉起服务）
 ├── sw.js                   # Service Worker（PWA 离线）
 ├── manifest.webmanifest    # PWA 清单
-├── StartWorkbench.bat      # 一键启动（静默版，桌面快捷方式指向它）
-├── ViewStart.bat           # 启动（诊断版，窗口保留可查信息）
+├── Start.bat               # 一键启动（静默版：VBS 隐藏启动服务，桌面快捷方式指向它）
+├── start-hidden.vbs        # 隐藏启动 node 的 VBS 脚本（Start.bat 调用，勿动）
+├── ViewStart.bat           # 启动（诊断版：前台运行，日志可见，Ctrl+C 停止）
 ├── create_lnk.py           # 生成桌面快捷方式（迁移后用，零依赖）
 ├── make_bats.py            # 重新生成两个启动脚本（一般不用管）
 ├── icons/                  # 应用图标
@@ -171,7 +172,7 @@ media-data-workbench/
 └── tests/run.js            # 自动化回归测试（开发用）
 ```
 
-> 日常使用只需认识：`StartWorkbench.bat`（启动）、`data/`（数据）、`create_lnk.py`（重建桌面图标）。
+> 日常使用只需认识：`Start.bat`（启动）、`data/`（数据）、`create_lnk.py`（重建桌面图标）。
 
 ---
 
