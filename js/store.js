@@ -233,6 +233,10 @@ let contentDateFilter = '';   // 内容登记日期筛选：''=全部 | today | 
 let contentSortByViews = '';
 let contentFoldOpen = true;
 
+// 待办页 / 日历页：内容详情展开状态（key = "平台|日期"）
+// 保存（编辑/录入数据）后 render() 重绘时据此恢复展开，避免"保存后自动收起"
+let expandedTaskKeys = new Set();
+
 // ===== 心跳检测：服务断开时显示横幅 =====
 // 策略：每 5 秒定时 ping + 页面切回前台时立即 ping + render 时主动 ping
 // 用户每次操作（点击/切换 tab）必然触发 render → 主动检测服务

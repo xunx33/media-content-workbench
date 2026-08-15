@@ -367,6 +367,7 @@ a { color: var(--accent); text-decoration: none; }
   border: 1px solid var(--border-strong);
 }
 .expand-toggle:hover { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.expand-toggle.open { transform: rotate(180deg); }
 .task-detail {
   display: none; margin-top: 8px; padding: 10px 12px;
   background: var(--bg-2); border: 1px solid var(--border);

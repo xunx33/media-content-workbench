@@ -58,18 +58,20 @@ function renderCalendar() {
 // 单平台日历行：平台标签 + 已发条数/未登记 + [+1] 按钮 + 内容展开
 function renderDayPlatformItem(platform, count, date, type) {
   const list = getPlatformContents(date, platform);
+  const taskKey = platform + '|' + date;   // 展开状态 key（保存重绘后据此恢复展开）
+  const isOpen = expandedTaskKeys.has(taskKey);
   let html = `<div class="day-task ${count > 0 ? 'has-detail' : ''}">
     <div class="day-task-row">
       <span class="task-name">
         <span class="platform-tag ${type}">${platform}</span>
         ${count > 0
-          ? `<span style="color:var(--green);font-size:12px;font-weight:600;">已发 ${count} 条</span><span class="expand-toggle" onclick="toggleTaskDetail(this)">&#9660;</span>`
+          ? `<span style="color:var(--green);font-size:12px;font-weight:600;">已发 ${count} 条</span><span class="expand-toggle ${isOpen ? 'open' : ''}" onclick="toggleTaskDetail(this, '${taskKey}')">&#9660;</span>`
           : `<span style="color:var(--text3);font-size:12px;">未登记</span>`}
       </span>
       <button class="btn-done" onclick="openAddModal('${platform}', null, '${date}')">+1</button>
     </div>`;
   if (count > 0) {
-    html += `<div class="task-detail">`;
+    html += `<div class="task-detail ${isOpen ? 'open' : ''}">`;
     list.forEach(c => html += renderContentDetail(c));
     html += `</div>`;
   }

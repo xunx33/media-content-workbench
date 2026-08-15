@@ -38,19 +38,21 @@ function renderToday() {
 // 单平台今日行：平台标签 + 已发条数/未登记 + [+1] 按钮 + 内容展开
 function renderPlatformTodayItem(platform, count, date, type) {
   const list = getPlatformContents(date, platform);
+  const taskKey = platform + '|' + date;   // 展开状态 key（保存重绘后据此恢复展开）
+  const isOpen = expandedTaskKeys.has(taskKey);
   let html = `<li class="today-item ${count > 0 ? 'has-detail' : ''}">
     <div class="today-item-row">
       <span class="left">
         <span class="platform-initial ${type}">${PLATFORM_SHORT[platform] || (platform ? platform.charAt(0) : '')}</span><span class="platform-tag ${type}">${platform}</span>
         ${count > 0
-          ? `<span style="color:var(--green);font-size:12px;font-weight:600;">已发 ${count} 条</span><span class="expand-toggle" onclick="toggleTaskDetail(this)">&#9660;</span>`
+          ? `<span style="color:var(--green);font-size:12px;font-weight:600;">已发 ${count} 条</span><span class="expand-toggle ${isOpen ? 'open' : ''}" onclick="toggleTaskDetail(this, '${taskKey}')">&#9660;</span>`
           : `<span style="color:var(--text3);font-size:12px;">未登记</span>`}
       </span>
       <span class="status-dot ${count > 0 ? 'done' : 'pending'}" title="${count > 0 ? '已登记' : '未登记'}"></span>
       <button class="btn-done" onclick="openAddModal('${platform}', null, '${date}')">+1</button>
     </div>`;
   if (count > 0) {
-    html += `<div class="task-detail">`;
+    html += `<div class="task-detail ${isOpen ? 'open' : ''}">`;
     list.forEach(c => html += renderContentDetail(c));
     html += `</div>`;
   }
@@ -101,8 +103,8 @@ function renderContentDetail(content) {
   return html;
 }
 
-// 展开/收起任务详情
-function toggleTaskDetail(arrowEl) {
+// 展开/收起任务详情（记录到 expandedTaskKeys，保存重绘后保持展开）
+function toggleTaskDetail(arrowEl, taskKey) {
   // 兼容两种容器：今日待办 li.today-item / 日历 div.day-task
   const container = arrowEl.closest('.today-item') || arrowEl.closest('.day-task');
   if (!container) return;
@@ -111,9 +113,11 @@ function toggleTaskDetail(arrowEl) {
   const isOpen = detail.classList.contains('open');
   if (isOpen) {
     detail.classList.remove('open');
-    arrowEl.style.transform = 'rotate(0deg)';
+    arrowEl.classList.remove('open');
+    if (taskKey) expandedTaskKeys.delete(taskKey);
   } else {
     detail.classList.add('open');
-    arrowEl.style.transform = 'rotate(180deg)';
+    arrowEl.classList.add('open');
+    if (taskKey) expandedTaskKeys.add(taskKey);
   }
 }
