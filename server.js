@@ -7,6 +7,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
@@ -14,6 +15,41 @@ const DATA_DIR = path.join(__dirname, 'data');
 // 首次启动自动创建数据目录
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR);
+}
+
+// ===== 静态资源内容指纹（替代手动 ?v= 版本号）=====
+// 每次请求 index.html 时按文件当前内容实时计算哈希指纹并注入 ?v=：
+//   文件内容变了 → 指纹变 → URL 变 → 浏览器必然重新下载
+//   文件没变    → 指纹不变 → URL 不变 → 浏览器放心用缓存
+// 服务运行中改代码也立即生效（无需重启）；js/css 共 13 个文件，计算开销毫秒级。
+const assetHashes = {};
+function collectAssetHashes() {
+  const hashes = {};
+  const walk = (dir, base) => {
+    for (const name of fs.readdirSync(dir)) {
+      const full = path.join(dir, name);
+      const rel = base ? base + '/' + name : name;
+      if (fs.statSync(full).isDirectory()) {
+        walk(full, rel);
+      } else {
+        const hash = crypto.createHash('sha1').update(fs.readFileSync(full)).digest('hex').slice(0, 10);
+        hashes[rel] = hash;
+      }
+    }
+  };
+  walk(path.join(__dirname, 'js'), 'js');
+  walk(path.join(__dirname, 'css'), 'css');
+  return hashes;
+}
+
+// 把 HTML 里 <script src> / <link href> 的 ?v= 替换为内容指纹
+function injectAssetHashes(html) {
+  const hashes = collectAssetHashes();
+  Object.assign(assetHashes, hashes);
+  return html.replace(/(src|href)="([^"]+\.(?:js|css))(?:\?v=[^"]*)?"/g, (m, attr, file) => {
+    const hash = hashes[file];
+    return hash ? `${attr}="${file}?v=${hash}"` : m;
+  });
 }
 
 const MIME = {
@@ -132,6 +168,23 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404); res.end('Not Found');
       return;
     }
+
+    // index.html：注入内容指纹 + no-cache（每次都拿最新引用，配合指纹实现"改完即刷新"）
+    if (url === '/' || url === '/index.html') {
+      const html = injectAssetHashes(fs.readFileSync(filePath, 'utf-8'));
+      res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache' });
+      res.end(html);
+      return;
+    }
+
+    // 带内容指纹的 js/css：永久缓存（URL 带指纹，内容不变 URL 不变，可放心缓存）
+    const query = req.url.split('?')[1] || '';
+    if ((ext === '.js' || ext === '.css') && query.indexOf('v=') === 0) {
+      res.writeHead(200, { 'Content-Type': MIME[ext], 'Cache-Control': 'public, max-age=31536000, immutable' });
+      res.end(fs.readFileSync(filePath));
+      return;
+    }
+
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
     res.end(fs.readFileSync(filePath));
   } catch (err) {

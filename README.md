@@ -120,6 +120,7 @@ node server.js
   - `GET  /api/data/{key}`：读取数据（不存在返回 `[]`）
   - `POST /api/data/{key}`：单键写入（**原子写**：先写临时文件再 rename 替换，中途关窗不留半截文件）
   - `POST /api/data/batch`：批量写入（**两阶段原子提交**：先全部写 tmp、再全部 rename，失败自动回滚，保证跨文件一致性）
+  - **缓存自动刷新**：js/css 按内容计算哈希指纹自动注入 `?v=`，改代码后浏览器必然拿到新文件，无需手动维护版本号；带指纹资源配 `immutable` 长缓存，`index.html` 走 `no-cache`
 - **前端**：原生 JS + CSS，无框架、无构建、无 npm 依赖
 
 ### 安全设计
@@ -141,7 +142,7 @@ Service Worker 采用「数据请求永远走网络 + 静态资源 stale-while-r
 ## 六、项目结构
 
 ```
-media-content-workbench/
+media-data-workbench/
 ├── index.html              # 入口页面（6 页 SPA）
 ├── css/style.css           # 样式（浅蓝主题，CSS 变量）
 ├── js/

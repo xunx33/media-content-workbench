@@ -60,7 +60,7 @@
 </div>
 
 <!-- ===== 依赖顺序加载：store(数据) → ui(通用) → views → export/sample → app(入口) ===== -->
-<!-- ?v= 版本号：改动 JS/CSS 后请同步更新，避免浏览器缓存旧文件 -->
+<!-- 版本号无需手动维护：server.js 启动时按文件内容自动计算指纹并注入 ?v=，改代码后浏览器自动拿到新文件 -->
 <script src="js/store.js?v=20260813e"></script>
 <script src="js/ui.js?v=20260813c"></script>
 <script src="js/views/today.js?v=20260814d"></script>
