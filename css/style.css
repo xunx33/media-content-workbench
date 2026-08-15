@@ -291,7 +291,17 @@ a { color: var(--accent); text-decoration: none; }
   margin-bottom: 16px;
   box-shadow: var(--shadow);
 }
-.today-section h3 { font-family: var(--serif); font-size: 15px; margin-bottom: 12px; color: var(--accent); font-weight: 600; }
+/* 标题前竖条装饰：与 .card-title 的 ::before 保持一致的视觉语言 */
+.today-section h3 {
+  font-family: var(--serif); font-size: 15px; margin-bottom: 12px; color: var(--accent); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.today-section h3::before {
+  content: '';
+  width: 3px; height: 15px;
+  border-radius: 3px;
+  background: var(--accent);
+}
 .today-list { list-style: none; margin-bottom: 4px; }
 .today-item {
   display: flex;
@@ -680,11 +690,10 @@ a { color: var(--accent); text-decoration: none; }
 }
 .stat-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
 .stat-card .stat-value {
-  font-family: var(--mono);
   font-size: 24px; font-weight: 700;
   color: var(--text);
   line-height: 1.1;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;  /* 保持数字等宽对齐，但字体与整体统一（继承 sans） */
 }
 .stat-card .stat-label { font-size: 11px; color: var(--text2); margin-top: 5px; letter-spacing: 0.3px; }
 
@@ -731,7 +740,7 @@ a { color: var(--accent); text-decoration: none; }
 .bar.video { background: var(--video-orange); }
 .bar.article { background: var(--article-purple); }
 .bar-label { font-size: 9px; color: var(--text2); margin-top: 5px; text-align: center; white-space: normal; line-height: 1.25; }
-.bar-value { font-family: var(--mono); font-size: 10px; margin-bottom: 3px; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bar-value { font-size: 10px; margin-bottom: 3px; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* 双柱对比（本月 vs 上月）：同平台两柱固定等宽（14px）、间距 3px，平台间靠 bar-col/gap 分隔 */
 .bar-pair {
