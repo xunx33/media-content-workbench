@@ -22,13 +22,16 @@
     </div>
   </div>
   <div class="nav-tabs" id="navTabs">
-    <button class="nav-tab ws-toggle" id="wsToggle" onclick="toggleWorkspace()" title="点击切换工作台分区">短视频 ▾</button>
     <div class="nav-tab active" data-tab="today">今日待办</div>
     <div class="nav-tab" data-tab="content">内容登记</div>
     <div class="nav-tab" data-tab="account">账号登记</div>
     <div class="nav-tab" data-tab="data">数据复盘</div>
     <div class="nav-tab" data-tab="calendar">发布日历</div>
     <div class="nav-tab" data-tab="overview">发布总览</div>
+    <select class="ws-select" id="wsSelect" onchange="switchWorkspace(this.value)" title="切换工作台分区" aria-label="工作台分区">
+      <option value="video">短视频工作台</option>
+      <option value="article">文书工作台</option>
+    </select>
   </div>
 </div>
 

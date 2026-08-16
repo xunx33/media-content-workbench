@@ -166,24 +166,25 @@ a { color: var(--accent); text-decoration: none; }
 }
 .nav-tab.active::after { content: none; }
 
-/* 分区切换按钮：与导航 tab 同一行、位于最前方，点按在「短视频/文书」间切换（类似语言切换）
-   样式上略区别于普通 tab（带边框、双色渐变），提示这是模式开关 */
-.ws-toggle {
+/* 分区切换下拉：位于导航栏最右（标签之后），同一行，胶囊下拉外观 */
+.ws-select {
   flex: 0 0 auto;
-  padding: 6px 13px;
+  margin-left: 4px;
+  padding: 6px 24px 6px 12px;
   font-size: 12px;
   font-weight: 600;
   color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--accent-soft) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path fill='%231a6fb5' d='M0 0l4 5 4-5z'/></svg>") no-repeat right 8px center;
   border: 1px solid var(--accent);
   border-radius: 18px;
   cursor: pointer;
   white-space: nowrap;
-  user-select: none;
+  appearance: none;
+  -webkit-appearance: none;
   transition: all 0.25s var(--ease);
 }
-.ws-toggle:hover { background: var(--accent); color: var(--accent-ink); }
-.ws-toggle:active { transform: scale(0.97); }
+.ws-select:hover { background-color: var(--accent); color: var(--accent-ink); }
+.ws-select option { background: var(--card-solid); color: var(--text); font-weight: 400; }
 
 .backup-bar {
   display: flex;
@@ -951,7 +952,7 @@ a { color: var(--accent); text-decoration: none; }
   .brand h1 { font-size: 16px; }
   .brand .subtitle { font-size: 9px; letter-spacing: .5px; }
   .nav-tab { padding: 5px 8px; font-size: 11.5px; }
-  .ws-toggle { padding: 5px 10px; font-size: 11.5px; }
+  .ws-select { padding: 5px 20px 5px 9px; font-size: 11.5px; }
   .main { padding: 0 0 14px; }
   .platform-rows { gap: 7px; }
   .platform-row { padding: 10px 12px; gap: 11px; }
@@ -960,7 +961,7 @@ a { color: var(--accent); text-decoration: none; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .form-row { grid-template-columns: 1fr; }
   .nav-tab { padding: 7px 10px; font-size: 12px; }
-  .ws-toggle { padding: 7px 11px; font-size: 12px; }
+  .ws-select { padding: 7px 22px 7px 10px; font-size: 12px; }
   .bar-chart { height: 100px; }
   .calendar-day { height: 32px; }
 }
