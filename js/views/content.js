@@ -178,9 +178,17 @@ function saveContentData() {
     document.querySelectorAll('#aiChecks .ai-check-item').forEach(el => {
       ai[el.dataset.ai] = el.classList.contains('checked');
     });
+    const anyEngine = AI_ENGINES.some(eng => ai[eng] === true);
+    const noneChosen = ai['__none__'] === true;
     const existing = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
-    if (existing) { existing.ai = ai; existing.contentId = c.id; }
-    else aiStats.push({ id: Date.now() + Math.random(), platform: c.platform, date: c.createdAt, title: c.title, ai, contentId: c.id });
+    if (anyEngine || noneChosen) {
+      // 已录入：勾选了引擎 或 明确选了「无」→ 保存/更新记录（与未登记区分）
+      if (existing) { existing.ai = ai; existing.contentId = c.id; }
+      else aiStats.push({ id: Date.now() + Math.random(), platform: c.platform, date: c.createdAt, title: c.title, ai, contentId: c.id });
+    } else if (existing) {
+      // 未录入：留空/清空后保存 = 删除已有记录（等同未登记，不再计入已录入）
+      aiStats = aiStats.filter(x => x !== existing);
+    }
     saveData('aiStats', aiStats);
   }
   pendingDataContentId = null;
