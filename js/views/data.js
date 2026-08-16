@@ -593,7 +593,36 @@ function renderAccountData() {
   html += '<div class="toolbar" style="margin-top:8px;"><button class="btn-primary" onclick="saveAccountSnapshot()">保存账号数据（' + accSelectedPlatform + '）</button></div>';
   html += '</div>';
 
-  // 2. 各平台最新快照汇总（按「平台+账号」每行，取该账号最新一次记录）
+  // 2. 粉丝量趋势（按账号分组：每账号一条折线，2 列网格）
+  html += '<div class="card"><div class="card-title">粉丝量趋势 <span class="badge">按账号快照</span></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
+  var trendGroups = [];
+  VIDEO_PLATFORMS.forEach(function(p) {
+    var recs = accountIds.filter(function(x){ return x.platform === p; });
+    recs.forEach(function(rec) {
+      trendGroups.push({ platform: p, label: rec.accountId || ('账号#' + rec.id), ref: rec.id });
+    });
+    if (latestUnspecifiedAccount(p)) trendGroups.push({ platform: p, label: '未指定账号', ref: null });
+  });
+  trendGroups.forEach(function(g) {
+    var pts = accountStats
+      .filter(function(s){ return s.platform === g.platform && String(s.accountRef || '') === String(g.ref || '') && s.followers !== undefined && s.followers !== null; })
+      .sort(function(a,b){ return (a.date || '').localeCompare(b.date || ''); })
+      .map(function(s){ return { date: s.date, value: Number(s.followers) || 0 }; });
+    html += '<div>';
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + escapeHtml(g.platform) + ' · ' + escapeHtml(g.label) + '</div>';
+    if (pts.length >= 2) {
+      html += renderTrendLine(pts, { color: '#5b8cff' });
+    } else if (pts.length === 1) {
+      html += '<div class="trend-box"><div class="trend-single">共 <b style="color:var(--accent);">' + formatNum(pts[0].value) + '</b></div></div>';
+    } else {
+      html += '<div class="trend-box"><div class="trend-single" style="color:var(--text3);">暂无数据</div></div>';
+    }
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // 3. 各平台最新快照汇总（按「平台+账号」每行，取该账号最新一次记录）
   html += '<div class="card"><div class="card-title">各平台最新账号数据 <span class="badge">按账号最新快照</span></div>';
   html += '<table class="data-table"><thead><tr><th>平台</th><th>账号</th><th>记录日期</th><th>发布量</th><th>粉丝量</th><th>总播放量</th><th>总点赞量</th><th>总评论量</th><th>总转发/分享</th></tr></thead><tbody>';
   VIDEO_PLATFORMS.forEach(function(p) {
@@ -626,55 +655,51 @@ function renderAccountData() {
   });
   html += '</tbody></table></div>';
 
-  // 3. 粉丝量趋势（按账号分组：每账号一条折线，2 列网格）
-  html += '<div class="card"><div class="card-title">粉丝量趋势 <span class="badge">按账号快照</span></div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
-  var trendGroups = [];
-  VIDEO_PLATFORMS.forEach(function(p) {
-    var recs = accountIds.filter(function(x){ return x.platform === p; });
-    recs.forEach(function(rec) {
-      trendGroups.push({ platform: p, label: rec.accountId || ('账号#' + rec.id), ref: rec.id });
-    });
-    if (latestUnspecifiedAccount(p)) trendGroups.push({ platform: p, label: '未指定账号', ref: null });
-  });
-  trendGroups.forEach(function(g) {
-    var pts = accountStats
-      .filter(function(s){ return s.platform === g.platform && String(s.accountRef || '') === String(g.ref || '') && s.followers !== undefined && s.followers !== null; })
-      .sort(function(a,b){ return (a.date || '').localeCompare(b.date || ''); })
-      .map(function(s){ return { date: s.date, value: Number(s.followers) || 0 }; });
-    html += '<div>';
-    html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + escapeHtml(g.platform) + ' · ' + escapeHtml(g.label) + '</div>';
-    if (pts.length >= 2) {
-      html += renderTrendLine(pts, { color: '#5b8cff' });
-    } else if (pts.length === 1) {
-      html += '<div class="trend-box"><div class="trend-single">共 <b style="color:var(--accent);">' + formatNum(pts[0].value) + '</b></div></div>';
-    } else {
-      html += '<div class="trend-box"><div class="trend-single" style="color:var(--text3);">暂无数据</div></div>';
-    }
-    html += '</div>';
-  });
-  html += '</div></div>';
-
-  // 4. 历史记录（全部快照，每个数据格旁带与上一条记录的差值箭头）
-  var sorted = accountStats.slice().sort(function(a,b){ return (b.date || '').localeCompare(a.date || ''); });
-  html += '<div class="card"><div class="card-title">历史记录 <span class="badge">' + sorted.length + '条</span></div>';
-  if (sorted.length === 0) {
+  // 4. 历史记录（分平台各保留最新 3 条；标题右侧带清空按钮 + 弹窗确认）
+  html += '<div class="card"><div class="card-title">历史记录 <span class="badge">分平台各保留最新3条</span>';
+  html += '<button class="btn-danger-mini" style="margin-left:10px;padding:3px 10px;font-size:11px;" onclick="clearAccountHistory()">清空</button></div>';
+  if (accountStats.length === 0) {
     html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无账号数据记录，从上方表单开始记录</p>';
   } else {
-    html += '<table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>账号</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th></th></tr></thead><tbody>';
-    sorted.forEach(function(r) {
-      var prev = accountPrevSnapshot(r);
-      html += '<tr><td>' + escapeHtml(r.date) + '</td><td><span class="platform-tag video">' + escapeHtml(r.platform) + '</span></td>';
-      html += '<td style="font-size:12px;">' + escapeHtml(accountLabel(r.accountRef)) + '</td>';
-      html += '<td>' + accountDeltaCell(r, prev, 'posts') + '</td><td>' + accountDeltaCell(r, prev, 'followers') + '</td><td>' + accountDeltaCell(r, prev, 'views') + '</td>';
-      html += '<td>' + accountDeltaCell(r, prev, 'likes') + '</td><td>' + accountDeltaCell(r, prev, 'comments') + '</td><td>' + accountDeltaCell(r, prev, 'shares') + '</td>';
-      html += '<td><button class="btn-delete-mini" onclick="deleteAccountSnapshot(\'' + r.id + '\')">删除</button></td></tr>';
+    // 按平台分组（按平台顺序），每组内按日期倒序只取最新 3 条
+    var platformGroups = {};
+    VIDEO_PLATFORMS.forEach(function(p) { platformGroups[p] = []; });
+    accountStats.forEach(function(s) {
+      if (platformGroups[s.platform] !== undefined) platformGroups[s.platform].push(s);
     });
-    html += '</tbody></table>';
+    Object.keys(platformGroups).forEach(function(p) {
+      var group = platformGroups[p].sort(function(a,b){ return (b.date || '').localeCompare(a.date || ''); }).slice(0, 3);
+      if (group.length === 0) return;
+      html += '<div style="margin:6px 0 2px;"><span class="platform-tag video" style="display:inline-block;">' + p + '</span> <span style="font-size:11px;color:var(--text3);">最新 ' + group.length + ' 条</span></div>';
+      html += '<table class="data-table"><thead><tr><th>日期</th><th>账号</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th></th></tr></thead><tbody>';
+      group.forEach(function(r) {
+        var prev = accountPrevSnapshot(r);
+        html += '<tr><td>' + escapeHtml(r.date) + '</td>';
+        html += '<td style="font-size:12px;">' + escapeHtml(accountLabel(r.accountRef)) + '</td>';
+        html += '<td>' + accountDeltaCell(r, prev, 'posts') + '</td><td>' + accountDeltaCell(r, prev, 'followers') + '</td><td>' + accountDeltaCell(r, prev, 'views') + '</td>';
+        html += '<td>' + accountDeltaCell(r, prev, 'likes') + '</td><td>' + accountDeltaCell(r, prev, 'comments') + '</td><td>' + accountDeltaCell(r, prev, 'shares') + '</td>';
+        html += '<td><button class="btn-delete-mini" onclick="deleteAccountSnapshot(\'' + r.id + '\')">删除</button></td></tr>';
+      });
+      html += '</tbody></table>';
+    });
   }
   html += '</div>';
 
   return html;
+}
+
+// 清空历史记录（弹窗确认后清空全部账号数据快照）
+function clearAccountHistory() {
+  if (accountStats.length === 0) { showToast('暂无历史记录可清空'); return; }
+  showConfirm({
+    title: '清空历史记录',
+    desc: '确定清空全部账号数据历史记录吗？（共 ' + accountStats.length + ' 条，不可恢复）',
+    danger: true,
+    onOk: function() {
+      accountStats = [];
+      saveData('accountStats', accountStats); render(); showToast('历史记录已清空');
+    }
+  });
 }
 
 // 与上次记录对比：同平台同账号早于当前记录且日期最近的一条（供历史记录表格逐格差值）
