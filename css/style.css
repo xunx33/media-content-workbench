@@ -586,9 +586,8 @@ a { color: var(--accent); text-decoration: none; }
 .calendar-day.other-month { opacity: 0.3; }
 .calendar-day .dots { display: flex; gap: 2px; margin-top: 2px; height: 5px; }
 .calendar-day .dot { width: 5px; height: 5px; border-radius: 50%; transition: background 0.2s; }
-.calendar-day .dot.video { background: var(--orange); }
-.calendar-day .dot.article { background: var(--accent-2); }
 .calendar-day .dot.done { background: var(--green); }
+.calendar-day .dot.warn { background: var(--yellow); }
 
 /* Day Detail */
 .day-detail {

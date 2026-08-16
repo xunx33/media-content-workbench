@@ -103,11 +103,14 @@ function renderVideoDataModal(c) {
 function renderAiDataModal(c) {
   const s = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
   const savedAi = (s && s.ai) || {};
+  // 「无」选项：与「未登记」区分——未登记=无记录；「无」=已录入但无任何引擎收录（ai.__none__）
+  const noneChecked = savedAi.__none__ === true;
   return `<h3>文书AI收录录入</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag article">${c.platform}</span> ${escapeHtml(c.title)}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}</span></p>
-    <div class="form-group"><label>AI 收录情况（勾选已收录）</label>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag article">${c.platform}</span> ${escapeHtml(c.title)}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}${s ? ' · 已录入' : ' · 未登记'}</span></p>
+    <div class="form-group"><label>AI 收录情况（勾选已收录；若无任何收录请勾选「无」）</label>
       <div class="ai-checks" id="aiChecks">
         ${AI_ENGINES.map(eng => `<div class="ai-check-item ${savedAi[eng] ? 'checked' : ''}" data-ai="${eng}" onclick="toggleAiCheck(this)"><div class="check-box">${savedAi[eng] ? '&#10003;' : ''}</div><span>${eng}</span></div>`).join('')}
+        <div class="ai-check-item ai-none ${noneChecked ? 'checked' : ''}" data-ai="__none__" onclick="toggleAiCheck(this)"><div class="check-box">${noneChecked ? '&#10003;' : ''}</div><span style="color:var(--text3);">无</span></div>
       </div>
     </div>
     <div class="modal-actions">

@@ -22,23 +22,23 @@ function renderCalendar() {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = dateStr === todayStr;
     const isSelected = dateStr === selectedDate;
-    const dayCounts = getDayCounts(dateStr);
-    // 按工作台分区判断完成状态：视频分区看 4 平台全发；文书分区看 ≥3 平台
-    const videoOk = VIDEO_PLATFORMS.every(p => dayCounts[p] > 0);
-    const articleOk = ARTICLE_PLATFORMS.filter(p => dayCounts[p] > 0).length >= 3;
-    const inWs = workspace === 'video';
-    const wsOk = inWs ? videoOk : articleOk;
-    const wsHas = inWs
-      ? VIDEO_PLATFORMS.some(p => dayCounts[p] > 0)
-      : ARTICLE_PLATFORMS.some(p => dayCounts[p] > 0);
+    // 圆点统一逻辑（视频/文书一致）：
+    //   第一点=当日登记：无任何登记留空 / 部分平台有登记=黄 / 全部平台都有登记=绿
+    //   第二点=数据录入：当日登记内容全部已录入数据=绿 / 个别未录入=黄 / 无登记内容不显示
+    const dayStats = getDayPlatformStatus(dateStr);
     let classes = 'calendar-day';
     if (isToday) classes += ' today';
     if (isSelected) classes += ' selected';
     html += `<div class="${classes}" onclick="selectDay('${dateStr}')">${d}<div class="dots">`;
-    // 有内容的日期才显示点：当前分区完成变绿、未完成显示分区色点
-    if (wsHas) {
-      if (wsOk) html += '<span class="dot done"></span>';
-      else html += `<span class="dot ${inWs ? 'video' : 'article'}"></span>`;
+    if (dayStats.hasContent) {
+      html += dayStats.allRegistered
+        ? '<span class="dot done"></span>'
+        : '<span class="dot warn"></span>';
+      if (dayStats.hasDataEntry) {
+        html += dayStats.allDataEntered
+          ? '<span class="dot done"></span>'
+          : '<span class="dot warn"></span>';
+      }
     }
     html += '</div></div>';
   }
@@ -88,6 +88,34 @@ function renderDayPlatformItem(platform, count, date, type) {
 function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth() + delta); render(); }
 function goToday() { currentMonth = new Date(); selectedDate = getToday(); render(); }
 function selectDay(date) { selectedDate = date; render(); }
+
+// 当日平台登记 + 数据录入状态（按当前工作台分区；视频/文书逻辑统一）
+// 返回：{ hasContent, allRegistered, hasDataEntry, allDataEntered }
+//   hasContent    ：当日是否登记了内容（任一平台）
+//   allRegistered ：全部平台都有登记
+//   hasDataEntry  ：登记的内容中是否有任何一条已录入数据（视频stats / 文书aiStats）
+//   allDataEntered：每条登记内容都已录入数据
+function getDayPlatformStatus(date) {
+  const platforms = workspace === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
+  const dayContents = contents.filter(c => platforms.includes(c.platform) && c.createdAt === date);
+  const hasContent = dayContents.length > 0;
+  // 全部平台有登记 = 每个平台至少 1 条
+  const allRegistered = platforms.every(p => dayContents.some(c => c.platform === p));
+  // 数据录入判定：视频内容看 stats（按内容关联），文书内容看 aiStats
+  const hasData = c => {
+    if (isVideo(c.platform)) {
+      return stats.some(s => s.contentId == c.id || s.contentId == Number(c.id));
+    }
+    return aiStats.some(s => s.contentId == c.id || s.contentId == Number(c.id));
+  };
+  const entered = dayContents.filter(hasData);
+  return {
+    hasContent,
+    allRegistered,
+    hasDataEntry: entered.length > 0,
+    allDataEntered: dayContents.length > 0 && entered.length === dayContents.length
+  };
+}
 
 // 从数据复盘折线图点击数据点跳转：切到发布日历并定位到该日期所在月、选中该日
 function goCalendarDate(dateStr) {

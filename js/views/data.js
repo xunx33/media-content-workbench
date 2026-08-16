@@ -517,6 +517,29 @@ function renderArticleData(period) {
 }
 
 function toggleAiCheck(el) {
+  const isNone = el.dataset.ai === '__none__';
+  if (isNone && !el.classList.contains('checked')) {
+    // 勾选「无」：清空所有引擎勾选（互斥）
+    document.querySelectorAll('#aiChecks .ai-check-item').forEach(x => {
+      x.classList.remove('checked');
+      x.querySelector('.check-box').innerHTML = '';
+    });
+    el.classList.add('checked');
+    el.querySelector('.check-box').innerHTML = '&#10003;';
+    return;
+  }
+  if (isNone && el.classList.contains('checked')) {
+    // 取消「无」：正常取消
+    el.classList.remove('checked');
+    el.querySelector('.check-box').innerHTML = '';
+    return;
+  }
+  // 勾选引擎：若「无」已选中则先取消「无」
+  const noneEl = document.querySelector('#aiChecks .ai-check-item[data-ai="__none__"]');
+  if (noneEl && noneEl.classList.contains('checked')) {
+    noneEl.classList.remove('checked');
+    noneEl.querySelector('.check-box').innerHTML = '';
+  }
   el.classList.toggle('checked');
   if (el.classList.contains('checked')) el.querySelector('.check-box').innerHTML = '&#10003;';
   else el.querySelector('.check-box').innerHTML = '';
