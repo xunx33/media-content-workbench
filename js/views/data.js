@@ -403,7 +403,8 @@ function renderVideoData(period) {
   const isWeek = (period || 'month') === 'week';
   const trendDays = isWeek ? ((new Date().getDay() + 6) % 7) + 1 : 30;
   const trendBase = isWeek ? '本周播放量趋势' : '本月播放量趋势';
-  const trendTitle = pf ? trendBase + ' · ' + pf : trendBase;  // 标题命名统一：「本月播放量趋势 · 平台名」
+  // 标题不带平台后缀（badge「本周 · 平台 · 点击数据点跳转当日」已含平台，避免重复）
+  const trendTitle = trendBase;
   // 周模式窗口=本周一~今天（与周期范围一致，不含上周数据）；月模式近30天
   const trendPts = aggregateDaily(stats.filter(s => byPf(s)), s => s.views || 0, trendDays, new Date());
   html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${isWeek ? '本周' : '近30天'} · ${pf || '4平台合计'} · 点击数据点跳转当日</span></div>${renderTrendLine(trendPts, { color: '#fb923c', onClick: 'goCalendarDate' })}</div>`;
@@ -501,7 +502,8 @@ function renderArticleData(period) {
     return n;
   }, aiTrendDays, new Date());
   const aiTrendBase = aiIsWeek ? '本周 AI 收录数趋势' : '本月 AI 收录数趋势';
-  const aiTrendTitle = pf ? aiTrendBase + ' · ' + pf : aiTrendBase;  // 标题命名统一：「本月 AI 收录数趋势 · 平台名」
+  // 标题不带平台后缀（badge「本周 · 平台」已含平台，避免重复）
+  const aiTrendTitle = aiTrendBase;
   html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'} · ${pf || '6平台合计'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n, label: '收录数' })}</div>`;
 
   // 未关联记录（AI收录但找不到对应内容）
