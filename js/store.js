@@ -228,14 +228,13 @@ let workspace = localStorage.getItem(STORAGE_KEY + 'workspace') === 'article' ? 
 function switchWorkspace(w) {
   workspace = w === 'article' ? 'article' : 'video';
   localStorage.setItem(STORAGE_KEY + 'workspace', workspace);
-  // 切换分区时的边界规则：
-  // 1) 文书分区下「账号登记」不可用（视频专属）→ 跳回今日待办
-  // 2) 数据复盘：子页类型与分区强绑定；旧平台的筛选不合法 → 重置为「全部」
-  if (workspace === 'article' && currentTab === 'account') currentTab = 'today';
-  if (currentTab === 'data') dataSubTab = workspace;
+  // 切换后自动回到今日待办首页（页面随分区渲染对应工作台的待办）
+  currentTab = 'today';
+  // 数据复盘：子页类型与分区强绑定；旧平台的筛选不合法 → 重置为「全部」
+  dataSubTab = workspace;
   const validPf = workspace === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
   if (reviewPlatformFilter && !validPf.includes(reviewPlatformFilter)) reviewPlatformFilter = '';
-  // 3) 同步下拉栏选中值 + 账号登记 tab 显隐
+  // 同步下拉栏选中值 + 账号登记 tab 显隐
   const sel = document.getElementById('wsSelect');
   if (sel) sel.value = workspace;
   const accTab = document.querySelector('.nav-tab[data-tab="account"]');
