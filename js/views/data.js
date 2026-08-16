@@ -12,14 +12,9 @@ function findLinkedTitle(record, type) {
 function renderData() {
   // 账号总数据已提升为独立 Tab「账号登记」，此处自愈历史遗留的 account 值
   if (dataSubTab === 'account') dataSubTab = 'video';
-  // 子 tab 与工作台分区强绑定：视频分区→短视频数据；文书分区→文书AI收录
+  // 子页类型与工作台分区强绑定（分区已决定展示内容，子 tab 已删除）
   dataSubTab = workspace;
   let html = '';
-
-  // Sub-tabs（分区内只显示对应子页，避免跨分区切换）
-  html += `<div class="sub-tab-bar">
-    <div class="sub-tab active">${workspace === 'video' ? '短视频数据' : '文书AI收录'}</div>
-  </div>`;
 
   // 顶部工具栏：左侧平台筛选标签 + 右侧周期下拉（同一行，窄屏自动换行）
   const curPeriod = getCurPeriod();
@@ -48,14 +43,6 @@ function renderData() {
   html += '</div>';
 
   return html;
-}
-
-function switchDataTab(tab) {
-  dataSubTab = tab;
-  // 子页切换后校验平台筛选合法性：不属于新子页平台的旧筛选自动重置为「全部」
-  const valid = tab === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
-  if (reviewPlatformFilter && !valid.includes(reviewPlatformFilter)) reviewPlatformFilter = '';
-  render();
 }
 
 // ===== 数据复盘平台筛选标签 =====

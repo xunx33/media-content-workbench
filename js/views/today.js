@@ -17,10 +17,11 @@ function renderToday() {
 
   html += '</div>';
 
-  // 今日发布概览（按分区只显示对应类型；「今日总登记」始终为当日全部）
+  // 今日发布概览（按分区只显示对应类型；「今日总登记」只统计当前分区平台）
   const todayContents = contents.filter(c => c.createdAt === today);
   const vTotal = todayContents.filter(c => isVideo(c.platform)).length;
   const aTotal = todayContents.filter(c => isArticle(c.platform)).length;
+  const wsTotal = workspace === 'video' ? vTotal : aTotal;  // 今日总登记 = 当前分区条数
   const videoDone = VIDEO_PLATFORMS.filter(p => todayContents.some(c => c.platform === p)).length;
   const articleDone = ARTICLE_PLATFORMS.filter(p => todayContents.some(c => c.platform === p)).length;
   html += `<div class="card"><div class="card-title">今日发布概览</div>
@@ -29,12 +30,12 @@ function renderToday() {
     html += `
       <div class="stat-card"><div class="stat-value">${vTotal}</div><div class="stat-label">短视频条数</div></div>
       <div class="stat-card"><div class="stat-value">${videoDone}/${VIDEO_PLATFORMS.length}</div><div class="stat-label">视频平台覆盖</div></div>
-      <div class="stat-card"><div class="stat-value">${todayContents.length}</div><div class="stat-label">今日总登记</div></div>`;
+      <div class="stat-card"><div class="stat-value">${wsTotal}</div><div class="stat-label">今日总登记</div></div>`;
   } else {
     html += `
       <div class="stat-card"><div class="stat-value">${aTotal}</div><div class="stat-label">文书条数</div></div>
       <div class="stat-card"><div class="stat-value">${articleDone}/${ARTICLE_PLATFORMS.length}</div><div class="stat-label">文书平台覆盖</div></div>
-      <div class="stat-card"><div class="stat-value">${todayContents.length}</div><div class="stat-label">今日总登记</div></div>`;
+      <div class="stat-card"><div class="stat-value">${wsTotal}</div><div class="stat-label">今日总登记</div></div>`;
   }
   html += `</div></div>`;
 

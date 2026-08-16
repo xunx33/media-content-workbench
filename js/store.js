@@ -224,16 +224,23 @@ window.storeReady = (async () => {
 let currentTab = 'today';
 // 工作台分区：'video' = 短视频工作台 | 'article' = 文书工作台（localStorage 记忆，刷新保持）
 let workspace = localStorage.getItem(STORAGE_KEY + 'workspace') === 'article' ? 'article' : 'video';
-function switchWorkspace(w) {
-  workspace = w === 'article' ? 'article' : 'video';
+// 单按钮点按切换（类似语言切换）：video ↔ article
+function toggleWorkspace() {
+  workspace = workspace === 'article' ? 'video' : 'article';
   localStorage.setItem(STORAGE_KEY + 'workspace', workspace);
   // 切换分区时的边界规则：
   // 1) 文书分区下「账号登记」不可用（视频专属）→ 跳回今日待办
   // 2) 数据复盘子 tab 与分区强绑定（video→短视频数据 / article→文书AI收录）
   if (workspace === 'article' && currentTab === 'account') currentTab = 'today';
   if (currentTab === 'data') dataSubTab = workspace;
-  // 3) 同步分区按钮 active 态
-  document.querySelectorAll('.ws-item').forEach(el => el.classList.toggle('active', el.dataset.ws === workspace));
+  // 旧平台的复盘筛选不合法 → 重置为「全部」
+  const validPf = workspace === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
+  if (reviewPlatformFilter && !validPf.includes(reviewPlatformFilter)) reviewPlatformFilter = '';
+  // 3) 同步切换按钮文本 + 账号登记 tab 显隐
+  const btn = document.getElementById('wsToggle');
+  if (btn) btn.textContent = workspace === 'video' ? '短视频 ▾' : '文书 ▾';
+  const accTab = document.querySelector('.nav-tab[data-tab="account"]');
+  if (accTab) accTab.style.display = workspace === 'video' ? '' : 'none';
   render();
 }
 let currentMonth = new Date();

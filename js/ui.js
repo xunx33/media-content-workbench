@@ -141,9 +141,13 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
   });
 });
 
-// ===== WORKSPACE 分区按钮 active 态同步 =====
+// ===== WORKSPACE 分区按钮同步 =====
 function syncWorkspaceUI() {
-  document.querySelectorAll('.ws-item').forEach(el => el.classList.toggle('active', el.dataset.ws === workspace));
+  const btn = document.getElementById('wsToggle');
+  if (btn) btn.textContent = workspace === 'video' ? '短视频 ▾' : '文书 ▾';
+  // 文书工作台隐藏「账号登记」导航按钮
+  const accTab = document.querySelector('.nav-tab[data-tab="account"]');
+  if (accTab) accTab.style.display = workspace === 'video' ? '' : 'none';
 }
 
 // ===== TOAST =====
