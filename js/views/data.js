@@ -340,7 +340,8 @@ function renderVideoData(period) {
   const byPf = s => isVideo(s.platform) && (!pf || s.platform === pf);
   const currStats = stats.filter(s => byPf(s) && s.date >= ranges.start && s.date <= ranges.end);
   const prevStats = stats.filter(s => byPf(s) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
-  const totalCount = currStats.length;  // 总发布数（数据录入条数）
+  // 总发布数以「登记内容」为准（当前周期 + 平台筛选），不以录入数据条数为准
+  const totalCount = contents.filter(c => byPf(c) && c.createdAt >= ranges.start && c.createdAt <= ranges.end).length;
   const totalViews = currStats.reduce((sum, s) => sum + (s.views || 0), 0);
   const totalLikes = currStats.reduce((sum, s) => sum + (s.likes || 0), 0);
   const totalComments = currStats.reduce((sum, s) => sum + (s.comments || 0), 0);
@@ -443,8 +444,10 @@ function renderArticleData(period) {
     AI_ENGINES.forEach(ai => { totalPossible++; if (s.ai && s.ai[ai]) totalChecked++; });
   });
   const rate = totalPossible > 0 ? Math.round(totalChecked / totalPossible * 100) : 0;
+  // 总发布数以「登记内容」为准（当前周期 + 平台筛选），不以 AI 收录录入条数为准
+  const articleCount = contents.filter(c => byPf(c) && c.createdAt >= ranges.start && c.createdAt <= ranges.end).length;
   html += `<div class="stats-grid">
-    <div class="stat-card"><div class="stat-value">${currAiStats.length}</div><div class="stat-label">总发布数</div></div>
+    <div class="stat-card"><div class="stat-value">${articleCount}</div><div class="stat-label">总发布数</div></div>
     <div class="stat-card"><div class="stat-value">${totalChecked}/${totalPossible}</div><div class="stat-label">AI收录数</div></div>
     <div class="stat-card"><div class="stat-value" style="color:${rate>=50?'var(--green)':'var(--yellow)'};">${rate}%</div><div class="stat-label">AI收录率</div></div>
   </div></div>`;
