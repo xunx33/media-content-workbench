@@ -370,18 +370,34 @@ function renderVideoData(period) {
       <div class="stat-card"><div class="stat-value">${formatNum(totalFollowers)}</div><div class="stat-label">总涨粉</div></div>
     </div></div>`;
 
-  // Bar chart（当前周期 vs 上期双柱对比；选中单平台时只显示该平台一根柱）
-  // 标题命名统一：「播放量对比 · 平台名」；未筛选时「各平台播放量对比」
-  html += `<div class="card"><div class="card-title">${pf ? '播放量对比 · ' + pf : '各平台播放量对比'} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
-  const platformViews = {};
-  const prevPlatformViews = {};
-  const barPlatforms = pf ? [pf] : VIDEO_PLATFORMS;  // 筛选单平台时图表只显示该平台
-  barPlatforms.forEach(p => { platformViews[p] = 0; prevPlatformViews[p] = 0; });
-  currStats.forEach(s => { if (platformViews[s.platform] !== undefined) platformViews[s.platform] += s.views; });
-  prevStats.forEach(s => { if (prevPlatformViews[s.platform] !== undefined) prevPlatformViews[s.platform] += s.views; });
-  html += renderChartLegend('video', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(barPlatforms, barPlatforms.map(p => platformViews[p]), barPlatforms.map(p => prevPlatformViews[p]), 'video', formatNum, ranges.label, ranges.prevLabel);
-  html += '</div>';
+  // Bar chart（当前周期 vs 上期双柱对比）
+  if (pf) {
+    // 单平台筛选：展示该平台 4 个通用指标（播放/点赞/评论/分享）的双柱对比，避免单根柱过于单薄
+    // 标题命名统一：「平台名 数据对比」
+    const metrics = [
+      { key: 'views',    label: '播放量' },
+      { key: 'likes',    label: '点赞量' },
+      { key: 'comments', label: '评论量' },
+      { key: 'shares',   label: '分享量' },
+    ];
+    const curVals  = metrics.map(m => currStats.reduce((sum, s) => sum + (s[m.key] || 0), 0));
+    const prevVals = metrics.map(m => prevStats.reduce((sum, s) => sum + (s[m.key] || 0), 0));
+    html += `<div class="card"><div class="card-title">${pf} 数据对比 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+    html += renderChartLegend('video', ranges.label, ranges.prevLabel);
+    html += renderDualBarChart(metrics.map(m => m.label), curVals, prevVals, 'video', formatNum, ranges.label, ranges.prevLabel);
+    html += '</div>';
+  } else {
+    // 全部平台：各平台播放量对比
+    html += `<div class="card"><div class="card-title">各平台播放量对比 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+    const platformViews = {};
+    const prevPlatformViews = {};
+    VIDEO_PLATFORMS.forEach(p => { platformViews[p] = 0; prevPlatformViews[p] = 0; });
+    currStats.forEach(s => { if (platformViews[s.platform] !== undefined) platformViews[s.platform] += s.views; });
+    prevStats.forEach(s => { if (prevPlatformViews[s.platform] !== undefined) prevPlatformViews[s.platform] += s.views; });
+    html += renderChartLegend('video', ranges.label, ranges.prevLabel);
+    html += renderDualBarChart(VIDEO_PLATFORMS, VIDEO_PLATFORMS.map(p => platformViews[p]), VIDEO_PLATFORMS.map(p => prevPlatformViews[p]), 'video', formatNum, ranges.label, ranges.prevLabel);
+    html += '</div>';
+  }
 
   // 播放量趋势折线图（跟随周期：周=本周一~今天，月=近30天）
   const isWeek = (period || 'month') === 'week';
