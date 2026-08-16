@@ -655,27 +655,35 @@ function renderAccountData() {
   });
   html += '</tbody></table></div>';
 
-  // 4. 历史记录（分平台各保留最新 3 条；标题右侧带清空按钮 + 弹窗确认）
-  html += '<div class="card"><div class="card-title">历史记录 <span class="badge">分平台各保留最新3条</span>';
+  // 4. 历史记录（按「平台+账号」分组，每个账号独立保留最新 3 条；标题右侧带清空按钮 + 弹窗确认）
+  html += '<div class="card"><div class="card-title">历史记录 <span class="badge">每平台每账号各保留最新3条</span>';
   html += '<button class="btn-danger-mini" style="margin-left:10px;padding:3px 10px;font-size:11px;" onclick="clearAccountHistory()">清空</button></div>';
   if (accountStats.length === 0) {
     html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无账号数据记录，从上方表单开始记录</p>';
   } else {
-    // 按平台分组（按平台顺序），每组内按日期倒序只取最新 3 条
-    var platformGroups = {};
-    VIDEO_PLATFORMS.forEach(function(p) { platformGroups[p] = []; });
+    // 按「平台+账号」分组：每组按日期倒序只取最新 3 条
+    // 组 key = 平台 + '|' + (账号ref 或 '未指定账号')
+    var accountGroups = {};
     accountStats.forEach(function(s) {
-      if (platformGroups[s.platform] !== undefined) platformGroups[s.platform].push(s);
+      var refStr = String(s.accountRef || '');
+      var label = refStr ? accountLabel(s.accountRef) : '未指定账号';
+      var key = s.platform + '|' + refStr;
+      if (!accountGroups[key]) accountGroups[key] = { platform: s.platform, label: label, items: [] };
+      accountGroups[key].items.push(s);
     });
-    Object.keys(platformGroups).forEach(function(p) {
-      var group = platformGroups[p].sort(function(a,b){ return (b.date || '').localeCompare(a.date || ''); }).slice(0, 3);
+    // 按平台顺序排序（同平台内按账号标签排序）
+    var ordered = Object.keys(accountGroups).map(function(k){ return accountGroups[k]; }).sort(function(a, b){
+      var ia = VIDEO_PLATFORMS.indexOf(a.platform), ib = VIDEO_PLATFORMS.indexOf(b.platform);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || String(a.label).localeCompare(String(b.label), 'zh');
+    });
+    ordered.forEach(function(g) {
+      var group = g.items.sort(function(a,b){ return (b.date || '').localeCompare(a.date || ''); }).slice(0, 3);
       if (group.length === 0) return;
-      html += '<div style="margin:6px 0 2px;"><span class="platform-tag video" style="display:inline-block;">' + p + '</span> <span style="font-size:11px;color:var(--text3);">最新 ' + group.length + ' 条</span></div>';
-      html += '<table class="data-table"><thead><tr><th>日期</th><th>账号</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th></th></tr></thead><tbody>';
+      html += '<div style="margin:6px 0 2px;"><span class="platform-tag video" style="display:inline-block;">' + escapeHtml(g.platform) + '</span> <span style="font-size:12px;font-weight:600;">' + escapeHtml(g.label) + '</span> <span style="font-size:11px;color:var(--text3);">最新 ' + group.length + ' 条</span></div>';
+      html += '<table class="data-table"><thead><tr><th>日期</th><th>发布</th><th>粉丝</th><th>播放</th><th>点赞</th><th>评论</th><th>转发/分享</th><th></th></tr></thead><tbody>';
       group.forEach(function(r) {
         var prev = accountPrevSnapshot(r);
         html += '<tr><td>' + escapeHtml(r.date) + '</td>';
-        html += '<td style="font-size:12px;">' + escapeHtml(accountLabel(r.accountRef)) + '</td>';
         html += '<td>' + accountDeltaCell(r, prev, 'posts') + '</td><td>' + accountDeltaCell(r, prev, 'followers') + '</td><td>' + accountDeltaCell(r, prev, 'views') + '</td>';
         html += '<td>' + accountDeltaCell(r, prev, 'likes') + '</td><td>' + accountDeltaCell(r, prev, 'comments') + '</td><td>' + accountDeltaCell(r, prev, 'shares') + '</td>';
         html += '<td><button class="btn-delete-mini" onclick="deleteAccountSnapshot(\'' + r.id + '\')">删除</button></td></tr>';
