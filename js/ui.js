@@ -6,22 +6,25 @@ function formatNum(n) {
 
 // ===== MODAL =====
 let pendingLinkTaskId = null;
+// 登记弹窗平台下拉：按工作台分区只显示对应平台（短视频工作台 → 4 视频平台；文书工作台 → 6 文书平台）
+function platformOptions(selected) {
+  const list = workspace === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
+  const label = workspace === 'video' ? '短视频平台' : '文书平台';
+  const fallback = list.includes(selected) ? selected : list[0];
+  return `<optgroup label="${label}">${list.map(p => `<option value="${p}" ${p === fallback ? 'selected' : ''}>${p}</option>`).join('')}</optgroup>`;
+}
+
 function openAddModal(prefillPlatform, taskId, prefillDate) {
   editId = null;
   pendingLinkTaskId = taskId || null;
-  const preP = prefillPlatform || VIDEO_PLATFORMS[0];
+  const preP = prefillPlatform || (workspace === 'video' ? VIDEO_PLATFORMS[0] : ARTICLE_PLATFORMS[0]);
   const preD = prefillDate || getToday();
   document.getElementById('modalContent').innerHTML = `
     <h3>登记内容</h3>
     <div class="form-row">
       <div class="form-group"><label>平台</label>
         <select id="cPlatform">
-          <optgroup label="短视频平台">
-            ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${p===preP?'selected':''}>${p}</option>`).join('')}
-          </optgroup>
-          <optgroup label="文书平台">
-            ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${p===preP?'selected':''}>${p}</option>`).join('')}
-          </optgroup>
+          ${platformOptions(preP)}
         </select>
       </div>
       <div class="form-group"><label>日期</label><input type="date" id="cDate" value="${preD}"></div>
@@ -36,6 +39,8 @@ function openAddModal(prefillPlatform, taskId, prefillDate) {
   document.getElementById('modalOverlay').classList.add('active');
 }
 
+// 编辑登记弹窗：仅登记内容（数据录入保持独立按钮——必须先有登记内容才能录数据，二者不同时进行）
+// 平台下拉按工作台分区只显示对应平台
 function editContent(id) {
   const c = contents.find(x => x.id == id || x.id == Number(id));
   if (!c) return;
@@ -45,12 +50,7 @@ function editContent(id) {
     <div class="form-row">
       <div class="form-group"><label>平台</label>
         <select id="cPlatform">
-          <optgroup label="短视频平台">
-            ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${c.platform===p?'selected':''}>${p}</option>`).join('')}
-          </optgroup>
-          <optgroup label="文书平台">
-            ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${c.platform===p?'selected':''}>${p}</option>`).join('')}
-          </optgroup>
+          ${platformOptions(c.platform)}
         </select>
       </div>
       <div class="form-group"><label>日期</label><input type="date" id="cDate" value="${c.createdAt}"></div>
