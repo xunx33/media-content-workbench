@@ -225,6 +225,7 @@ let currentTab = 'today';
 let currentMonth = new Date();
 let selectedDate = null;
 let dataSubTab = 'video';
+let reviewPlatformFilter = '';   // 数据复盘平台筛选：''=全部 | 具体平台名（随子页短视频/文书变化）
 let editId = null;
 let overviewMonth = new Date();
 let searchKeyword = '';

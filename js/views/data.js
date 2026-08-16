@@ -21,6 +21,7 @@ function renderData() {
   </div>`;
 
   // 周期下拉（周数据与复盘 / 月数据与复盘，替代复盘登记里的周期选择）
+  // + 平台筛选标签（随子页变化：短视频 4 个 / 文书 6 个，含「全部」）
   const curPeriod = getCurPeriod();
   html += `<div class="period-select-row">
     <select id="dataPeriodSelect" onchange="switchDataPeriod(this.value)" aria-label="数据复盘周期">
@@ -28,6 +29,7 @@ function renderData() {
       <option value="month" ${curPeriod==='month'?'selected':''}>月数据与复盘</option>
     </select>
   </div>`;
+  html += renderPlatformFilterTags();
 
   // 左右两栏：左=统计图表，右=复盘登记
   html += '<div class="data-layout">';
@@ -46,7 +48,31 @@ function renderData() {
   return html;
 }
 
-function switchDataTab(tab) { dataSubTab = tab; render(); }
+function switchDataTab(tab) {
+  dataSubTab = tab;
+  // 子页切换后校验平台筛选合法性：不属于新子页平台的旧筛选自动重置为「全部」
+  const valid = tab === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
+  if (reviewPlatformFilter && !valid.includes(reviewPlatformFilter)) reviewPlatformFilter = '';
+  render();
+}
+
+// ===== 数据复盘平台筛选标签 =====
+// 渲染「全部 + 各平台」标签，平台列表随子页变化（短视频 4 个 / 文书 6 个）
+function renderPlatformFilterTags() {
+  const platforms = dataSubTab === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
+  let html = '<div class="platform-filter-row"><span class="filter-label">平台：</span>';
+  html += `<span class="filter-pill ${reviewPlatformFilter === '' ? 'active' : ''}" onclick="switchReviewPlatformFilter('')">全部</span>`;
+  platforms.forEach(p => {
+    html += `<span class="filter-pill ${reviewPlatformFilter === p ? 'active' : ''}" onclick="switchReviewPlatformFilter('${p}')">${p}</span>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function switchReviewPlatformFilter(platform) {
+  reviewPlatformFilter = platform;
+  render();
+}
 
 // ===== 周期状态：视频/文书/账号各自记忆周/月选择 =====
 let dataPeriod = { video: 'month', article: 'month', account: 'month' };
@@ -320,16 +346,20 @@ function renderChartLegend(barClass, curLabel, prevLabel) {
 // --- Video data（仅统计展示）---
 function renderVideoData(period) {
   const ranges = getPeriodRanges(period || 'month');
-  const currStats = stats.filter(s => isVideo(s.platform) && s.date >= ranges.start && s.date <= ranges.end);
-  const prevStats = stats.filter(s => isVideo(s.platform) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
+  // 平台筛选：''=全部视频平台 | 具体平台
+  const pf = reviewPlatformFilter;
+  const byPf = s => isVideo(s.platform) && (!pf || s.platform === pf);
+  const currStats = stats.filter(s => byPf(s) && s.date >= ranges.start && s.date <= ranges.end);
+  const prevStats = stats.filter(s => byPf(s) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
   const totalCount = currStats.length;  // 总发布数（数据录入条数）
   const totalViews = currStats.reduce((sum, s) => sum + (s.views || 0), 0);
   const totalLikes = currStats.reduce((sum, s) => sum + (s.likes || 0), 0);
   const totalComments = currStats.reduce((sum, s) => sum + (s.comments || 0), 0);
   const totalFavorites = currStats.reduce((sum, s) => sum + (s.favorites || 0), 0);
   const totalFollowers = currStats.reduce((sum, s) => sum + (s.followers || 0), 0);
+  const titleSuffix = pf ? ' · ' + pf : '';
 
-  let html = `<div class="card"><div class="card-title">短视频平台${ranges.label}数据 <span class="badge">${ranges.start} ~ ${ranges.end}</span></div>
+  let html = `<div class="card"><div class="card-title">短视频平台${ranges.label}数据${titleSuffix} <span class="badge">${ranges.start} ~ ${ranges.end}</span></div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-value">${totalCount}</div><div class="stat-label">总发布数</div></div>
       <div class="stat-card"><div class="stat-value">${formatNum(totalViews)}</div><div class="stat-label">总播放量</div></div>
@@ -339,15 +369,16 @@ function renderVideoData(period) {
       <div class="stat-card"><div class="stat-value">${formatNum(totalFollowers)}</div><div class="stat-label">总涨粉</div></div>
     </div></div>`;
 
-  // Bar chart（当前周期 vs 上期双柱对比）
-  html += `<div class="card"><div class="card-title">各平台播放量对比 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+  // Bar chart（当前周期 vs 上期双柱对比；选中单平台时只显示该平台一根柱）
+  html += `<div class="card"><div class="card-title">${pf ? pf + ' ' : ''}播放量对比 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const platformViews = {};
   const prevPlatformViews = {};
-  VIDEO_PLATFORMS.forEach(p => { platformViews[p] = 0; prevPlatformViews[p] = 0; });
+  const barPlatforms = pf ? [pf] : VIDEO_PLATFORMS;  // 筛选单平台时图表只显示该平台
+  barPlatforms.forEach(p => { platformViews[p] = 0; prevPlatformViews[p] = 0; });
   currStats.forEach(s => { if (platformViews[s.platform] !== undefined) platformViews[s.platform] += s.views; });
   prevStats.forEach(s => { if (prevPlatformViews[s.platform] !== undefined) prevPlatformViews[s.platform] += s.views; });
   html += renderChartLegend('video', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(VIDEO_PLATFORMS, VIDEO_PLATFORMS.map(p => platformViews[p]), VIDEO_PLATFORMS.map(p => prevPlatformViews[p]), 'video', formatNum, ranges.label, ranges.prevLabel);
+  html += renderDualBarChart(barPlatforms, barPlatforms.map(p => platformViews[p]), barPlatforms.map(p => prevPlatformViews[p]), 'video', formatNum, ranges.label, ranges.prevLabel);
   html += '</div>';
 
   // 播放量趋势折线图（跟随周期：周=本周一~今天，月=近30天）
@@ -355,12 +386,11 @@ function renderVideoData(period) {
   const trendDays = isWeek ? ((new Date().getDay() + 6) % 7) + 1 : 30;
   const trendTitle = isWeek ? '本周播放量趋势' : '近30天播放量趋势';
   // 周模式窗口=本周一~今天（与周期范围一致，不含上周数据）；月模式近30天
-  const trendPts = aggregateDaily(stats.filter(s => isVideo(s.platform)), s => s.views || 0, trendDays, new Date());
-  html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${isWeek ? '本周' : '近30天'} · 4平台合计 · 点击数据点跳转当日</span></div>${renderTrendLine(trendPts, { color: '#fb923c', onClick: 'goCalendarDate' })}</div>`;
+  const trendPts = aggregateDaily(stats.filter(s => byPf(s)), s => s.views || 0, trendDays, new Date());
+  html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${isWeek ? '本周' : '近30天'} · ${pf || '4平台合计'} · 点击数据点跳转当日</span></div>${renderTrendLine(trendPts, { color: '#fb923c', onClick: 'goCalendarDate' })}</div>`;
 
   // 未关联记录（录了数据但找不到对应内容）— 折叠面板
-  const orphanStats = [...currStats].filter(s => findLinkedTitle(s, 'video') === null).sort((a,b) => b.date.localeCompare(a.date));
-  html += `<div class="card"><div class="card-title">未关联记录 <span class="badge">${orphanStats.length}</span></div>`;
+  const orphanStats = [...currStats].filter(s => findLinkedTitle(s, 'video') === null).sort((a,b) => b.date.localeCompare(a.date));  html += `<div class="card"><div class="card-title">未关联记录 <span class="badge">${orphanStats.length}</span></div>`;
   if (orphanStats.length === 0) {
     html += '<p style="font-size:12px;color:var(--text2);padding:6px 0;">当前周期无未关联记录</p>';
   } else {
@@ -390,9 +420,13 @@ function deleteStat(id) {
 // --- Article AI data ---
 function renderArticleData(period) {
   const ranges = getPeriodRanges(period || 'month');
-  const currAiStats = aiStats.filter(s => isArticle(s.platform) && s.date >= ranges.start && s.date <= ranges.end);
-  const prevAiStats = aiStats.filter(s => isArticle(s.platform) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
-  let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪 <span class="badge">${ranges.start} ~ ${ranges.end}</span></div>`;
+  // 平台筛选：''=全部文书平台 | 具体平台
+  const pf = reviewPlatformFilter;
+  const byPf = s => isArticle(s.platform) && (!pf || s.platform === pf);
+  const currAiStats = aiStats.filter(s => byPf(s) && s.date >= ranges.start && s.date <= ranges.end);
+  const prevAiStats = aiStats.filter(s => byPf(s) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
+  const titleSuffix = pf ? ' · ' + pf : '';
+  let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪${titleSuffix} <span class="badge">${ranges.start} ~ ${ranges.end}</span></div>`;
   html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">统计6大AI引擎收录情况：${AI_ENGINES.join('、')}</p>`;
 
   // Summary（当前周期：总发布数 / AI收录数 / AI收录率）
@@ -408,7 +442,7 @@ function renderArticleData(period) {
   </div></div>`;
 
   // AI引擎收录情况（引擎视角柱形图，当前周期 vs 上期）
-  html += `<div class="card"><div class="card-title">AI引擎收录情况 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+  html += `<div class="card"><div class="card-title">AI引擎收录情况${titleSuffix} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const aiCounts = {};
   const prevAiCounts = {};
   AI_ENGINES.forEach(ai => { aiCounts[ai] = 0; prevAiCounts[ai] = 0; });
@@ -418,11 +452,12 @@ function renderArticleData(period) {
   html += renderDualBarChart(AI_ENGINES, AI_ENGINES.map(ai => aiCounts[ai]), AI_ENGINES.map(ai => prevAiCounts[ai]), 'article', n => n, ranges.label, ranges.prevLabel);
   html += '</div>';
 
-  // 文书平台被收录情况（平台视角柱形图，当前周期 vs 上期）
-  html += `<div class="card"><div class="card-title">文书平台被收录情况 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+  // 文书平台被收录情况（平台视角柱形图，当前周期 vs 上期；筛选单平台时只显示该平台一根柱）
+  html += `<div class="card"><div class="card-title">${pf ? pf + ' ' : ''}被收录情况 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const platformCounts = {};
   const prevPlatformCounts = {};
-  ARTICLE_PLATFORMS.forEach(p => { platformCounts[p] = 0; prevPlatformCounts[p] = 0; });
+  const barPlatforms = pf ? [pf] : ARTICLE_PLATFORMS;  // 筛选单平台时图表只显示该平台
+  barPlatforms.forEach(p => { platformCounts[p] = 0; prevPlatformCounts[p] = 0; });
   currAiStats.forEach(s => {
     if (platformCounts[s.platform] !== undefined) {
       AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) platformCounts[s.platform]++; });
@@ -434,19 +469,19 @@ function renderArticleData(period) {
     }
   });
   html += renderChartLegend('article', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(ARTICLE_PLATFORMS, ARTICLE_PLATFORMS.map(p => platformCounts[p]), ARTICLE_PLATFORMS.map(p => prevPlatformCounts[p]), 'article', n => n, ranges.label, ranges.prevLabel);
+  html += renderDualBarChart(barPlatforms, barPlatforms.map(p => platformCounts[p]), barPlatforms.map(p => prevPlatformCounts[p]), 'article', n => n, ranges.label, ranges.prevLabel);
   html += '</div>';
 
   // AI 收录数趋势折线图（跟随周期：周=本周一~今天，月=近30天）
   const aiIsWeek = (period || 'month') === 'week';
   const aiTrendDays = aiIsWeek ? ((new Date().getDay() + 6) % 7) + 1 : 30;
-  const aiTrendPts = aggregateDaily(aiStats.filter(s => isArticle(s.platform)), s => {
+  const aiTrendPts = aggregateDaily(aiStats.filter(s => byPf(s)), s => {
     let n = 0;
     AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) n++; });
     return n;
   }, aiTrendDays, new Date());
   const aiTrendTitle = aiIsWeek ? '本周 AI 收录数趋势' : '近30天 AI 收录数趋势';
-  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n, label: '收录数' })}</div>`;
+  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'} · ${pf || '6平台合计'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n, label: '收录数' })}</div>`;
 
   // 未关联记录（AI收录但找不到对应内容）
   const orphanAi = [...currAiStats].filter(s => findLinkedTitle(s, 'article') === null).sort((a,b) => b.date.localeCompare(a.date));
