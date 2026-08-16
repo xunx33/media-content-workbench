@@ -222,6 +222,20 @@ window.storeReady = (async () => {
 
 // ===== UI 状态 =====
 let currentTab = 'today';
+// 工作台分区：'video' = 短视频工作台 | 'article' = 文书工作台（localStorage 记忆，刷新保持）
+let workspace = localStorage.getItem(STORAGE_KEY + 'workspace') === 'article' ? 'article' : 'video';
+function switchWorkspace(w) {
+  workspace = w === 'article' ? 'article' : 'video';
+  localStorage.setItem(STORAGE_KEY + 'workspace', workspace);
+  // 切换分区时的边界规则：
+  // 1) 文书分区下「账号登记」不可用（视频专属）→ 跳回今日待办
+  // 2) 数据复盘子 tab 与分区强绑定（video→短视频数据 / article→文书AI收录）
+  if (workspace === 'article' && currentTab === 'account') currentTab = 'today';
+  if (currentTab === 'data') dataSubTab = workspace;
+  // 3) 同步分区按钮 active 态
+  document.querySelectorAll('.ws-item').forEach(el => el.classList.toggle('active', el.dataset.ws === workspace));
+  render();
+}
 let currentMonth = new Date();
 let selectedDate = null;
 let dataSubTab = 'video';

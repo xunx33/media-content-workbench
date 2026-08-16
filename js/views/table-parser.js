@@ -1,4 +1,6 @@
 function renderTableParser() {
+  // 解析数据表格仅支持短视频平台导出表：文书工作台下不显示此模块
+  if (workspace !== 'video') return '';
   const videoCount = stats.length;
   const videoContents = contents.filter(c => isVideo(c.platform)).length;
   const missCount = Math.max(videoContents - videoCount, 0);
@@ -738,6 +740,9 @@ function isYesValue(v) {
 function getFilteredContents() {
   const today = getToday();
   let filtered = [...contents];
+
+  // 按工作台分区过滤（短视频工作台 / 文书工作台），不干扰后续搜索/日期/平台筛选
+  filtered = filtered.filter(c => workspace === 'video' ? isVideo(c.platform) : isArticle(c.platform));
 
   // Apply search
   if (searchKeyword) {

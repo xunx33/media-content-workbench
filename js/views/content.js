@@ -18,12 +18,13 @@ function renderContent() {
     </select>
     <select class="filter-select" id="platformFilterSelect" onchange="filterPlatformSelect(this.value)" aria-label="平台筛选">
       <option value="">平台筛选</option>
-      <optgroup label="短视频平台">
-        ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
-      </optgroup>
-      <optgroup label="文书平台">
-        ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
-      </optgroup>
+      ${workspace === 'video'
+        ? `<optgroup label="短视频平台">
+            ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
+          </optgroup>`
+        : `<optgroup label="文书平台">
+            ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
+          </optgroup>`}
     </select>
     <span class="filter-pill sort-views ${contentSortByViews === 'desc' ? 'active-desc' : contentSortByViews === 'asc' ? 'active-asc' : ''}" onclick="toggleSortViews()">${contentSortByViews === 'desc' ? '播放量 ↓' : contentSortByViews === 'asc' ? '播放量 ↑' : '播放量'}</span>
   </div>`;

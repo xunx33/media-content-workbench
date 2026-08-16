@@ -4,30 +4,39 @@ function renderToday() {
 
   let html = '<div class="today-section"><h3>今日待办</h3>';
 
-  // 短视频平台（全部 4 个）
-  html += '<div style="font-size:13px;color:var(--video-orange-light);margin-bottom:6px;font-weight:600;">短视频平台</div><ul class="today-list">';
-  VIDEO_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'video'));
-  html += '</ul>';
-
-  // 文书平台
-  html += '<div style="font-size:13px;color:var(--article-purple-light);margin:12px 0 6px;font-weight:600;">文书平台</div><ul class="today-list">';
-  ARTICLE_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'article'));
-  html += '</ul>';
+  // 按工作台分区只渲染对应平台（短视频工作台 / 文书工作台）
+  if (workspace === 'video') {
+    html += '<div style="font-size:13px;color:var(--video-orange-light);margin-bottom:6px;font-weight:600;">短视频平台</div><ul class="today-list">';
+    VIDEO_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'video'));
+    html += '</ul>';
+  } else {
+    html += '<div style="font-size:13px;color:var(--article-purple-light);margin-bottom:6px;font-weight:600;">文书平台</div><ul class="today-list">';
+    ARTICLE_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'article'));
+    html += '</ul>';
+  }
 
   html += '</div>';
 
-  // 今日发布概览（以登记为准）
+  // 今日发布概览（按分区只显示对应类型；「今日总登记」始终为当日全部）
   const todayContents = contents.filter(c => c.createdAt === today);
   const vTotal = todayContents.filter(c => isVideo(c.platform)).length;
   const aTotal = todayContents.filter(c => isArticle(c.platform)).length;
   const videoDone = VIDEO_PLATFORMS.filter(p => todayContents.some(c => c.platform === p)).length;
+  const articleDone = ARTICLE_PLATFORMS.filter(p => todayContents.some(c => c.platform === p)).length;
   html += `<div class="card"><div class="card-title">今日发布概览</div>
-    <div class="stats-grid">
+    <div class="stats-grid">`;
+  if (workspace === 'video') {
+    html += `
       <div class="stat-card"><div class="stat-value">${vTotal}</div><div class="stat-label">短视频条数</div></div>
+      <div class="stat-card"><div class="stat-value">${videoDone}/${VIDEO_PLATFORMS.length}</div><div class="stat-label">视频平台覆盖</div></div>
+      <div class="stat-card"><div class="stat-value">${todayContents.length}</div><div class="stat-label">今日总登记</div></div>`;
+  } else {
+    html += `
       <div class="stat-card"><div class="stat-value">${aTotal}</div><div class="stat-label">文书条数</div></div>
-      <div class="stat-card"><div class="stat-value">${todayContents.length}</div><div class="stat-label">今日总登记</div></div>
-      <div class="stat-card"><div class="stat-value">${videoDone}/4</div><div class="stat-label">视频平台覆盖</div></div>
-    </div></div>`;
+      <div class="stat-card"><div class="stat-value">${articleDone}/${ARTICLE_PLATFORMS.length}</div><div class="stat-label">文书平台覆盖</div></div>
+      <div class="stat-card"><div class="stat-value">${todayContents.length}</div><div class="stat-label">今日总登记</div></div>`;
+  }
+  html += `</div></div>`;
 
   // 解析数据表格模块（原在内容登记页，移至今日待办页底部）
   html += renderTableParser();

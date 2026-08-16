@@ -64,6 +64,10 @@ function checkWeeklyReminder() {
   if (window.storeReady) {
     try { await window.storeReady; } catch (e) { console.error('store 初始化失败', e); }
   }
+  // 启动时应用分区边界规则（localStorage 记忆的分区可能是 article）
+  if (workspace === 'article' && currentTab === 'account') currentTab = 'today';
+  if (currentTab === 'data') dataSubTab = workspace;
+  if (window.syncWorkspaceUI) window.syncWorkspaceUI();
   render();
   checkBackupReminder();
   checkWeeklyReminder();

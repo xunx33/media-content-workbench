@@ -126,13 +126,25 @@ document.addEventListener('keydown', function(e) {
 // ===== NAV =====
 document.querySelectorAll('.nav-tab').forEach(tab => {
   tab.addEventListener('click', () => {
+    // 文书工作台下「账号登记」不可用（视频专属）→ 拦截并提示
+    if (workspace === 'article' && tab.dataset.tab === 'account') {
+      showToast('账号登记仅适用于短视频工作台');
+      return;
+    }
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     currentTab = tab.dataset.tab;
+    // 数据复盘子 tab 跟随分区（video→短视频数据 / article→文书AI收录）
+    if (currentTab === 'data') dataSubTab = workspace;
     if (currentTab === 'calendar' && !selectedDate) selectedDate = getToday();
     render();
   });
 });
+
+// ===== WORKSPACE 分区按钮 active 态同步 =====
+function syncWorkspaceUI() {
+  document.querySelectorAll('.ws-item').forEach(el => el.classList.toggle('active', el.dataset.ws === workspace));
+}
 
 // ===== TOAST =====
 function showToast(msg) {

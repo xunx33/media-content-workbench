@@ -12,12 +12,13 @@ function findLinkedTitle(record, type) {
 function renderData() {
   // 账号总数据已提升为独立 Tab「账号登记」，此处自愈历史遗留的 account 值
   if (dataSubTab === 'account') dataSubTab = 'video';
+  // 子 tab 与工作台分区强绑定：视频分区→短视频数据；文书分区→文书AI收录
+  dataSubTab = workspace;
   let html = '';
 
-  // Sub-tabs
+  // Sub-tabs（分区内只显示对应子页，避免跨分区切换）
   html += `<div class="sub-tab-bar">
-    <div class="sub-tab ${dataSubTab==='video'?'active':''}" onclick="switchDataTab('video')">短视频数据</div>
-    <div class="sub-tab ${dataSubTab==='article'?'active':''}" onclick="switchDataTab('article')">文书AI收录</div>
+    <div class="sub-tab active">${workspace === 'video' ? '短视频数据' : '文书AI收录'}</div>
   </div>`;
 
   // 顶部工具栏：左侧平台筛选标签 + 右侧周期下拉（同一行，窄屏自动换行）

@@ -23,20 +23,22 @@ function renderCalendar() {
     const isToday = dateStr === todayStr;
     const isSelected = dateStr === selectedDate;
     const dayCounts = getDayCounts(dateStr);
-    const videoOk = VIDEO_PLATFORMS.every(p => dayCounts[p] > 0);   // 视频 4 平台全发
-    const articleOk = ARTICLE_PLATFORMS.filter(p => dayCounts[p] > 0).length >= 3;  // 文书 ≥3 平台
-    const hasContent = ALL_PLATFORMS.some(p => dayCounts[p] > 0);   // 当天有发布内容
+    // 按工作台分区判断完成状态：视频分区看 4 平台全发；文书分区看 ≥3 平台
+    const videoOk = VIDEO_PLATFORMS.every(p => dayCounts[p] > 0);
+    const articleOk = ARTICLE_PLATFORMS.filter(p => dayCounts[p] > 0).length >= 3;
+    const inWs = workspace === 'video';
+    const wsOk = inWs ? videoOk : articleOk;
+    const wsHas = inWs
+      ? VIDEO_PLATFORMS.some(p => dayCounts[p] > 0)
+      : ARTICLE_PLATFORMS.some(p => dayCounts[p] > 0);
     let classes = 'calendar-day';
     if (isToday) classes += ' today';
     if (isSelected) classes += ' selected';
     html += `<div class="${classes}" onclick="selectDay('${dateStr}')">${d}<div class="dots">`;
-    // 有内容的日期才显示点：视频/文书各自完成变绿；两种都没完成时加第三个绿点（有内容提示）
-    if (hasContent) {
-      if (videoOk) html += '<span class="dot done"></span>';
-      else html += '<span class="dot video"></span>';
-      if (articleOk) html += '<span class="dot done"></span>';
-      else html += '<span class="dot article"></span>';
-      if (!videoOk && !articleOk) html += '<span class="dot done"></span>';
+    // 有内容的日期才显示点：当前分区完成变绿、未完成显示分区色点
+    if (wsHas) {
+      if (wsOk) html += '<span class="dot done"></span>';
+      else html += `<span class="dot ${inWs ? 'video' : 'article'}"></span>`;
     }
     html += '</div></div>';
   }
@@ -46,10 +48,14 @@ function renderCalendar() {
     const counts = getDayCounts(selectedDate);
     const isPast = selectedDate < todayStr;
     html += `<div class="day-detail"><h4>${selectedDate} 发布任务</h4>`;
-    html += '<div style="font-size:12px;color:var(--video-orange-light);margin-bottom:4px;font-weight:600;">短视频平台（全部 4 个有内容）</div>';
-    VIDEO_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'video'));
-    html += '<div style="font-size:12px;color:var(--article-purple-light);margin:8px 0 4px;font-weight:600;">文书平台（至少 3 个平台有内容）</div>';
-    ARTICLE_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'article'));
+    // 按工作台分区只显示对应平台（短视频工作台 / 文书工作台）
+    if (workspace === 'video') {
+      html += '<div style="font-size:12px;color:var(--video-orange-light);margin-bottom:4px;font-weight:600;">短视频平台（全部 4 个有内容）</div>';
+      VIDEO_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'video'));
+    } else {
+      html += '<div style="font-size:12px;color:var(--article-purple-light);margin-bottom:4px;font-weight:600;">文书平台（至少 3 个平台有内容）</div>';
+      ARTICLE_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'article'));
+    }
     html += '</div>';
   }
   return html;
