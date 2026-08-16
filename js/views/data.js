@@ -20,16 +20,17 @@ function renderData() {
     <div class="sub-tab ${dataSubTab==='article'?'active':''}" onclick="switchDataTab('article')">文书AI收录</div>
   </div>`;
 
-  // 周期下拉（周数据与复盘 / 月数据与复盘，替代复盘登记里的周期选择）
-  // + 平台筛选标签（随子页变化：短视频 4 个 / 文书 6 个，含「全部」）
+  // 顶部工具栏：左侧平台筛选标签 + 右侧周期下拉（同一行，窄屏自动换行）
   const curPeriod = getCurPeriod();
+  html += '<div class="review-toolbar">';
+  html += renderPlatformFilterTags();
   html += `<div class="period-select-row">
     <select id="dataPeriodSelect" onchange="switchDataPeriod(this.value)" aria-label="数据复盘周期">
       <option value="week" ${curPeriod==='week'?'selected':''}>周数据与复盘</option>
       <option value="month" ${curPeriod==='month'?'selected':''}>月数据与复盘</option>
     </select>
   </div>`;
-  html += renderPlatformFilterTags();
+  html += '</div>';
 
   // 左右两栏：左=统计图表，右=复盘登记
   html += '<div class="data-layout">';
@@ -370,7 +371,8 @@ function renderVideoData(period) {
     </div></div>`;
 
   // Bar chart（当前周期 vs 上期双柱对比；选中单平台时只显示该平台一根柱）
-  html += `<div class="card"><div class="card-title">${pf ? pf + ' ' : ''}播放量对比 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+  // 标题命名统一：「播放量对比 · 平台名」；未筛选时「各平台播放量对比」
+  html += `<div class="card"><div class="card-title">${pf ? '播放量对比 · ' + pf : '各平台播放量对比'} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const platformViews = {};
   const prevPlatformViews = {};
   const barPlatforms = pf ? [pf] : VIDEO_PLATFORMS;  // 筛选单平台时图表只显示该平台
@@ -384,7 +386,8 @@ function renderVideoData(period) {
   // 播放量趋势折线图（跟随周期：周=本周一~今天，月=近30天）
   const isWeek = (period || 'month') === 'week';
   const trendDays = isWeek ? ((new Date().getDay() + 6) % 7) + 1 : 30;
-  const trendTitle = isWeek ? '本周播放量趋势' : '近30天播放量趋势';
+  const trendBase = isWeek ? '本周播放量趋势' : '本月播放量趋势';
+  const trendTitle = pf ? trendBase + ' · ' + pf : trendBase;  // 标题命名统一：「本月播放量趋势 · 平台名」
   // 周模式窗口=本周一~今天（与周期范围一致，不含上周数据）；月模式近30天
   const trendPts = aggregateDaily(stats.filter(s => byPf(s)), s => s.views || 0, trendDays, new Date());
   html += `<div class="card"><div class="card-title">${trendTitle} <span class="badge">${isWeek ? '本周' : '近30天'} · ${pf || '4平台合计'} · 点击数据点跳转当日</span></div>${renderTrendLine(trendPts, { color: '#fb923c', onClick: 'goCalendarDate' })}</div>`;
@@ -453,7 +456,8 @@ function renderArticleData(period) {
   html += '</div>';
 
   // 文书平台被收录情况（平台视角柱形图，当前周期 vs 上期；筛选单平台时只显示该平台一根柱）
-  html += `<div class="card"><div class="card-title">${pf ? pf + ' ' : ''}被收录情况 <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+  // 标题命名统一：「被收录情况 · 平台名」；未筛选时「文书平台被收录情况」
+  html += `<div class="card"><div class="card-title">${pf ? '被收录情况 · ' + pf : '文书平台被收录情况'} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
   const platformCounts = {};
   const prevPlatformCounts = {};
   const barPlatforms = pf ? [pf] : ARTICLE_PLATFORMS;  // 筛选单平台时图表只显示该平台
@@ -480,7 +484,8 @@ function renderArticleData(period) {
     AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) n++; });
     return n;
   }, aiTrendDays, new Date());
-  const aiTrendTitle = aiIsWeek ? '本周 AI 收录数趋势' : '近30天 AI 收录数趋势';
+  const aiTrendBase = aiIsWeek ? '本周 AI 收录数趋势' : '本月 AI 收录数趋势';
+  const aiTrendTitle = pf ? aiTrendBase + ' · ' + pf : aiTrendBase;  // 标题命名统一：「本月 AI 收录数趋势 · 平台名」
   html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'} · ${pf || '6平台合计'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n, label: '收录数' })}</div>`;
 
   // 未关联记录（AI收录但找不到对应内容）
