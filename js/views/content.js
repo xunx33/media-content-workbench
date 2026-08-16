@@ -212,18 +212,23 @@ function toggleSortViews() {
 function deleteContent(id) {
   showConfirm({
     title: '确认删除',
-    desc: '确定删除这条记录吗？删除后不可恢复。',
+    desc: '确定删除这条记录吗？将连同其录入的视频/AI收录数据一并删除，不可恢复。',
     danger: true,
     onOk: () => {
       const numId = Number(id);
-      contents = contents.filter(c => c.id != id && c.id != numId);
-      // 同步清理关联的视频数据 / AI收录数据（batch 原子保存）
-      const newStats = stats.filter(s => !(s.contentId == id || s.contentId == numId));
-      const newAiStats = aiStats.filter(s => !(s.contentId == id || s.contentId == numId));
+      const c = contents.find(x => x.id == id || x.id == numId);
+      contents = contents.filter(x => x.id != id && x.id != numId);
+      // 同步清理关联的视频数据 / AI收录数据（与 findLinkedTitle 关联逻辑对称）：
+      // 1) contentId 精确匹配；2) 兜底 platform + date 匹配（老数据/未绑定 contentId 的记录）
+      const isLinked = s =>
+        s.contentId == id || s.contentId == numId ||
+        (c && s.platform === c.platform && s.date === c.createdAt);
+      stats = stats.filter(s => !isLinked(s));
+      aiStats = aiStats.filter(s => !isLinked(s));
       saveDataBatch([
         { key: 'contents', val: contents },
-        { key: 'stats', val: newStats },
-        { key: 'aiStats', val: newAiStats }
+        { key: 'stats', val: stats },
+        { key: 'aiStats', val: aiStats }
       ]);
       render();
       showToast('已删除');
