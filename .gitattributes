@@ -1,0 +1,5 @@
+# bat/cmd/ps1 文件用 binary 模式存储，避免 git 把 CRLF 强制转成 LF
+# Windows cmd 必须用 CRLF + UTF-8 BOM；autocrlf=true 在 commit 时会破坏这些文件
+*.bat binary
+*.cmd binary
+*.ps1 binary

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>新媒体数据工作台</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a6fb5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/x-icon" href="/icons/app.ico">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css?v=20260814d">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="header">
+    <div class="logo">
+      <img src="icons/icon-192.png" alt="logo" style="width:100%;height:100%;object-fit:contain;border-radius:inherit;">
+    </div>
+    <div class="brand">
+      <h1>新媒体数据工作台</h1>
+      <div class="subtitle">Media Studio · 4短视频+6文书平台</div>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs">
+    <div class="nav-tab active" data-tab="today">今日待办</div>
+    <div class="nav-tab" data-tab="content">内容登记</div>
+    <div class="nav-tab" data-tab="account">账号登记</div>
+    <div class="nav-tab" data-tab="data">数据复盘</div>
+    <div class="nav-tab" data-tab="calendar">发布日历</div>
+    <div class="nav-tab" data-tab="overview">发布总览</div>
+    <select class="ws-select" id="wsSelect" onchange="switchWorkspace(this.value)" title="切换工作台分区 / AI 配置" aria-label="切换工作台分区">
+      <option value="video">短视频工作台</option>
+      <option value="article">文书工作台</option>
+      <option value="llm">🤖AI功能</option>
+    </select>
+  </div>
+</div>
+
+<div class="backup-bar">
+  <div class="backup-group">
+    <div class="export-dropdown">
+      <button class="backup-btn export-trigger" onclick="toggleExportMenu(event)">导出数据 ▾</button>
+      <div class="export-menu" id="exportMenu">
+        <button class="export-item" onclick="doExport('all')">全部数据</button>
+        <button class="export-item" onclick="doExport('week')">本周数据</button>
+        <button class="export-item" onclick="doExport('month')">本月数据</button>
+      </div>
+    </div>
+    <button onclick="exportData()">导出JSON</button>
+    <button onclick="document.getElementById('importFile').click()">导入恢复</button>
+    <button onclick="clearAllData()">清空数据</button>
+    <button onclick="fillSampleData()">重置示例</button>
+    <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+  </div>
+</div>
+
+<div class="main" id="mainContent"></div>
+
+<button class="fab" id="fabBtn" onclick="openAddModal()">+</button>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- ===== 依赖顺序加载：store(数据) → ui(通用) → views → export/sample → app(入口) ===== -->
+<!-- 版本号无需手动维护：server.js 启动时按文件内容自动计算指纹并注入 ?v=，改代码后浏览器自动拿到新文件 -->
+<script src="js/store.js?v=20260813e"></script>
+<script src="js/ui.js?v=20260813c"></script>
+<script src="js/views/today.js?v=20260814d"></script>
+<script src="js/views/llm.js?v=20260818"></script>
+<script src="js/views/calendar.js?v=20260812x"></script>
+<script src="js/views/overview.js?v=20260812x"></script>
+<script src="js/views/content.js?v=20260814e"></script>
+<script src="js/views/table-parser.js?v=20260814e"></script>
+<script src="js/views/data.js?v=20260814e"></script>
+<script src="js/export.js?v=20260814d"></script>
+<script src="js/sample-migration.js?v=20260813c"></script>
+<script src="js/app.js?v=20260812y"></script>
+</body>
+</html>
