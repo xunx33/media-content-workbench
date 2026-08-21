@@ -4,6 +4,7 @@ node_modules/
 
 # ===== 项目本地数据/临时文件 =====
 data/
+data-backup/
 *.log
 cleanup-cloud.*
 
