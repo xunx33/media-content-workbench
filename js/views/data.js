@@ -600,7 +600,7 @@ function renderAccountData() {
   // 已保存的账号ID（始终渲染表格，避免空/非空切换时跳动；每行带删除按钮）
   var savedIds = accountIds.filter(function(r){ return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()) || (r.phone && r.phone.trim()) || (r.realName && r.realName.trim()) || (r.operator && r.operator.trim()); });
   html += '<div style="margin:10px 0 2px;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">已保存的账号ID（' + savedIds.length + '条）</div>';
-  html += '<table class="data-table"><thead><tr><th style="width:90px;">平台</th><th>账号ID</th><th>备注</th><th>登录手机号</th><th>实名人姓名</th><th>运营人</th><th style="width:56px;"></th></tr></thead><tbody>';
+  html += '<table class="data-table"><thead><tr><th style="width:90px;">平台</th><th>账号ID</th><th>备注</th><th>登录手机号</th><th>实名人姓名</th><th>运营人</th><th style="width:120px;"></th></tr></thead><tbody>';
   if (savedIds.length === 0) {
     html += '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:14px 0;">暂无，保存后显示在此处</td></tr>';
   } else {
@@ -610,7 +610,7 @@ function renderAccountData() {
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.id - b.id;
     }).forEach(function(sr) {
       html += '<tr><td><span class="platform-tag video">' + escapeHtml(sr.platform) + '</span></td><td>' + escapeHtml(sr.accountId || '') + '</td><td>' + escapeHtml(sr.note || '') + '</td><td>' + escapeHtml(sr.phone || '') + '</td><td>' + escapeHtml(sr.realName || '') + '</td><td>' + escapeHtml(sr.operator || '') + '</td>';
-      html += '<td><button class="btn-delete-mini" onclick="deleteAccountId(\'' + sr.id + '\')">删除</button></td></tr>';
+      html += '<td style="white-space:nowrap;"><button class="btn-edit-mini" onclick="editAccountId(\'' + sr.id + '\')">编辑</button> <button class="btn-delete-mini" onclick="deleteAccountId(\'' + sr.id + '\')">删除</button></td></tr>';
     });
   }
   html += '</tbody></table></div>';
@@ -799,6 +799,41 @@ async function saveAccountIdOnly() {
   if (!accountId && !note && !phone && !realName && !operator) { showToast('请至少填写一项信息'); return; }
   accountIds.push({ id: Date.now() + Math.random(), platform: platform, accountId: accountId, note: note, phone: phone, realName: realName, operator: operator });
   await saveData('accountIds', accountIds); render(); showToast(platform + '账号ID已保存');
+}
+
+// 编辑单条账号ID记录（弹窗修改平台/账号ID/备注/手机号/实名人/运营人）
+function editAccountId(id) {
+  var rec = accountIds.find(function(x){ return String(x.id) === String(id); });
+  if (!rec) { showToast('该记录不存在'); return; }
+  var opts = VIDEO_PLATFORMS.map(function(p){ return '<option value="' + p + '"' + (p === rec.platform ? ' selected' : '') + '>' + p + '</option>'; }).join('');
+  document.getElementById('modalContent').innerHTML = `
+    <h3>编辑账号ID</h3>
+    <div class="form-group"><label>平台</label><select id="editAccPlatform">${opts}</select></div>
+    <div class="form-group"><label>账号ID</label><input type="text" id="editAccAccountId" value="${escapeHtml(rec.accountId || '')}"></div>
+    <div class="form-group"><label>备注</label><input type="text" id="editAccNote" value="${escapeHtml(rec.note || '')}"></div>
+    <div class="form-group"><label>登录手机号</label><input type="text" id="editAccPhone" value="${escapeHtml(rec.phone || '')}"></div>
+    <div class="form-group"><label>实名人姓名</label><input type="text" id="editAccRealName" value="${escapeHtml(rec.realName || '')}"></div>
+    <div class="form-group"><label>运营人</label><input type="text" id="editAccOperator" value="${escapeHtml(rec.operator || '')}"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveAccountIdEdit('${rec.id}')">保存</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+// 保存编辑后的账号ID记录
+async function saveAccountIdEdit(id) {
+  var rec = accountIds.find(function(x){ return String(x.id) === String(id); });
+  if (!rec) { showToast('该记录不存在'); return; }
+  rec.platform = document.getElementById('editAccPlatform').value;
+  rec.accountId = (document.getElementById('editAccAccountId').value || '').trim();
+  rec.note = (document.getElementById('editAccNote').value || '').trim();
+  rec.phone = (document.getElementById('editAccPhone').value || '').trim();
+  rec.realName = (document.getElementById('editAccRealName').value || '').trim();
+  rec.operator = (document.getElementById('editAccOperator').value || '').trim();
+  if (!rec.accountId && !rec.note && !rec.phone && !rec.realName && !rec.operator) { showToast('请至少填写一项信息'); return; }
+  closeModal();
+  await saveData('accountIds', accountIds); render(); showToast('账号ID已更新');
 }
 
 // 删除单条账号ID记录（按记录 id）

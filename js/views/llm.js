@@ -19,7 +19,10 @@ function applyLlmConfigFold() {
   const body = document.getElementById('llmConfigBody');
   const arrow = document.getElementById('llmConfigToggle');
   if (body) body.style.display = __llmConfigCollapsed ? 'none' : 'block';
-  if (arrow) arrow.innerHTML = __llmConfigCollapsed ? '&#9654;' : '&#9660;';
+  if (arrow) {
+    arrow.innerHTML = '&#9660;';
+    arrow.classList.toggle('collapsed', __llmConfigCollapsed);
+  }
 }
 
 // AI 生成视频描述 / AI 数据总结分析的每日额度（各自计数，存 data/llmQuota.json 走服务端，清浏览器缓存不影响）
@@ -107,7 +110,7 @@ function renderLLMConfig() {
   return `
   <div class="llm-page">
     <div class="card">
-      <div class="card-title" style="cursor:pointer;" onclick="toggleLlmConfig()">AI 大模型配置${renderLlmStatusBadge()}<span class="content-fold-arrow" id="llmConfigToggle" style="margin-left:auto;font-size:12px;">${__llmConfigCollapsed ? '&#9654;' : '&#9660;'}</span></div>
+      <div class="card-title" style="cursor:pointer;" onclick="toggleLlmConfig()">AI 大模型配置${renderLlmStatusBadge()}<span class="content-fold-arrow ${__llmConfigCollapsed ? 'collapsed' : ''}" id="llmConfigToggle" style="margin-left:auto;">&#9660;</span></div>
       <div id="llmConfigBody" style="${__llmConfigCollapsed ? 'display:none;' : ''}">
       <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">配置 OpenAI 兼容接口，支持 DeepSeek、豆包、千问等</div>
       <div class="form-group">
