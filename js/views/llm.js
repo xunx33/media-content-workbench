@@ -257,7 +257,7 @@ function resetAiBusyFlags() {
   // 渲染函数根据 busy 标志显示 loading + 取消按钮，切回后状态不丢失
 }
 
-// ===== AI 数据总结分析（AI 配置与功能页，视频/文书平台可选）=====
+// ===== AI 数据总结分析（AI 配置与功能页，视频平台）=====
 // 按所选周期（全部/本月/本周）取数据（与导出报表同口径的数据表），连同账号运营时长注入系统提示词，让大模型自动分析与复盘
 // 视频指标口径：完播率仅抖音/快手/视频号、均播时长仅抖音/小红书/视频号、收藏仅抖音/快手/小红书（视频号看「推荐」、不记收藏）——不适用显示「-」而非 0，提示词已向模型说明
 
@@ -302,24 +302,31 @@ function getAiReviewRange() {
 function inReviewRange(d, r) { return !r.start || (d >= r.start && d <= r.end); }
 
 // 系统提示词：总结周期（数据日期范围）与账号运营时长（评估背景）是两类信息，分别注入
-function buildAiReviewSystemPrompt(periodLabel, monthsText) {
-  return '你是一名资深新媒体运营数据分析师。下面是新媒体数据工作台导出的数据表（视频平台或文书平台）。\n' +
+function buildAiReviewSystemPrompt(periodLabel, monthsText, withAccountData) {
+  let p = '你是一名资深新媒体数据分析师，根据用户提供的数据表进行分析总结并给出评价和建议。下面是数据表（短视频平台）。\n' +
     '总结周期：' + periodLabel + '。本次仅针对该日期范围内的数据进行总结与复盘。\n' +
     '账号运营时长：' + monthsText + '。请结合账号运营时间长短评估数据表现：运营初期与运营成熟期的指标预期、增长曲线和复盘重点应有所区分，避免用成熟账号的标准苛求早期账号。\n' +
-    '数据口径说明：视频指标中，完播率仅抖音/快手/视频号适用，均播时长仅抖音/小红书/视频号适用，收藏仅抖音/快手/小红书适用（视频号看「推荐」、不记收藏），不适用指标显示为「-」，并非该数据为 0。\n' +
-    '文书平台数据表仅列出「已录入 AI 收录情况」的记录：「被收录的AI引擎」列出实际被收录的引擎，显示「无」表示已录入且明确未被任何引擎收录；未出现在表中的内容为尚未录入 AI 收录数据，不代表未被收录。\n' +
-    '请做自动分析与复盘，用中文严格按以下结构输出（直接输出纯文本，不要使用任何 markdown 符号如 #、##、**、* 等）：\n' +
-    '【总体表现】\n本期核心数据与整体表现一句话总结。\n' +
-    '【亮点与做得好的内容】\n用 1. 2. 3. 编号逐条列出，每个附数据佐证。\n' +
-    '【问题与不足】\n用 1. 2. 3. 编号逐条列出。\n' +
-    '【下一步建议】\n用 1. 2. 3. 编号列出 1-3 条可执行的优化建议，结合账号运营时长给出合理的阶段预期。\n' +
-    '控制篇幅、重点突出、用数据说话，不要输出数据表之外的无关内容。';
+    '数据口径说明（务必区分三种情况）：表中「-」=该平台不适用此指标（例如小红书无完播率、快手无均播时长、视频号无收藏）；空白=该平台适用此指标但本条未录入；0=录入数据为 0。各平台适用对照：完播率=抖音/快手/视频号；均播时长=抖音/小红书/视频号；收藏=抖音/快手/小红书；推荐=视频号；播放/点赞/评论/分享/涨粉=各平台通用。单条视频的「涨粉」为该视频带来的粉丝增长，应结合「账号登记数据」的粉丝变化综合判断（如没有对比变化，表示只录入了一次数据而不是没有总增长）。切勿把「-」当成数据缺失，也不要仅因未看到某些记录就断言某平台不统计某指标。\n' +
+    '数据表若含「账号登记数据」，为各平台账号的累计运营数据快照（总发布/总粉丝/总播放/总点赞/总评论/总分享），该板块独立于所选周期、不按周期过滤，每账号仅保留最新3条快照，「对比变化」为上一次与这一次登记快照的差值（正负号表示增减），可据此评估账号健康度、粉丝增长趋势。\n';
+  const platforms = VIDEO_PLATFORMS.join('、');
+  p += '请做自动分析与复盘，用中文严格按以下结构输出，风格偏鼓励，表现真的很差就直接指出（直接输出纯文本，不要使用任何 markdown 符号如 #、##、**、* 等）：\n' +
+    '【账号表现】\n' +
+'总体表现：核心数据与整体表现一句话总结。';
+  if (withAccountData) {
+    p += '并概括「账号登记数据」中的账号累计规模（总粉丝量、总播放量、总发布量等）、对比变化趋势（如有），说明所处量级情况。';
+  }
+  p += '按' + platforms + '逐平台各用一段，结合该平台内容数据与账号数据给出分析要点。\n' +
+    '【亮点和优势】\n用「• 」无序符号逐条列出 2-5 条表现好的亮点和优势，每条附数据佐证。\n' +
+    '【问题和不足】\n用「• 」无序符号逐条列出 2-5 条问题和不足。\n' +
+    '【下一步建议】\n用「• 」无序符号列出 1-3 条可执行的优化建议，结合账号运营时长、亮点优势和问题不足给出合理的阶段预期。\n' +
+    '控制篇幅、突出重点、用数据说话，不要输出数据表之外的无关内容。';
+  return p;
 }
 
-// 分析对象：视频平台 / 文书平台（各自独立保存结果）
+// 分析对象：仅视频平台
 let __aiReviewTarget = 'video';
 function setAiReviewTarget(v) {
-  if (v === 'video' || v === 'article') __aiReviewTarget = v;
+  if (v === 'video') __aiReviewTarget = v;
 }
 
 // AI 配置与功能页的 AI 数据总结分析卡片（分析对象 + 周期下拉 + 运营时长输入）
@@ -334,12 +341,6 @@ function renderAiReviewCard() {
         <div class="ai-panel-body">
           <div class="ai-feature-sub">自动汇总周期数据，生成结构化分析报告，可导出 Word</div>
           <div class="form-row">
-            <div class="form-group"><label>分析对象</label>
-              <select id="overviewAiTarget" onchange="setAiReviewTarget(this.value)">
-                <option value="video" ${__aiReviewTarget === 'video' ? 'selected' : ''}>视频平台</option>
-                <option value="article" ${__aiReviewTarget === 'article' ? 'selected' : ''}>文书平台</option>
-              </select>
-            </div>
             <div class="form-group"><label>总结周期</label>
               <select id="overviewAiPeriod" onchange="setOverviewAiPeriod(this.value)">
                 <option value="all" ${__aiReviewPeriod === 'all' ? 'selected' : ''}>全部</option>
@@ -364,7 +365,7 @@ function renderAiReviewCard() {
         <div class="ai-panel-head"><span class="ai-panel-dot"></span><span class="ai-panel-title">AI 输出结果</span></div>
         <div class="ai-result-panel" id="overviewAiOutput">${
           isRunning
-            ? '<div class="llm-loading"><span>正在按「' + escapeHtml(getAiReviewRange().label) + '」对' + (__aiReviewTarget === 'video' ? '视频平台' : '文书平台') + '进行 AI 数据总结分析...</span><span class="llm-loading-hint">预计需要1-3分钟（内容量大小），请稍候。</span></div>'
+            ? '<div class="llm-loading"><span>正在按「' + escapeHtml(getAiReviewRange().label) + '」对视频平台进行 AI 数据总结分析...</span><span class="llm-loading-hint">预计需要1-3分钟（内容量大小），请稍候。</span></div>'
             : aiReviewReply()
               ? '<pre class="llm-reply">' + escapeHtml(aiReviewReply()) + '</pre>' + aiReviewReplyButtons()
               : (configured ? '<div class="ai-panel-empty">AI 数据总结分析结果将显示在这里<br>完成后可一键导出 Word 报表</div>' : '<div class="llm-error">尚未配置大模型，请先在上方填写并保存。</div>')
@@ -376,63 +377,65 @@ function renderAiReviewCard() {
 // 构建发给 AI 的数据表文本：汇总 + 明细（与导出报表口径一致，视频不适用指标显示「-」），过长则截断保留最近内容
 function buildOverviewReviewData(range) {
   const lines = [];
-  const MAX = 2600;
+  const MAX = 6000;
   const monthContents = contents.filter(c => inReviewRange(c.createdAt || '', range));
-  const push = s => { if (lines.join('\n').length < MAX) lines.push(s); };
-  if (__aiReviewTarget === 'video') {
-    const vStats = stats.filter(s => inReviewRange(s.date || '', range) && isVideo(s.platform));
-    const sum = k => vStats.reduce((s, x) => s + (x[k] || 0), 0);
-    push('【短视频平台数据汇总】');
-    push('总发布数：' + monthContents.filter(c => isVideo(c.platform)).length +
-      '，总播放量：' + sum('views') + '，总点赞：' + sum('likes') + '，总评论：' + sum('comments') +
-      '，总收藏（不含视频号）：' + sum('favorites') + '，总涨粉：' + sum('followers'));
-    VIDEO_PLATFORMS.forEach(p => {
-      const ps = vStats.filter(s => s.platform === p);
-      if (ps.length) push('  ' + p + '：发布' + ps.length + '条，播放' + ps.reduce((s,x)=>s+(x.views||0),0) +
-        '，点赞' + ps.reduce((s,x)=>s+(x.likes||0),0) + '，评论' + ps.reduce((s,x)=>s+(x.comments||0),0) +
-        '，涨粉' + ps.reduce((s,x)=>s+(x.followers||0),0));
+  let dropped = false;
+  const push = s => { if (lines.join('\n').length < MAX) lines.push(s); else dropped = true; };
+  // 标题按码点安全截断（保留主标题、去掉长尾标签/描述），让更多记录能塞进提示词
+  const shortTitle = t => { const a = Array.from(String(t || '')); return a.length > 24 ? a.slice(0, 24).join('') + '…' : String(t || ''); };
+  // 账号登记数据：独立板块（不分周期），放在最前保证不被下方视频数据（MAX 上限）截断。
+  // 账号数据登记本身只保留每账号最新3条快照（发布/粉丝/播放/点赞/评论/分享），展示全部快照 + 最早→最新对比变化
+  const accSnaps = accountStats.filter(s => isVideo(s.platform));
+  if (accSnaps.length) {
+    const accGroups = {};
+    accSnaps.forEach(s => {
+      const key = s.platform + '|' + String(s.accountRef || '');
+      (accGroups[key] = accGroups[key] || { platform: s.platform, ref: s.accountRef, items: [] }).items.push(s);
     });
-    push('【逐条数据】日期|平台|标题|播放|完播%|均播(秒)|点赞|评论|收藏|推荐|分享|涨粉（不适用指标显示 -）');
-    vStats.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(s => {
-      push('  ' + (s.date || '') + '|' + s.platform + '|' + (statTitle(s) || '') + '|' + (s.views ?? '') +
-        '|' + videoMetric(s, 'completionRate') + '|' + videoMetric(s, 'avgWatch') + '|' + (s.likes ?? '') +
-        '|' + (s.comments ?? '') + '|' + videoMetric(s, 'favorites') + '|' + videoMetric(s, 'recommend') +
-        '|' + (s.shares ?? '') + '|' + (s.followers ?? ''));
-    });
-  } else {
-    const aStats = aiStats.filter(s => inReviewRange(s.date || '', range));
-    let checked = 0, possible = 0;
-    aStats.forEach(s => AI_ENGINES.forEach(ai => { possible++; if (s.ai && s.ai[ai]) checked++; }));
-    const rate = possible > 0 ? Math.round(checked / possible * 100) : 0;
-    push('【文书平台数据汇总】');
-    push('总发布数：' + monthContents.filter(c => isArticle(c.platform)).length +
-      '，AI 收录数：' + checked + '/' + possible + '，收录率：' + rate + '%');
-    ARTICLE_PLATFORMS.forEach(p => {
-      const ps = aStats.filter(s => s.platform === p);
-      if (ps.length) {
-        let c = 0, t = 0;
-        ps.forEach(s => AI_ENGINES.forEach(ai => { t++; if (s.ai && s.ai[ai]) c++; }));
-        push('  ' + p + '：发布' + ps.length + '条，收录 ' + c + '/' + t);
-      }
-    });
-    push('【逐条数据】日期|平台|标题|被收录的AI引擎（「无」=已录入且明确未被收录）');
-    aStats.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(s => {
-      const engs = AI_ENGINES.filter(ai => s.ai && s.ai[ai]);
-      const noneChosen = s.ai && s.ai['__none__'] === true;
-      push('  ' + (s.date || '') + '|' + s.platform + '|' + (statTitle(s) || '') + '|' +
-        (engs.length ? engs.join('、') : (noneChosen ? '无' : '未收录')));
+    push('【账号登记数据】格式：平台|账号|最新记录日期|发布|粉丝|播放|点赞|评论|分享|对比变化（最早→最新，每账号保留最新3条快照）');
+    Object.keys(accGroups).sort().forEach(key => {
+      const g = accGroups[key];
+      g.items.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      const first = g.items[0], latest = g.items[g.items.length - 1];
+      const rec = g.ref ? accountIds.find(x => String(x.id) === String(g.ref)) : null;
+      const label = rec && rec.accountId ? rec.accountId : '未指定账号';
+      const note = rec && rec.note ? '（' + rec.note + '）' : '';
+      const delta = k => { const d = (Number(latest[k]) || 0) - (Number(first[k]) || 0); return d > 0 ? '+' + d : String(d); };
+      push('  ' + g.platform + '|' + label + note + '|' + latest.date + '|发布' + (latest.posts ?? '') +
+        '|粉丝' + (latest.followers ?? '') + '|播放' + (latest.views ?? '') + '|点赞' + (latest.likes ?? '') +
+        '|评论' + (latest.comments ?? '') + '|分享' + (latest.shares ?? '') +
+        '|粉丝' + delta('followers') + '、播放' + delta('views') + '、点赞' + delta('likes'));
     });
   }
+  const vStats = stats.filter(s => inReviewRange(s.date || '', range) && isVideo(s.platform));
+  const sum = k => vStats.reduce((s, x) => s + (x[k] || 0), 0);
+  push('【短视频平台数据汇总】');
+  push('总发布数：' + monthContents.filter(c => isVideo(c.platform)).length +
+    '，总播放量：' + sum('views') + '，总点赞：' + sum('likes') + '，总评论：' + sum('comments') +
+    '，总收藏（不含视频号）：' + sum('favorites') + '，总涨粉：' + sum('followers'));
+  VIDEO_PLATFORMS.forEach(p => {
+    const ps = vStats.filter(s => s.platform === p);
+    if (ps.length) push('  ' + p + '：发布' + ps.length + '条，播放' + ps.reduce((s,x)=>s+(x.views||0),0) +
+      '，点赞' + ps.reduce((s,x)=>s+(x.likes||0),0) + '，评论' + ps.reduce((s,x)=>s+(x.comments||0),0) +
+      '，涨粉' + ps.reduce((s,x)=>s+(x.followers||0),0));
+  });
+  push('【逐条数据】日期|平台|标题|播放|完播%|均播(秒)|点赞|评论|收藏|推荐|分享|涨粉（不适用指标显示 -）');
+  vStats.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(s => {
+    push('  ' + (s.date || '') + '|' + s.platform + '|' + shortTitle(statTitle(s)) + '|' + (s.views ?? '') +
+      '|' + videoMetric(s, 'completionRate') + '|' + videoMetric(s, 'avgWatch') + '|' + (s.likes ?? '') +
+      '|' + (s.comments ?? '') + '|' + videoMetric(s, 'favorites') + '|' + videoMetric(s, 'recommend') +
+      '|' + (s.shares ?? '') + '|' + (s.followers ?? ''));
+  });
   let text = lines.join('\n');
-  if (text.length > MAX) text = text.slice(0, MAX) + '\n（数据过长已截断，仅保留最近内容）';
+  if (dropped) text += '\n（注意：数据量较大已截断，仅保留了最近内容，较早记录未列入本分析；请勿因未看到较早记录就断定某指标缺失或某平台不统计某指标）';
   return text;
 }
 
 let __overviewAiBusy = false;
 let __aiReviewCompleted = false;   // 本次分析是否已拿到结果（已完成后取消不再退款）
-// 各分析对象的 AI 数据总结分析结果相互独立（视频/文书分开保存），切换不串扰、不清空
+// AI 数据总结分析结果（仅视频平台）
 const __aiReviewReplies = {};
-function aiReviewReply() { return __aiReviewReplies[__aiReviewTarget] || ''; }
+function aiReviewReply() { return __aiReviewReplies['video'] || ''; }
 function aiReviewReplyButtons() {
   return '<div style="margin-top:10px;text-align:right;display:flex;justify-content:flex-end;gap:8px;">' +
     '<button class="btn-danger" onclick="clearAiReviewReply()" style="font-size:12px;padding:6px 14px;cursor:pointer;">清空结果</button>' +
@@ -442,11 +445,11 @@ function aiReviewReplyButtons() {
 function clearAiReviewReply() {
   showConfirm({
     title: '清空 AI 分析结果',
-    desc: '将清空当前' + (__aiReviewTarget === 'video' ? '视频平台' : '文书平台') + '的 AI 数据总结分析结果，是否继续？',
+    desc: '将清空当前的 AI 数据总结分析结果，是否继续？',
     danger: true,
     okText: '确认清空',
     onOk: async () => {
-      __aiReviewReplies[__aiReviewTarget] = '';
+      __aiReviewReplies['video'] = '';
       render();
       showToast('AI 分析结果已清空');
     }
@@ -459,7 +462,7 @@ function exportAiAnalysisToWord() {
   const period = __aiReviewPeriod === 'week' ? '本周' : (__aiReviewPeriod === 'month' ? '本月' : '全部');
   const months = getOverviewAiMonths();
   const monthsLabel = months > 0 ? '，账号运营' + months + '个月' : '';
-  const wsLabel = __aiReviewTarget === 'video' ? '短视频' : '文书';
+  const wsLabel = '短视频';
   const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -470,11 +473,11 @@ function exportAiAnalysisToWord() {
 <meta name="Generator" content="Microsoft Word 15">
 <title>${wsLabel}AI 数据总结分析报告</title>
 <style>
-body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; margin: 24px; color: #1f2937; line-height: 1.8; font-size: 14px; }
-h1 { font-size: 20px; border-bottom: 3px solid #3b82f6; padding-bottom: 8px; }
-h2 { color: #2563eb; margin-top: 24px; font-size: 16px; }
-pre { white-space: pre-wrap; word-break: break-word; font-size: 14px; }
-.meta { color: #6b7280; font-size: 13px; margin: 6px 0 18px; }
+body { font-family: 'Microsoft YaHei', '微软雅黑', sans-serif; margin: 24px; color: #1f2937; line-height: 1.8; font-size: 7.5pt; }
+h1 { font-family: 'Microsoft YaHei', '微软雅黑', sans-serif; font-size: 12pt; border-bottom: 3px solid #3b82f6; padding-bottom: 8px; }
+h2 { font-family: 'Microsoft YaHei', '微软雅黑', sans-serif; color: #2563eb; margin-top: 24px; font-size: 12pt; }
+pre { font-family: 'Microsoft YaHei', '微软雅黑', sans-serif; white-space: pre-wrap; word-break: break-word; font-size: 7.5pt; }
+.meta { color: #6b7280; font-size: 6.5pt; margin: 6px 0 18px; }
 </style>
 <!--[if gte mso 9]>
 <xml>
@@ -502,7 +505,7 @@ pre { white-space: pre-wrap; word-break: break-word; font-size: 14px; }
 }
 async function runOverviewAiReview() {
   if (__overviewAiBusy) return;
-  const ws = __aiReviewTarget;   // 记录发起时的分析对象，完成后结果写入对应对象
+  const ws = 'video';   // AI 数据总结分析仅针对视频平台
   const out = document.getElementById('overviewAiOutput');
   const cfg = llmConfig || {};
   if (!cfg.baseUrl || !cfg.apiKey || !cfg.model) {
@@ -517,7 +520,7 @@ async function runOverviewAiReview() {
   __overviewAiBusy = true;
   __aiReviewController = new AbortController();
   __aiReviewCompleted = false;
-  if (out) out.innerHTML = '<div class="llm-loading"><span>正在按「' + range.label + '」对' + (ws === 'video' ? '视频平台' : '文书平台') + '进行 AI 数据总结分析...</span><span class="llm-loading-hint">预计需要1-3分钟（内容量大小），请稍候。</span></div>';
+  if (out) out.innerHTML = '<div class="llm-loading"><span>正在按「' + range.label + '」对视频平台进行 AI 数据总结分析...</span><span class="llm-loading-hint">预计需要1-3分钟（内容量大小），请稍候。</span></div>';
   // 在操作区域显示取消按钮
   const actionsEl = document.getElementById('overviewAiActions');
   if (actionsEl) actionsEl.innerHTML = '<button class="btn-cancel" onclick="cancelAiReview()">取消</button>';
@@ -528,7 +531,7 @@ async function runOverviewAiReview() {
   };
   try {
     const reply = await chatLLM([
-      { role: 'system', content: buildAiReviewSystemPrompt(range.label, monthsText) },
+      { role: 'system', content: buildAiReviewSystemPrompt(range.label, monthsText, ws === 'video') },
       { role: 'user', content: '以下是 ' + range.label + ' 导出的数据表：\n\n' + buildOverviewReviewData(range) }
     ], __aiReviewController.signal);
     __aiReviewCompleted = true;

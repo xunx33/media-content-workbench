@@ -118,7 +118,7 @@ test('hasCorruptChar 识别 U+FFFD 乱码替换符', () => {
 // ============================================================
 const PAYLOAD = '<img src=x onerror=alert(1)>';
 const MAL_URL = 'javascript:alert(1)';
-const KNOWN_DATA_FIELDS = ['contents', 'stats', 'aiStats', 'reviews', 'accountStats', 'accountIds', 'articleAccounts'];
+const KNOWN_DATA_FIELDS = ['contents', 'stats', 'reviews', 'accountStats', 'accountIds'];
 
 const HARNESS = `
 ;(function(){
@@ -127,18 +127,17 @@ const HARNESS = `
   // 注入恶意数据（reassign store.js 顶层 let 绑定）
   try { contents = [__MAL__]; } catch(e){}
   try { stats = []; } catch(e){}
-  try { aiStats = []; } catch(e){}
   try { reviews = [{ id:1, date:'2026-08-12', period:'week', highlights:__PAYLOAD__, problems:__PAYLOAD__, plans:__PAYLOAD__ }]; } catch(e){}
   try { searchKeyword = __PAYLOAD__; } catch(e){}
   try { contentFilterType=''; contentDateFilter=''; contentSortByViews=''; } catch(e){}
   try { dataSubTab='video'; } catch(e){}
-  const __calls__ = ['renderContentDetail','renderContentItem','renderVideoDataModal','renderAiDataModal','renderContent','renderReviewPanel'];
+  const __calls__ = ['renderContentDetail','renderContentItem','renderVideoDataModal','renderContent','renderReviewPanel'];
   let __html__ = '';
   let __ran__ = [];
   __calls__.forEach(function(fn){
     if (typeof globalThis[fn] === 'function') {
       try {
-        const arg = (fn==='renderContentDetail'||fn==='renderContentItem'||fn==='renderVideoDataModal'||fn==='renderAiDataModal') ? __MAL__
+        const arg = (fn==='renderContentDetail'||fn==='renderContentItem'||fn==='renderVideoDataModal') ? __MAL__
                   : (fn==='renderReviewPanel' ? 'week' : undefined);
         __html__ += globalThis[fn](arg); __ran__.push(fn);
       }
@@ -175,7 +174,7 @@ console.log('\n[2] 运行时 XSS 渲染测试（恶意输入必须被转义）')
 let combined = null;
 test('全部渲染函数在真实代码下成功执行（无脚本错误）', () => {
   combined = runCombinedRender();
-  const expected = ['renderContentDetail', 'renderContentItem', 'renderVideoDataModal', 'renderAiDataModal', 'renderContent', 'renderReviewPanel'];
+  const expected = ['renderContentDetail', 'renderContentItem', 'renderVideoDataModal', 'renderContent', 'renderReviewPanel'];
   const notRan = expected.filter(fn => !combined.ran.includes(fn));
   assert.ok(notRan.length === 0, '以下渲染函数未执行：' + notRan.join(', ') + (Object.keys(combined.err).length ? '；错误：' + JSON.stringify(combined.err) : ''));
 });
@@ -206,7 +205,7 @@ test('导出写出的 7 个字段与导入读取的字段完全一致', () => {
   let m;
   const readRe = /data\.([A-Za-z_$][\w$]*)/g;
   while ((m = readRe.exec(src))) if (KNOWN_DATA_FIELDS.includes(m[1])) importRead.add(m[1]);
-  const restoreRe = /\b(contents|stats|aiStats|reviews|accountStats|accountIds)\s*=\s*[a-zA-Z_$][\w$]*\.(contents|stats|aiStats|reviews|accountStats|accountIds)/g;
+  const restoreRe = /\b(contents|stats|reviews|accountStats|accountIds)\s*=\s*[a-zA-Z_$][\w$]*\.(contents|stats|reviews|accountStats|accountIds)/g;
   while ((m = restoreRe.exec(src))) { importRead.add(m[1]); importRead.add(m[2]); }
 
   const missing = KNOWN_DATA_FIELDS.filter(k => !importRead.has(k));
@@ -218,13 +217,11 @@ test('导出写出的 7 个字段与导入读取的字段完全一致', () => {
 });
 
 // ============================================================
-// 测试 4：导出报表含复盘记录栏，且相对「文书AI收录情况」位置正确
-//  - 视频平台复盘记录 在 文书AI收录情况 上方
-//  - 文书平台复盘记录 在 文书AI收录情况 下方
-//  - 无复盘记录时两栏都不显示
+// 测试 4：导出报表含视频复盘记录栏；有复盘时显示、无复盘时不显示；
+// 报表中不应再出现任何文书/AI收录相关内容
 // 以 <h2> 章节标题作为定位锚点（meta 行也会含这些文字，plain indexOf 会误判）
 // ============================================================
-console.log('\n[4] 导出报表复盘记录栏位置');
+console.log('\n[4] 导出报表复盘记录栏');
 function buildReportHtmlWithReviews(reviewsData) {
   const sandbox = makeSandbox();
   vm.createContext(sandbox);
@@ -234,6 +231,7 @@ function buildReportHtmlWithReviews(reviewsData) {
   }
   const inject = `
     ;(function(){
+      contents = [{ id:99, platform:'抖音', title:'测试视频', createdAt:'2026-08-12' }];
       reviews = ${JSON.stringify(reviewsData)};
       globalThis.__HTML__ = buildReportHtml('all', '全量');
     })();
@@ -241,26 +239,18 @@ function buildReportHtmlWithReviews(reviewsData) {
   vm.runInContext(code + inject, sandbox);
   return sandbox.__HTML__ || '';
 }
-test('有复盘时视频复盘在文书AI收录情况上方、文书复盘在下方', () => {
+test('有视频复盘记录时显示「视频平台复盘记录」栏', () => {
   const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); })();
   const html = buildReportHtmlWithReviews([
     { id:1, type:'video', period:'week', date: today, highlights:'视频亮点', problems:'视频问题', plans:'视频计划' },
-    { id:2, type:'article', period:'month', date: today, highlights:'文书亮点', problems:'文书问题', plans:'文书计划' },
   ]);
-  const iVideo = html.indexOf('<h2>视频平台复盘记录');
-  const iAi = html.indexOf('<h2>文书AI收录情况');
-  const iArticle = html.indexOf('<h2>文书平台复盘记录');
-  assert.ok(iVideo >= 0, '未出现「视频平台复盘记录」栏');
-  assert.ok(iAi >= 0, '未出现「文书AI收录情况」栏');
-  assert.ok(iArticle >= 0, '未出现「文书平台复盘记录」栏');
-  assert.ok(iVideo < iAi, '视频平台复盘记录 应在 文书AI收录情况 上方');
-  assert.ok(iAi < iArticle, '文书平台复盘记录 应在 文书AI收录情况 下方');
+  assert.ok(html.indexOf('<h2>视频平台复盘记录') >= 0, '未出现「视频平台复盘记录」栏');
 });
-test('无复盘记录时两栏都不显示', () => {
+test('无复盘记录时不显示复盘栏，且报表不含任何文书/AI收录内容', () => {
   const html = buildReportHtmlWithReviews([]);
   assert.ok(html.indexOf('<h2>视频平台复盘记录</h2>') < 0, '无复盘时不应出现视频平台复盘记录栏');
-  assert.ok(html.indexOf('<h2>文书平台复盘记录</h2>') < 0, '无复盘时不应出现文书平台复盘记录栏');
-  assert.ok(html.indexOf('<h2>文书AI收录情况') >= 0, '无复盘时文书AI收录情况栏仍应存在');
+  assert.ok(html.indexOf('文书') < 0, '报表不应再出现「文书」字样');
+  assert.ok(html.indexOf('AI收录') < 0, '报表不应再出现「AI收录」字样');
 });
 
 // ============================================================

@@ -13,7 +13,6 @@ function renderOverview() {
   // 日期可能缺失（旧数据/手改 JSON），统一用 (x || '') 防护避免整页崩溃
   const monthContents = contents.filter(c => (c.createdAt || '').startsWith(monthStr));
   const vDone = monthContents.filter(c => isVideo(c.platform)).length;
-  const aDone = monthContents.filter(c => isArticle(c.platform)).length;
 
   // 视频平台数据汇总（与数据复盘页同口径：总发布数/总播放量/总点赞/总评论/总收藏/总涨粉）
   const monthVideoStats = stats.filter(s => (s.date || '').startsWith(monthStr) && isVideo(s.platform));
@@ -23,69 +22,36 @@ function renderOverview() {
   const monthFavorites = monthVideoStats.reduce((sum, s) => sum + (s.favorites || 0), 0);
   const monthFollowers = monthVideoStats.reduce((sum, s) => sum + (s.followers || 0), 0);
 
-  // 文书平台数据汇总（与数据复盘页同口径：总发布数 / AI收录数(x/y) / AI收录率）
-  const monthAiStats = aiStats.filter(s => (s.date || '').startsWith(monthStr));
-  let aiChecked = 0, aiPossible = 0;
-  monthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { aiPossible++; if (s.ai && s.ai[ai]) aiChecked++; }); });
-  const aiRate = aiPossible > 0 ? Math.round(aiChecked / aiPossible * 100) : 0;
-
   html += `<div class="card"><div class="card-title">本月数据总览</div>`;
-  // 按工作台分区只显示对应类型统计（卡片与数据复盘页完全统一：名称/类型/数据）
-  if (workspace === 'video') {
-    html += `<div class="stats-grid">
-      <div class="stat-card"><div class="stat-value">${vDone}</div><div class="stat-label">总发布数</div></div>
-      <div class="stat-card"><div class="stat-value">${formatNum(monthViews)}</div><div class="stat-label">总播放量</div></div>
-      <div class="stat-card"><div class="stat-value">${formatNum(monthLikes)}</div><div class="stat-label">总点赞</div></div>
-      <div class="stat-card"><div class="stat-value">${formatNum(monthComments)}</div><div class="stat-label">总评论</div></div>
-      <div class="stat-card"><div class="stat-value">${formatNum(monthFavorites)}</div><div class="stat-label">总收藏</div></div>
-      <div class="stat-card"><div class="stat-value">${formatNum(monthFollowers)}</div><div class="stat-label">总涨粉</div></div>
-    </div>`;
-  } else {
-    html += `<div class="stats-grid">
-      <div class="stat-card"><div class="stat-value">${aDone}</div><div class="stat-label">总发布数</div></div>
-      <div class="stat-card"><div class="stat-value">${aiChecked}/${aiPossible}</div><div class="stat-label">AI收录数</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:${aiRate>=50?'var(--green)':'var(--yellow)'};">${aiRate}%</div><div class="stat-label">AI收录率</div></div>
-    </div>`;
-  }
+  html += `<div class="stats-grid">
+    <div class="stat-card"><div class="stat-value">${vDone}</div><div class="stat-label">总发布数</div></div>
+    <div class="stat-card"><div class="stat-value">${formatNum(monthViews)}</div><div class="stat-label">总播放量</div></div>
+    <div class="stat-card"><div class="stat-value">${formatNum(monthLikes)}</div><div class="stat-label">总点赞</div></div>
+    <div class="stat-card"><div class="stat-value">${formatNum(monthComments)}</div><div class="stat-label">总评论</div></div>
+    <div class="stat-card"><div class="stat-value">${formatNum(monthFavorites)}</div><div class="stat-label">总收藏</div></div>
+    <div class="stat-card"><div class="stat-value">${formatNum(monthFollowers)}</div><div class="stat-label">总涨粉</div></div>
+  </div>`;
   html += `</div>`;
 
-  // 各平台数据占比饼图（专注本月）
-  if (workspace === 'video') {
-    // 每项数据（播放/点赞/评论/涨粉）各平台占比饼图，2 列网格
-    const metrics = [
-      { label: '播放量', sum: monthViews, key: 'views' },
-      { label: '点赞量', sum: monthLikes, key: 'likes' },
-      { label: '评论量', sum: monthComments, key: 'comments' },
-      { label: '涨粉量', sum: monthFollowers, key: 'followers' },
-    ];
-    html += '<div class="card"><div class="card-title">各平台数据占比 <span class="badge">本月</span></div>';
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
-    metrics.forEach(m => {
-      const segs = VIDEO_PLATFORMS.map((p, i) => {
-        const v = monthVideoStats.filter(s => s.platform === p).reduce((sum, s) => sum + (s[m.key] || 0), 0);
-        return { label: p, value: v, color: PIE_COLORS.video[i] };
-      });
-      html += `<div><div style="font-size:13px;font-weight:600;margin-bottom:4px;">${m.label}</div>`;
-      html += renderPieChart(segs, m.sum, 'video');
-      html += '</div>';
+  // 各平台数据占比饼图（专注本月）：播放/点赞/评论/涨粉 各平台占比，2 列网格
+  const metrics = [
+    { label: '播放量', sum: monthViews, key: 'views' },
+    { label: '点赞量', sum: monthLikes, key: 'likes' },
+    { label: '评论量', sum: monthComments, key: 'comments' },
+    { label: '涨粉量', sum: monthFollowers, key: 'followers' },
+  ];
+  html += '<div class="card"><div class="card-title">各平台数据占比 <span class="badge">本月</span></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
+  metrics.forEach(m => {
+    const segs = VIDEO_PLATFORMS.map((p, i) => {
+      const v = monthVideoStats.filter(s => s.platform === p).reduce((sum, s) => sum + (s[m.key] || 0), 0);
+      return { label: p, value: v, color: PIE_COLORS.video[i] };
     });
-    html += '</div></div>';
-  } else {
-    // 文书：各平台发布量占比 + 各平台被收录条数占比
-    const pubSegs = ARTICLE_PLATFORMS.map((p, i) => {
-      const v = monthContents.filter(c => c.platform === p).length;
-      return { label: p, value: v, color: PIE_COLORS.article[i] };
-    });
-    const recSegs = ARTICLE_PLATFORMS.map((p, i) => {
-      const v = monthAiStats.filter(s => s.platform === p).filter(s => AI_ENGINES.some(ai => s.ai && s.ai[ai])).length;
-      return { label: p, value: v, color: PIE_COLORS.article[i] };
-    });
-    html += '<div class="card"><div class="card-title">各平台数据占比 <span class="badge">本月</span></div>';
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
-    html += `<div><div style="font-size:13px;font-weight:600;margin-bottom:4px;">各平台发布量</div>` + renderPieChart(pubSegs, aDone, 'article') + '</div>';
-    html += `<div><div style="font-size:13px;font-weight:600;margin-bottom:4px;">各平台被收录条数</div>` + renderPieChart(recSegs, recSegs.reduce((s, x) => s + x.value, 0), 'article') + '</div>';
-    html += '</div></div>';
-  }
+    html += `<div><div style="font-size:13px;font-weight:600;margin-bottom:4px;">${m.label}</div>`;
+    html += renderPieChart(segs, m.sum, 'video');
+    html += '</div>';
+  });
+  html += '</div></div>';
 
   // 各平台明细 + 进度条（条数 / 当月天数）
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -95,52 +61,31 @@ function renderOverview() {
     if (platformCounts[c.platform]) platformCounts[c.platform].done += 1;
   });
   html += '<div class="card"><div class="card-title">各平台发布明细</div>';
-  // 按工作台分区只显示对应平台明细
-  if (workspace === 'video') {
-    html += '<div class="section-label"><span style="color:var(--video-orange-light);">短视频平台</span><span class="count">' + VIDEO_PLATFORMS.length + '</span></div>';
-    html += '<div class="platform-rows">';
-    VIDEO_PLATFORMS.forEach(p => {
-      const c = platformCounts[p];
-      const pct = Math.min(100, Math.round(c.done / c.total * 100));
-      html += `<div class="platform-row video">
-        <div class="platform-row-icon video">${PLATFORM_SHORT[p]}</div>
-        <div class="platform-row-info">
-          <div class="platform-row-name">${p}</div>
-          <div class="platform-row-stat">${c.done} 条 / ${c.total} 天 · ${pct}%</div>
-          <div style="height:5px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--video-orange),var(--video-orange-light));transition:width 0.5s var(--ease);border-radius:3px;"></div>
-          </div>
+  html += '<div class="section-label"><span style="color:var(--video-orange-light);">短视频平台</span><span class="count">' + VIDEO_PLATFORMS.length + '</span></div>';
+  html += '<div class="platform-rows">';
+  VIDEO_PLATFORMS.forEach(p => {
+    const c = platformCounts[p];
+    const pct = Math.min(100, Math.round(c.done / c.total * 100));
+    html += `<div class="platform-row video">
+      <div class="platform-row-icon video">${PLATFORM_SHORT[p]}</div>
+      <div class="platform-row-info">
+        <div class="platform-row-name">${p}</div>
+        <div class="platform-row-stat">${c.done} 条 / ${c.total} 天 · ${pct}%</div>
+        <div style="height:5px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--video-orange),var(--video-orange-light));transition:width 0.5s var(--ease);border-radius:3px;"></div>
         </div>
-      </div>`;
-    });
-  } else {
-    html += '<div class="section-label"><span style="color:var(--article-purple-light);">文书平台</span><span class="count">' + ARTICLE_PLATFORMS.length + '</span></div>';
-    html += '<div class="platform-rows">';
-    ARTICLE_PLATFORMS.forEach(p => {
-      const c = platformCounts[p];
-      const pct = Math.min(100, Math.round(c.done / c.total * 100));
-      html += `<div class="platform-row article">
-        <div class="platform-row-icon article">${PLATFORM_SHORT[p]}</div>
-        <div class="platform-row-info">
-          <div class="platform-row-name">${p}</div>
-          <div class="platform-row-stat">${c.done} 条 / ${c.total} 天 · ${pct}%</div>
-          <div style="height:5px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--article-purple),var(--article-purple-light));transition:width 0.5s var(--ease);border-radius:3px;"></div>
-          </div>
-        </div>
-      </div>`;
-    });
-  }
+      </div>
+    </div>`;
+  });
   html += '</div></div>';
 
   return html;
 }
 
 // ===== 饼图（SVG 零依赖）=====
-// 平台配色（视频 4 色 / 文书 6 色，与平台顺序对应）
+// 平台配色（视频 4 色，与平台顺序对应）
 const PIE_COLORS = {
-  video: ['#ff6b35', '#ffa940', '#ff4d6d', '#5b8cff'],
-  article: ['#7c5cff', '#a78bfa', '#5b8cff', '#38bdf8', '#34d399', '#f59e0b']
+  video: ['#ff6b35', '#ffa940', '#ff4d6d', '#5b8cff']
 };
 // segments: [{label, value, color}]；total 为总和（用于占比）
 function renderPieChart(segments, total, type) {

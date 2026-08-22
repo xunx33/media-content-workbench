@@ -1,7 +1,7 @@
 {
   "name": "新媒体数据工作台",
   "short_name": "新媒体数据",
-  "description": "4短视频 + 6文书平台的数据登记、复盘与账号管理工具",
+  "description": "4个短视频平台的数据登记、复盘与账号管理工具",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",

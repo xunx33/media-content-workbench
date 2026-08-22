@@ -67,7 +67,7 @@ function renderCalendar() {
     const isToday = dateStr === todayStr;
     const isSelected = dateStr === selectedDate;
     const holiday = getHolidayInfo(dateStr);
-    // 圆点统一逻辑（视频/文书一致）：
+    // 圆点统一逻辑：
     //   第一点=当日登记：无任何登记留空 / 部分平台有登记=黄 / 全部平台都有登记=绿
     //   第二点=数据录入：当日登记内容全部已录入数据=绿 / 个别未录入=黄 / 无登记内容不显示
     const dayStats = getDayPlatformStatus(dateStr);
@@ -98,14 +98,9 @@ function renderCalendar() {
     const isPast = selectedDate < todayStr;
     const selHoliday = getHolidayInfo(selectedDate);
     html += `<div class="day-detail"><h4>${selectedDate} 发布任务${selHoliday ? '　<span style="font-size:12px;font-weight:400;color:#ef4444;">🎉 ' + selHoliday.name + '（法定节假日）</span>' : ''}</h4>`;
-    // 按工作台分区只显示对应平台（短视频工作台 / 文书工作台）
-    if (workspace === 'video') {
-      html += '<div style="font-size:12px;color:var(--video-orange-light);margin-bottom:4px;font-weight:600;">短视频平台（全部 4 个有内容）</div>';
-      VIDEO_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'video'));
-    } else {
-      html += '<div style="font-size:12px;color:var(--article-purple-light);margin-bottom:4px;font-weight:600;">文书平台（至少 3 个平台有内容）</div>';
-      ARTICLE_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'article'));
-    }
+    // 只显示短视频平台
+    html += '<div style="font-size:12px;color:var(--video-orange-light);margin-bottom:4px;font-weight:600;">短视频平台（全部 4 个有内容）</div>';
+    VIDEO_PLATFORMS.forEach(p => html += renderDayPlatformItem(p, counts[p], selectedDate, 'video'));
     html += '</div>';
   }
   return html;
@@ -139,25 +134,20 @@ function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth() + de
 function goToday() { currentMonth = new Date(); selectedDate = getToday(); render(); }
 function selectDay(date) { selectedDate = date; render(); }
 
-// 当日平台登记 + 数据录入状态（按当前工作台分区；视频/文书逻辑统一）
+// 当日平台登记 + 数据录入状态（视频平台）
 // 返回：{ hasContent, allRegistered, hasDataEntry, allDataEntered }
 //   hasContent    ：当日是否登记了内容（任一平台）
 //   allRegistered ：全部平台都有登记
-//   hasDataEntry  ：登记的内容中是否有任何一条已录入数据（视频stats / 文书aiStats）
+//   hasDataEntry  ：登记的内容中是否有任何一条已录入数据（视频 stats）
 //   allDataEntered：每条登记内容都已录入数据
 function getDayPlatformStatus(date) {
-  const platforms = workspace === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
+  const platforms = VIDEO_PLATFORMS;
   const dayContents = contents.filter(c => platforms.includes(c.platform) && c.createdAt === date);
   const hasContent = dayContents.length > 0;
   // 全部平台有登记 = 每个平台至少 1 条
   const allRegistered = platforms.every(p => dayContents.some(c => c.platform === p));
-  // 数据录入判定：视频内容看 stats（按内容关联），文书内容看 aiStats
-  const hasData = c => {
-    if (isVideo(c.platform)) {
-      return stats.some(s => s.contentId == c.id || s.contentId == Number(c.id));
-    }
-    return aiStats.some(s => s.contentId == c.id || s.contentId == Number(c.id));
-  };
+  // 数据录入判定：视频内容看 stats（按内容关联）
+  const hasData = c => stats.some(s => s.contentId == c.id || s.contentId == Number(c.id));
   const entered = dayContents.filter(hasData);
   return {
     hasContent,

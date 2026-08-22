@@ -1,5 +1,5 @@
 function renderTableParser() {
-  // 解析数据表格仅支持短视频平台导出表：文书工作台下不显示此模块
+  // 解析数据表格仅支持短视频平台导出表
   if (workspace !== 'video') return '';
   const videoCount = stats.length;
   const videoContents = contents.filter(c => isVideo(c.platform)).length;
@@ -427,13 +427,6 @@ const PLATFORM_HEADERS = {
   }
 };
 
-// 文书平台统一表头（AI收录）
-const ARTICLE_HEADERS = {
-  date: ['发布时间', '日期', '时间', 'date'],
-  title: ['作品名称', '文章标题', '标题', '作品', 'title'],
-  ai: ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米']
-};
-
 // ===== 平台签名检测（表头特征匹配，用于提示表格平台与所选平台是否一致）=====
 // 词源：4 个平台真实导出表头（抖音作品列表导出/快手作品列表明细/小红书笔记列表明细/视频号动态数据明细）
 // 每个词都是该平台的「独有列名」，避免交叉误报（如"完播率"四平台都有、"封面点击率"抖音小红书都有、"平均播放时长"抖音视频号都有，均不采用）
@@ -510,12 +503,10 @@ function detectPlatformMismatch(rows, selectedPlatform) {
 async function parseTableRows(rows, type, platform) {
   if (rows.length < 2) { showToast('数据至少需要表头+一行数据'); return null; }
   // 记录起始长度：解析后检测本次新增内容的乱码
-  const startC = contents.length, startS = stats.length, startA = aiStats.length;
+  const startC = contents.length, startS = stats.length;
 
   // 根据平台选择对应的表头规则
-  const rules = type === 'video'
-    ? (PLATFORM_HEADERS[platform] || PLATFORM_HEADERS['抖音'])
-    : ARTICLE_HEADERS;
+  const rules = PLATFORM_HEADERS[platform] || PLATFORM_HEADERS['抖音'];
 
   // 表头行偏移：部分平台（如小红书）第1行是提示语，表头在第2行
   const headerRowIdx = (rules.headerRow || 1) - 1;
@@ -541,16 +532,8 @@ async function parseTableRows(rows, type, platform) {
   const colFavorites = findCol(rules.favorites || ['收藏']);
   const colShares = findCol(rules.shares || ['分享']);
   const colFollowers = findCol(rules.followers || ['涨粉', '粉丝']);
-  const aiCols = {};
-  if (type === 'article') {
-    AI_ENGINES.forEach(ai => {
-      const idx = findCol([ai.toLowerCase(), ai]);
-      if (idx >= 0) aiCols[ai] = idx;
-    });
-  }
 
   if (colDate < 0) { showToast('未找到日期/时间列，请检查表头'); return null; }
-  if (type === 'article' && Object.keys(aiCols).length === 0) { showToast('未找到AI引擎列（DeepSeek/豆包/千问/文心/元宝/纳米）'); return null; }
 
   // 数据从表头行之后开始
   const dataStart = headerRowIdx + 1;
@@ -566,107 +549,80 @@ async function parseTableRows(rows, type, platform) {
     const normDate = normalizeDate(date);
     if (!normDate || !platform) continue;
 
-    if (type === 'video') {
-      let title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
-      const titleEmpty = !title;   // 原表标题是否为空（占位标题无法唯一标识内容）
-      // 空白标题 → 占位符「空标题」，保证内容与数据照常录入
-      if (!title) title = platform === '小红书' ? '空标题' : (platform + ' ' + normDate + ' 作品');
-      const views = colViews >= 0 ? cellNumOrNull(cells[colViews]) : null;
-      const completion = colCompletion >= 0 ? parseCompletion(cells[colCompletion]) : null;
-      // 小红书：人均观看时长（秒）；视频号：推荐数
-      const avgWatch = colAvgWatch >= 0 ? parseAvgWatch(cells[colAvgWatch]) : null;
-      const recommend = colRecommend >= 0 ? cellNumOrNull(cells[colRecommend]) : null;
-      const likes = colLikes >= 0 ? cellNumOrNull(cells[colLikes]) : null;
-      const comments = colComments >= 0 ? cellNumOrNull(cells[colComments]) : null;
-      const favorites = colFavorites >= 0 ? cellNumOrNull(cells[colFavorites]) : null;
-      const shares = colShares >= 0 ? cellNumOrNull(cells[colShares]) : null;
-      const followers = colFollowers >= 0 ? cellNumOrNull(cells[colFollowers]) : null;
+    let title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
+    const titleEmpty = !title;   // 原表标题是否为空（占位标题无法唯一标识内容）
+    // 空白标题 → 占位符「空标题」，保证内容与数据照常录入
+    if (!title) title = platform === '小红书' ? '空标题' : (platform + ' ' + normDate + ' 作品');
+    const views = colViews >= 0 ? cellNumOrNull(cells[colViews]) : null;
+    const completion = colCompletion >= 0 ? parseCompletion(cells[colCompletion]) : null;
+    // 小红书：人均观看时长（秒）；视频号：推荐数
+    const avgWatch = colAvgWatch >= 0 ? parseAvgWatch(cells[colAvgWatch]) : null;
+    const recommend = colRecommend >= 0 ? cellNumOrNull(cells[colRecommend]) : null;
+    const likes = colLikes >= 0 ? cellNumOrNull(cells[colLikes]) : null;
+    const comments = colComments >= 0 ? cellNumOrNull(cells[colComments]) : null;
+    const favorites = colFavorites >= 0 ? cellNumOrNull(cells[colFavorites]) : null;
+    const shares = colShares >= 0 ? cellNumOrNull(cells[colShares]) : null;
+    const followers = colFollowers >= 0 ? cellNumOrNull(cells[colFollowers]) : null;
 
-      // 内容登记：优先按「平台+日期+标题」匹配已登记内容（同日多条作品不会互相覆盖，避免数据丢失），
-      // 没有则自动登记一条（标题取表格作品名，平台/日期从表格读取）；重复导入同一文件可命中并复用。
-      // 占位标题（原表标题为空自动生成）无法唯一标识内容：仅当该平台当天恰好只有一条同名占位时才复用（幂等），
-      // 多条同名占位（如一天多篇「空标题」小红书笔记）无法区分 → 逐条新建，避免互相覆盖丢数据
-      const normTitle = (title || '').trim();
-      let content = null;
-      let autoCreated = false;
-      if (!titleEmpty) {
-        content = contents.find(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === normTitle);
-      } else {
-        // 占位标题：仅当该平台当天「此前已存在」恰好一条同名占位时才复用（幂等重导入）；
-        // 本次导入内新建的占位（newlyCreatedIds）不参与匹配，多条空标题逐条新建、互不覆盖
-        const placeholders = contents.filter(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === normTitle && !newlyCreatedIds.has(c.id));
-        if (placeholders.length === 1) content = placeholders[0];
-      }
-      if (!content) {
-        content = {
-          id: Date.now() + Math.random(),
-          title: normTitle || (platform + ' ' + normDate + ' 作品'),
-          platform,
-          topic: '',
-          url: '',
-          createdAt: normDate
-        };
-        contents.push(content);
-        newlyCreatedIds.add(content.id);
-        autoCreated = true;
-      }
-
-      // 数据登记：按关联内容匹配（同一内容重导入时覆盖更新，不同内容互不影响）；占位标题仅按 contentId 匹配（新内容无旧记录 → 新建）
-      const existing = !titleEmpty
-        ? stats.find(s => s.contentId == content.id || s.contentId == Number(content.id) || (s.platform === platform && s.date === normDate && (s.title || '').trim() === normTitle))
-        : stats.find(s => s.contentId == content.id || s.contentId == Number(content.id));
-      const newStat = { platform, date: normDate, title: normTitle || content.title, views, completionRate: completion, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: content.id };
-      if (existing) {
-        // 检测「同日期同标题但数据不同」：后一条会覆盖前一条，收集起来提醒用户知情（重复导入同一文件数据相同 → 不提醒）
-        const dataKeys = ['views', 'completionRate', 'avgWatch', 'recommend', 'likes', 'comments', 'favorites', 'shares', 'followers'];
-        const norm = v => (v === null || v === undefined || v === '') ? null : Number(v);
-        const differs = dataKeys.some(k => norm(existing[k]) !== norm(newStat[k]));
-        if (differs) overwriteWarnings.push(normDate + ' · ' + platform + '「' + content.title + '」');
-        Object.assign(existing, newStat);
-      }
-      else stats.push({ id: Date.now() + Math.random(), ...newStat });
-      parsedCount++;
-      if (autoCreated) contentCreatedCount++;
-      // 任务联动：该平台当日任务自动完成 + 标记已登记链接
-
-      let summary = `播放${formatNum(views)}`;
-      if (completion !== null) summary += ` 完播${completion}%`;
-      if (avgWatch !== null) summary += ` 均播${avgWatch}s`;
-      if (recommend > 0) summary += ` 推荐${recommend}`;
-      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${escapeHtml(content.title)}」${summary}</div>`);
+    // 内容登记：优先按「平台+日期+标题」匹配已登记内容（同日多条作品不会互相覆盖，避免数据丢失），
+    // 没有则自动登记一条（标题取表格作品名，平台/日期从表格读取）；重复导入同一文件可命中并复用。
+    // 占位标题（原表标题为空自动生成）无法唯一标识内容：仅当该平台当天恰好只有一条同名占位时才复用（幂等），
+    // 多条同名占位（如一天多篇「空标题」小红书笔记）无法区分 → 逐条新建，避免互相覆盖丢数据
+    const normTitle = (title || '').trim();
+    let content = null;
+    let autoCreated = false;
+    if (!titleEmpty) {
+      content = contents.find(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === normTitle);
     } else {
-      const ai = {};
-      AI_ENGINES.forEach(eng => {
-        const idx = aiCols[eng];
-        const v = idx >= 0 ? cells[idx] : '';
-        ai[eng] = isYesValue(v);
-      });
-      // 内容登记：优先按「平台+日期+标题」匹配；无已登记内容时自动登记（标题优先取表格作品名）
-      const artTitle = (colTitle >= 0 ? String(cells[colTitle] || '').trim() : '') || ('文书 ' + platform + ' ' + normDate);
-      let content = contents.find(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === artTitle);
-      let autoCreated = false;
-      if (!content) {
-        content = { id: Date.now() + Math.random(), title: artTitle, platform, topic: '', url: '', createdAt: normDate };
-        contents.push(content);
-        autoCreated = true;
-        contentCreatedCount++;
-      }
-      const existing = aiStats.find(s => s.contentId == content.id || s.contentId == Number(content.id) || (s.platform === platform && s.date === normDate && (s.title || '').trim() === artTitle));
-      if (existing) { existing.ai = ai; existing.contentId = content.id; }
-      else aiStats.push({ id: Date.now() + Math.random(), platform, date: normDate, title: content.title, ai, contentId: content.id });
-      parsedCount++;
-      const yesCount = AI_ENGINES.filter(e => ai[e]).length;
-      results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${escapeHtml(content.title)}」AI收录${yesCount}/6</div>`);
+      // 占位标题：仅当该平台当天「此前已存在」恰好一条同名占位时才复用（幂等重导入）；
+      // 本次导入内新建的占位（newlyCreatedIds）不参与匹配，多条空标题逐条新建、互不覆盖
+      const placeholders = contents.filter(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === normTitle && !newlyCreatedIds.has(c.id));
+      if (placeholders.length === 1) content = placeholders[0];
     }
+    if (!content) {
+      content = {
+        id: Date.now() + Math.random(),
+        title: normTitle || (platform + ' ' + normDate + ' 作品'),
+        platform,
+        topic: '',
+        url: '',
+        createdAt: normDate
+      };
+      contents.push(content);
+      newlyCreatedIds.add(content.id);
+      autoCreated = true;
+    }
+
+    // 数据登记：按关联内容匹配（同一内容重导入时覆盖更新，不同内容互不影响）；占位标题仅按 contentId 匹配（新内容无旧记录 → 新建）
+    const existing = !titleEmpty
+      ? stats.find(s => s.contentId == content.id || s.contentId == Number(content.id) || (s.platform === platform && s.date === normDate && (s.title || '').trim() === normTitle))
+      : stats.find(s => s.contentId == content.id || s.contentId == Number(content.id));
+    const newStat = { platform, date: normDate, title: normTitle || content.title, views, completionRate: completion, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: content.id };
+    if (existing) {
+      // 检测「同日期同标题但数据不同」：后一条会覆盖前一条，收集起来提醒用户知情（重复导入同一文件数据相同 → 不提醒）
+      const dataKeys = ['views', 'completionRate', 'avgWatch', 'recommend', 'likes', 'comments', 'favorites', 'shares', 'followers'];
+      const norm = v => (v === null || v === undefined || v === '') ? null : Number(v);
+      const differs = dataKeys.some(k => norm(existing[k]) !== norm(newStat[k]));
+      if (differs) overwriteWarnings.push(normDate + ' · ' + platform + '「' + content.title + '」');
+      Object.assign(existing, newStat);
+    }
+    else stats.push({ id: Date.now() + Math.random(), ...newStat });
+    parsedCount++;
+    if (autoCreated) contentCreatedCount++;
+    // 任务联动：该平台当日任务自动完成 + 标记已登记链接
+
+    let summary = `播放${formatNum(views)}`;
+    if (completion !== null) summary += ` 完播${completion}%`;
+    if (avgWatch !== null) summary += ` 均播${avgWatch}s`;
+    if (recommend > 0) summary += ` 推荐${recommend}`;
+    results.push(`<div style="font-size:12px;color:var(--green);">✓ ${normDate} ${platform} ${autoCreated ? '🆕 自动登记' : '已并入'}「${escapeHtml(content.title)}」${summary}</div>`);
   }
 
   await saveData('contents', contents);
   await saveData('stats', stats);
-  await saveData('aiStats', aiStats);
-  // 乱码检测：本次新增内容/数据/文书记录的标题与平台
+  // 乱码检测：本次新增内容/数据的标题与平台
   const newCorrupt = countCorruptRecords(contents.slice(startC), ['title', 'platform'])
-    + countCorruptRecords(stats.slice(startS), ['title', 'platform'])
-    + countCorruptRecords(aiStats.slice(startA), ['title', 'platform']);
+    + countCorruptRecords(stats.slice(startS), ['title', 'platform']);
   if (newCorrupt > 0) showToast('⚠️ 本次解析出 ' + newCorrupt + ' 条乱码记录：源表格可能不是 UTF-8 编码，建议改用 xlsx 或另存为 UTF-8 再导入');
   return { parsedCount, contentCreatedCount, results, overwriteWarnings };
 }
@@ -780,8 +736,8 @@ function getFilteredContents() {
   const today = getToday();
   let filtered = [...contents];
 
-  // 按工作台分区过滤（短视频工作台 / 文书工作台），不干扰后续搜索/日期/平台筛选
-  filtered = filtered.filter(c => workspace === 'video' ? isVideo(c.platform) : isArticle(c.platform));
+  // 仅保留短视频平台内容，不干扰后续搜索/日期/平台筛选
+  filtered = filtered.filter(c => isVideo(c.platform));
 
   // Apply search
   if (searchKeyword) {
@@ -812,8 +768,8 @@ function getFilteredContents() {
   // Apply platform filter（具体平台名）
   if (contentFilterType && ALL_PLATFORMS.includes(contentFilterType)) filtered = filtered.filter(c => c.platform === contentFilterType);
 
-  // 播放量排序：仅短视频工作台启用（文书工作台无播放量指标，且残留排序态不会把文书内容过滤为空）
-  if ((contentSortByViews === 'desc' || contentSortByViews === 'asc') && workspace === 'video') {
+  // 播放量排序（短视频平台）
+  if (contentSortByViews === 'desc' || contentSortByViews === 'asc') {
     filtered = filtered.filter(c => isVideo(c.platform));
     const viewOf = c => {
       const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
@@ -875,7 +831,7 @@ function metricView(pf, key, v) {
 }
 
 function renderContentItem(c) {
-  const type = isVideo(c.platform) ? 'video' : 'article';
+  const type = 'video';
   const kw = searchKeyword;
   const titleHtml = highlightText(c.title, kw);
   const topicHtml = c.topic ? highlightText(c.topic, kw) : '';
@@ -884,39 +840,21 @@ function renderContentItem(c) {
   // 已登记的数据（右侧数据栏，统一显示全部指标，不适用 → ❌）
   let dataHtml = '';
   let hasData = false;
-  if (type === 'video') {
-    const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
-    if (s) {
-      hasData = true;
-      // 适用指标：未录入留空；不适用由 metricView 显示 '-'
-      const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '';
-      const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '';
-      dataHtml = `<div class="content-data-item"><span>播放</span><b>${fmtData(s.views)}</b></div>
-        <div class="content-data-item"><span>完播</span><b>${metricView(c.platform, 'completionRate', completion)}</b></div>
-        <div class="content-data-item"><span>均播</span><b>${metricView(c.platform, 'avgWatch', avgWatch)}</b></div>
-        <div class="content-data-item"><span>点赞</span><b>${fmtData(s.likes)}</b></div>
-        <div class="content-data-item"><span>评论</span><b>${fmtData(s.comments)}</b></div>
-        <div class="content-data-item"><span>收藏</span><b>${metricView(c.platform, 'favorites', fmtData(s.favorites))}</b></div>
-        <div class="content-data-item"><span>推荐</span><b>${metricView(c.platform, 'recommend', fmtData(s.recommend))}</b></div>
-        <div class="content-data-item"><span>分享</span><b>${fmtData(s.shares)}</b></div>
-        <div class="content-data-item"><span>涨粉</span><b>${fmtData(s.followers)}</b></div>`;
-    }
-  } else {
-    const s = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
-    if (s) {
-      hasData = true;
-      const yes = AI_ENGINES.filter(e => s.ai && s.ai[e]);
-      const noneChosen = s.ai && s.ai['__none__'] === true;
-      if (noneChosen) {
-        // 明确勾选「无」= 已录入且确认未被收录
-        dataHtml = '<div class="content-data-item" style="width:100%;text-align:center;"><span style="color:var(--text3);font-size:12px;">无（已确认未被收录）</span></div>';
-      } else {
-        dataHtml = AI_ENGINES.map(ai => {
-          const ok = yes.includes(ai);
-          return `<div class="content-data-item"><span>${ai}</span><b style="color:${ok ? 'var(--green)' : 'var(--text3)'};">${ok ? '✓' : '—'}</b></div>`;
-        }).join('');
-      }
-    }
+  const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+  if (s) {
+    hasData = true;
+    // 适用指标：未录入留空；不适用由 metricView 显示 '-'
+    const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '';
+    const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '';
+    dataHtml = `<div class="content-data-item"><span>播放</span><b>${fmtData(s.views)}</b></div>
+      <div class="content-data-item"><span>完播</span><b>${metricView(c.platform, 'completionRate', completion)}</b></div>
+      <div class="content-data-item"><span>均播</span><b>${metricView(c.platform, 'avgWatch', avgWatch)}</b></div>
+      <div class="content-data-item"><span>点赞</span><b>${fmtData(s.likes)}</b></div>
+      <div class="content-data-item"><span>评论</span><b>${fmtData(s.comments)}</b></div>
+      <div class="content-data-item"><span>收藏</span><b>${metricView(c.platform, 'favorites', fmtData(s.favorites))}</b></div>
+      <div class="content-data-item"><span>推荐</span><b>${metricView(c.platform, 'recommend', fmtData(s.recommend))}</b></div>
+      <div class="content-data-item"><span>分享</span><b>${fmtData(s.shares)}</b></div>
+      <div class="content-data-item"><span>涨粉</span><b>${fmtData(s.followers)}</b></div>`;
   }
 
   // 左侧信息栏

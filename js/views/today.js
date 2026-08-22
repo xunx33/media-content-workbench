@@ -4,51 +4,26 @@ function renderToday() {
 
   let html = '<div class="today-section"><h3>今日待办</h3>';
 
-  // 按工作台分区只渲染对应平台（短视频工作台 / 文书工作台）
-  if (workspace === 'video') {
-    html += '<div style="font-size:13px;color:var(--video-orange-light);margin-bottom:6px;font-weight:600;">短视频平台</div><ul class="today-list">';
-    VIDEO_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'video'));
-    html += '</ul>';
-    // 短视频工作台底部：视频平台直达快链（URL 可在「修改链接」弹窗中自定义，存 localStorage）
-    html += '<div class="ai-links"><div class="ai-links-header"><div class="ai-links-title video">视频平台直达</div><button class="ai-links-edit" onclick="openQuickLinksEditor(\'video\')">修改链接</button></div><div class="ai-links-list">';
-    getQuickLinks('video').filter(l => safeUrl(l.url)).forEach(l => html += `<a class="ai-link video" href="${escapeHtml(safeUrl(l.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.name)}</a>`);
-    html += '</div></div>';
-  } else {
-    html += '<div style="font-size:13px;color:var(--article-purple-light);margin-bottom:6px;font-weight:600;">文书平台</div><ul class="today-list">';
-    ARTICLE_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'article'));
-    html += '</ul>';
-    // 文书工作台底部：文书平台直达 / AI 平台直达（URL 可在「修改链接」弹窗中自定义，存 localStorage）
-    html += '<div class="ai-links"><div class="ai-links-header"><div class="ai-links-title platform">文书平台直达</div><button class="ai-links-edit" onclick="openQuickLinksEditor(\'platform\')">修改链接</button></div><div class="ai-links-list">';
-    getQuickLinks('platform').filter(l => safeUrl(l.url)).forEach(l => html += `<a class="ai-link platform" href="${escapeHtml(safeUrl(l.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.name)}</a>`);
-    html += '</div></div>';
-    html += '<div class="ai-links"><div class="ai-links-header"><div class="ai-links-title">AI 平台直达</div><button class="ai-links-edit" onclick="openQuickLinksEditor(\'ai\')">修改链接</button></div><div class="ai-links-list">';
-    getQuickLinks('ai').filter(l => safeUrl(l.url)).forEach(l => html += `<a class="ai-link" href="${escapeHtml(safeUrl(l.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.name)}</a>`);
-    html += '</div></div>';
-  }
+  html += '<div style="font-size:13px;color:var(--video-orange-light);margin-bottom:6px;font-weight:600;">短视频平台</div><ul class="today-list">';
+  VIDEO_PLATFORMS.forEach(p => html += renderPlatformTodayItem(p, counts[p], today, 'video'));
+  html += '</ul>';
+  // 视频平台直达快链（URL 可在「修改链接」弹窗中自定义，存 localStorage）
+  html += '<div class="ai-links"><div class="ai-links-header"><div class="ai-links-title video">视频平台直达</div><button class="ai-links-edit" onclick="openQuickLinksEditor(\'video\')">修改链接</button></div><div class="ai-links-list">';
+  getQuickLinks('video').filter(l => safeUrl(l.url)).forEach(l => html += `<a class="ai-link video" href="${escapeHtml(safeUrl(l.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.name)}</a>`);
+  html += '</div></div>';
 
   html += '</div>';
 
-  // 今日发布概览（按分区只显示对应类型；「今日总登记」只统计当前分区平台）
+  // 今日发布概览（只统计短视频平台）
   const todayContents = contents.filter(c => c.createdAt === today);
   const vTotal = todayContents.filter(c => isVideo(c.platform)).length;
-  const aTotal = todayContents.filter(c => isArticle(c.platform)).length;
-  const wsTotal = workspace === 'video' ? vTotal : aTotal;  // 今日总登记 = 当前分区条数
   const videoDone = VIDEO_PLATFORMS.filter(p => todayContents.some(c => c.platform === p)).length;
-  const articleDone = ARTICLE_PLATFORMS.filter(p => todayContents.some(c => c.platform === p)).length;
   html += `<div class="card"><div class="card-title">今日发布概览</div>
-    <div class="stats-grid">`;
-  if (workspace === 'video') {
-    html += `
+    <div class="stats-grid">
       <div class="stat-card"><div class="stat-value">${vTotal}</div><div class="stat-label">短视频条数</div></div>
       <div class="stat-card"><div class="stat-value">${videoDone}/${VIDEO_PLATFORMS.length}</div><div class="stat-label">视频平台覆盖</div></div>
-      <div class="stat-card"><div class="stat-value">${wsTotal}</div><div class="stat-label">今日总登记</div></div>`;
-  } else {
-    html += `
-      <div class="stat-card"><div class="stat-value">${aTotal}</div><div class="stat-label">文书条数</div></div>
-      <div class="stat-card"><div class="stat-value">${articleDone}/${ARTICLE_PLATFORMS.length}</div><div class="stat-label">文书平台覆盖</div></div>
-      <div class="stat-card"><div class="stat-value">${wsTotal}</div><div class="stat-label">今日总登记</div></div>`;
-  }
-  html += `</div></div>`;
+      <div class="stat-card"><div class="stat-value">${vTotal}</div><div class="stat-label">今日总登记</div></div>
+    </div></div>`;
 
   return html;
 }
@@ -81,7 +56,7 @@ function renderPlatformTodayItem(platform, count, date, type) {
 // 单条内容详情：标题/链接/日期+选题 + 数据摘要 + 操作（数据录入/编辑/删除）
 // 布局：左侧信息列（flex:1）+ 右侧竖排操作按钮，避免按钮挤压内容列宽度
 function renderContentDetail(content) {
-  const type = isVideo(content.platform) ? 'video' : 'article';
+  const type = 'video';
   const safeLink = safeUrl(content.url);
   let html = `<div class="content-detail-item">
     <div class="task-detail-info">
@@ -89,37 +64,20 @@ function renderContentDetail(content) {
     ${safeLink ? `<div class="task-detail-row"><span class="detail-label">链接</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" style="color:var(--link-blue);word-break:break-all;">${escapeHtml(content.url)}</a></div>` : ''}
     <div class="task-detail-row"><span class="detail-label">日期</span><span>${content.createdAt || ''}${content.topic ? ' · 选题：' + escapeHtml(content.topic) : ''}</span></div>`;
 
-  // 数据摘要（视频 / AI收录，按平台动态显示）
-  if (type === 'video') {
-    const s = stats.find(x => x.contentId == content.id || x.contentId == Number(content.id));
-    if (s) {
-      // 摘要为单行文本，未录入用「-」占位保持可读（与数据栏网格逻辑不同）
-      const fmtSum = v => (v === null || v === undefined || v === '') ? '-' : formatNum(v);
-      const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
-      const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
-      const secondItem = content.platform === '小红书'
-        ? '均播' + avgWatch
-        : (content.platform === '视频号' || content.platform === '抖音')
-          ? '完播' + completion + '·均播' + avgWatch
-          : '完播' + completion;
-      const favItem = content.platform === '视频号' ? '推荐' + fmtSum(s.recommend) : '收藏' + fmtSum(s.favorites);
-      html += `<div class="task-detail-row"><span class="detail-label">数据</span><span>播放${fmtSum(s.views)} · ${secondItem} · 点赞${fmtSum(s.likes)} · 评论${fmtSum(s.comments)} · ${favItem} · 分享${fmtSum(s.shares)} · 涨粉${fmtSum(s.followers)}</span></div>`;
-    }
-  } else {
-    const s = aiStats.find(x => x.contentId == content.id || x.contentId == Number(content.id));
-    if (s) {
-      const yes = AI_ENGINES.filter(e => s.ai && s.ai[e]);
-      const noneChosen = s.ai && s.ai['__none__'] === true;
-      let aiText;
-      if (yes.length > 0) {
-        aiText = yes.join('、');
-      } else if (noneChosen) {
-        aiText = '<span style="color:var(--text3);">无（已确认未被收录）</span>';
-      } else {
-        aiText = '<span style="color:var(--yellow);">未收录</span>';
-      }
-      html += `<div class="task-detail-row"><span class="detail-label">AI收录</span><span>${aiText}</span></div>`;
-    }
+  // 数据摘要（视频，按平台动态显示）
+  const s = stats.find(x => x.contentId == content.id || x.contentId == Number(content.id));
+  if (s) {
+    // 摘要为单行文本，未录入用「-」占位保持可读（与数据栏网格逻辑不同）
+    const fmtSum = v => (v === null || v === undefined || v === '') ? '-' : formatNum(v);
+    const completion = s.completionRate !== null && s.completionRate !== undefined ? s.completionRate + '%' : '-';
+    const avgWatch = s.avgWatch !== null && s.avgWatch !== undefined ? s.avgWatch + 's' : '-';
+    const secondItem = content.platform === '小红书'
+      ? '均播' + avgWatch
+      : (content.platform === '视频号' || content.platform === '抖音')
+        ? '完播' + completion + '·均播' + avgWatch
+        : '完播' + completion;
+    const favItem = content.platform === '视频号' ? '推荐' + fmtSum(s.recommend) : '收藏' + fmtSum(s.favorites);
+    html += `<div class="task-detail-row"><span class="detail-label">数据</span><span>播放${fmtSum(s.views)} · ${secondItem} · 点赞${fmtSum(s.likes)} · 评论${fmtSum(s.comments)} · ${favItem} · 分享${fmtSum(s.shares)} · 涨粉${fmtSum(s.followers)}</span></div>`;
   }
   html += '</div>';
 
@@ -152,7 +110,7 @@ function toggleTaskDetail(arrowEl, taskKey) {
   }
 }
 
-// ===== 快链自定义（文书平台直达 / AI 平台直达）=====
+// ===== 快链自定义（视频平台直达）=====
 // 默认链接集中管理；用户改过的链接存 localStorage（与工作台分区记忆一致，不占服务器 7 类数据）
 const QUICK_LINKS_DEFAULT = {
   video: [
@@ -163,22 +121,6 @@ const QUICK_LINKS_DEFAULT = {
     { name: '小红书创作平台', url: 'https://creator.xiaohongshu.com/' },
     { name: '快手创作服务平台', url: 'https://cp.kuaishou.com/' },
     { name: '抖音创作者中心', url: 'https://creator.douyin.com/' }
-  ],
-  platform: [
-    { name: '搜狐号', url: 'https://mp.sohu.com' },
-    { name: '百家号', url: 'https://baijiahao.baidu.com' },
-    { name: '知乎', url: 'https://www.zhihu.com' },
-    { name: '公众号', url: 'https://mp.weixin.qq.com' },
-    { name: '企鹅号', url: 'https://om.qq.com' },
-    { name: '官网', url: '' }
-  ],
-  ai: [
-    { name: 'DeepSeek', url: 'https://chat.deepseek.com' },
-    { name: '豆包', url: 'https://www.doubao.com' },
-    { name: '千问', url: 'https://www.qianwen.com' },
-    { name: '文心', url: 'https://yiyan.baidu.com' },
-    { name: '元宝', url: 'https://yuanbao.tencent.com' },
-    { name: '纳米', url: 'https://www.n.cn' }
   ]
 };
 
@@ -208,7 +150,7 @@ function getQuickLinks(group) {
 
 // 打开快链编辑弹窗：一键修改该组内所有平台的链接
 function openQuickLinksEditor(group) {
-  const title = group === 'video' ? '视频平台直达' : (group === 'platform' ? '文书平台直达' : 'AI 平台直达');
+  const title = '视频平台直达';
   const links = getQuickLinks(group);
   const rows = links.map((l, i) => `
     <div class="form-group">

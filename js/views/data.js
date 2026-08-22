@@ -10,10 +10,8 @@ function findLinkedTitle(record, type) {
 }
 
 function renderData() {
-  // 账号总数据已提升为独立 Tab「账号登记」，此处自愈历史遗留的 account 值
-  if (dataSubTab === 'account') dataSubTab = 'video';
-  // 子页类型与工作台分区强绑定（分区已决定展示内容，子 tab 已删除）
-  dataSubTab = workspace;
+  // 数据复盘固定为短视频数据
+  dataSubTab = 'video';
   let html = '';
 
   // 顶部工具栏：左侧平台筛选标签 + 右侧周期下拉（同一行，窄屏自动换行）
@@ -31,11 +29,7 @@ function renderData() {
   // 左右两栏：左=统计图表，右=复盘登记
   html += '<div class="data-layout">';
   html += '<div class="data-left">';
-  if (dataSubTab === 'video') {
-    html += renderVideoData(curPeriod);
-  } else {
-    html += renderArticleData(curPeriod);
-  }
+  html += renderVideoData(curPeriod);
   html += '</div>';
   html += '<div class="data-right">';
   html += renderReviewPanel(curPeriod);
@@ -46,9 +40,9 @@ function renderData() {
 }
 
 // ===== 数据复盘平台筛选标签 =====
-// 渲染「全部 + 各平台」标签，平台列表随子页变化（短视频 4 个 / 文书 6 个）
+// 渲染「全部 + 各平台」标签，平台列表为 4 个短视频平台
 function renderPlatformFilterTags() {
-  const platforms = dataSubTab === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
+  const platforms = VIDEO_PLATFORMS;
   let html = '<div class="platform-filter-row"><span class="filter-label">平台：</span>';
   html += `<span class="filter-pill ${reviewPlatformFilter === '' ? 'active' : ''}" onclick="switchReviewPlatformFilter('')">全部</span>`;
   platforms.forEach(p => {
@@ -63,10 +57,10 @@ function switchReviewPlatformFilter(platform) {
   render();
 }
 
-// ===== 周期状态：视频/文书/账号各自记忆周/月选择 =====
-let dataPeriod = { video: 'month', article: 'month', account: 'month' };
-function getCurPeriod() { return dataPeriod[dataSubTab] || 'month'; }
-function switchDataPeriod(p) { dataPeriod[dataSubTab] = p; render(); }
+// ===== 周期状态：视频数据复盘记忆周/月选择 =====
+let dataPeriod = { video: 'month' };
+function getCurPeriod() { return dataPeriod['video'] || 'month'; }
+function switchDataPeriod(p) { dataPeriod['video'] = p; render(); }
 
 // ===== 账号登记（独立 Tab）：不定时快照登记，当天记录=最新总数据，与上次记录对比 =====
 function renderAccountTab() {
@@ -122,42 +116,36 @@ function formatReviewRange(period, dateStr) {
 
 // --- 复盘数据登记面板 ---
 function renderReviewPanel(period) {
-  // 跟随上方子Tab：短视频数据 ↔ 文书AI收录
-  const type = dataSubTab; // 'video' | 'article'
-  const isVideo = type === 'video';
   const curPeriod = period || getCurPeriod();
   const periodLabel = curPeriod === 'week' ? '本周复盘' : '本月复盘';
   const ranges = getPeriodRanges(curPeriod);
-  let html = `<div class="card"><div class="card-title">${isVideo ? '短视频' : '文书'}复盘登记</div>`;
+  let html = `<div class="card"><div class="card-title">短视频复盘登记</div>`;
 
   html += `<div class="form-group"><label>复盘周期（跟随上方选项）</label><div style="font-size:13px;color:var(--accent);font-weight:600;padding:9px 13px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xs);">${periodLabel}·${ranges.start} ~ ${ranges.end}</div></div>`;
   html += `<div class="form-group"><label>复盘日期</label><input type="date" id="reviewDate" value="${getToday()}"></div>`;
-  // 数据小结与亮点分析（视频=数据表现+亮点，文书=AI收录+亮点）
-  html += `<div class="form-group"><label>数据小结与亮点分析</label><textarea id="reviewHighlights" placeholder="${isVideo ? '数据表现 + 亮点：播放/完播/互动表现好的内容、平台、选题…' : 'AI收录 + 亮点：收录情况小结、做得好的内容、平台、选题…'}"></textarea></div>`;
+  html += `<div class="form-group"><label>数据小结与亮点分析</label><textarea id="reviewHighlights" placeholder="数据表现 + 亮点：播放/完播/互动表现好的内容、平台、选题…"></textarea></div>`;
   html += `<div class="form-group"><label>问题与不足</label><textarea id="reviewProblems" placeholder="数据不理想的地方、待改进项…"></textarea></div>`;
   html += `<div class="form-group"><label>下期计划</label><textarea id="reviewPlans" placeholder="下周/月计划做什么…"></textarea></div>`;
   html += `<div class="toolbar" style="margin-top:8px;">
     <button class="btn-primary" onclick="saveReview()">保存复盘</button>
   </div>`;
 
-  // 历史复盘列表（只显示当前类型的记录）
+  // 历史复盘列表（仅视频复盘记录）
   const sortedReviews = [...reviews]
-    .filter(r => (r.type || 'video') === type)
+    .filter(r => (r.type || 'video') === 'video')
     .sort((a,b) => (b.date||'').localeCompare(a.date||''));
   html += '<div style="margin-top:16px;">';
   html += `<div class="review-history-box">
-    <div class="review-history-title">📋 ${isVideo ? '短视频' : '文书'}复盘记录 <span class="badge">${sortedReviews.length}条</span></div>
+    <div class="review-history-title">📋 短视频复盘记录 <span class="badge">${sortedReviews.length}条</span></div>
     <div style="font-size:11px;color:var(--text3);line-height:1.6;padding:2px 0 6px;">每个周期（本周/本月）仅保留最新一条：保存新复盘会覆盖本周/本月的旧记录，过期历史不长期留存。</div>
     <div class="review-history-list">`;
   if (sortedReviews.length === 0) {
     html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无复盘记录</p>';
   } else {
     sortedReviews.forEach(r => {
-      const typeTag = isVideo ? 'video' : 'article';
-      const typeLabel = isVideo ? '短视频' : '文书';
       html += `<div class="review-item">
         <div class="review-item-head">
-          <span class="platform-tag ${typeTag}">${typeLabel}·${formatReviewRange(r.period, r.date)}</span>
+          <span class="platform-tag video">短视频·${formatReviewRange(r.period, r.date)}</span>
           <button class="btn-delete-mini" onclick="deleteReview('${r.id}')" title="删除复盘">删除</button>
         </div>
         <div class="review-item-date">${r.date}</div>
@@ -172,7 +160,7 @@ function renderReviewPanel(period) {
 }
 
 async function saveReview() {
-  const type = dataSubTab; // 跟随上方子Tab
+  const type = 'video'; // 复盘仅针对视频平台
   const period = getCurPeriod(); // 周期跟随页面顶部的周/月下拉
   const date = document.getElementById('reviewDate').value || getToday();
   const highlights = document.getElementById('reviewHighlights').value.trim();
@@ -428,154 +416,6 @@ function deleteStat(id) {
   });
 }
 
-// --- Article AI data ---
-function renderArticleData(period) {
-  const ranges = getPeriodRanges(period || 'month');
-  // 平台筛选：''=全部文书平台 | 具体平台
-  const pf = reviewPlatformFilter;
-  const byPf = s => isArticle(s.platform) && (!pf || s.platform === pf);
-  const currAiStats = aiStats.filter(s => byPf(s) && s.date >= ranges.start && s.date <= ranges.end);
-  const prevAiStats = aiStats.filter(s => byPf(s) && s.date >= ranges.prevStart && s.date <= ranges.prevEnd);
-  const titleSuffix = pf ? ' · ' + pf : '';
-  let html = `<div class="card"><div class="card-title">文书平台 AI 收录追踪${titleSuffix} <span class="badge">${ranges.start} ~ ${ranges.end}</span></div>`;
-  html += `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">统计6大AI引擎收录情况：${AI_ENGINES.join('、')}</p>`;
-
-  // Summary（当前周期：总发布数 / AI收录数 / AI收录率）
-  let totalChecked = 0, totalPossible = 0;
-  currAiStats.forEach(s => {
-    AI_ENGINES.forEach(ai => { totalPossible++; if (s.ai && s.ai[ai]) totalChecked++; });
-  });
-  const rate = totalPossible > 0 ? Math.round(totalChecked / totalPossible * 100) : 0;
-  // 总发布数以「登记内容」为准（当前周期 + 平台筛选），不以 AI 收录录入条数为准
-  const articleCount = contents.filter(c => byPf(c) && c.createdAt >= ranges.start && c.createdAt <= ranges.end).length;
-  html += `<div class="stats-grid">
-    <div class="stat-card"><div class="stat-value">${articleCount}</div><div class="stat-label">总发布数</div></div>
-    <div class="stat-card"><div class="stat-value">${totalChecked}/${totalPossible}</div><div class="stat-label">AI收录数</div></div>
-    <div class="stat-card"><div class="stat-value" style="color:${rate>=50?'var(--green)':'var(--yellow)'};">${rate}%</div><div class="stat-label">AI收录率</div></div>
-  </div></div>`;
-
-  // AI引擎收录情况（引擎视角柱形图，当前周期 vs 上期）
-  html += `<div class="card"><div class="card-title">AI引擎收录情况${titleSuffix} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
-  const aiCounts = {};
-  const prevAiCounts = {};
-  AI_ENGINES.forEach(ai => { aiCounts[ai] = 0; prevAiCounts[ai] = 0; });
-  currAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) aiCounts[ai]++; }); });
-  prevAiStats.forEach(s => { AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevAiCounts[ai]++; }); });
-  html += renderChartLegend('article', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(AI_ENGINES, AI_ENGINES.map(ai => aiCounts[ai]), AI_ENGINES.map(ai => prevAiCounts[ai]), 'article', n => n, ranges.label, ranges.prevLabel);
-  html += '</div>';
-
-  // 文书平台「发布收录对比」（平台视角柱形图：总发布数 + 收录数，均含当前周期 vs 上期对比；筛选单平台时只显示该平台）
-  html += `<div class="card"><div class="card-title">发布收录对比${titleSuffix} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
-  const barPlatforms = pf ? [pf] : ARTICLE_PLATFORMS;  // 筛选单平台时图表只显示该平台
-
-  // 总发布数（以登记内容为准）：当前周期 vs 上期
-  const pubCounts = {};
-  const prevPubCounts = {};
-  barPlatforms.forEach(p => { pubCounts[p] = 0; prevPubCounts[p] = 0; });
-  contents.filter(c => byPf(c) && c.createdAt >= ranges.start && c.createdAt <= ranges.end)
-    .forEach(c => { if (pubCounts[c.platform] !== undefined) pubCounts[c.platform]++; });
-  contents.filter(c => byPf(c) && c.createdAt >= ranges.prevStart && c.createdAt <= ranges.prevEnd)
-    .forEach(c => { if (prevPubCounts[c.platform] !== undefined) prevPubCounts[c.platform]++; });
-
-  // 收录数：当前周期 vs 上期
-  const platformCounts = {};
-  const prevPlatformCounts = {};
-  barPlatforms.forEach(p => { platformCounts[p] = 0; prevPlatformCounts[p] = 0; });
-  currAiStats.forEach(s => {
-    if (platformCounts[s.platform] !== undefined) {
-      AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) platformCounts[s.platform]++; });
-    }
-  });
-  prevAiStats.forEach(s => {
-    if (prevPlatformCounts[s.platform] !== undefined) {
-      AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevPlatformCounts[s.platform]++; });
-    }
-  });
-
-  html += '<div style="font-size:13px;font-weight:600;margin:4px 0 2px;">总发布数对比</div>';
-  html += renderChartLegend('article', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(barPlatforms, barPlatforms.map(p => pubCounts[p]), barPlatforms.map(p => prevPubCounts[p]), 'article', n => n, ranges.label, ranges.prevLabel);
-  html += '<div style="font-size:13px;font-weight:600;margin:14px 0 2px;">收录数对比</div>';
-  html += renderChartLegend('article', ranges.label, ranges.prevLabel);
-  html += renderDualBarChart(barPlatforms, barPlatforms.map(p => platformCounts[p]), barPlatforms.map(p => prevPlatformCounts[p]), 'article', n => n, ranges.label, ranges.prevLabel);
-  html += '</div>';
-
-  // AI 收录数趋势折线图（跟随周期：周=本周一~周日，月=近30天）
-  const aiIsWeek = (period || 'month') === 'week';
-  const aiTrendDays = aiIsWeek ? 7 : 30;
-  const aiTrendEnd = aiIsWeek ? new Date(ranges.end + 'T00:00:00') : new Date();
-  const aiTrendPts = aggregateDaily(aiStats.filter(s => byPf(s)), s => {
-    let n = 0;
-    AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) n++; });
-    return n;
-  }, aiTrendDays, aiTrendEnd);
-  const aiTrendBase = aiIsWeek ? '本周 AI 收录数趋势' : '本月 AI 收录数趋势';
-  // 标题不带平台后缀（badge「本周 · 平台」已含平台，避免重复）
-  const aiTrendTitle = aiTrendBase;
-  html += `<div class="card"><div class="card-title">${aiTrendTitle} <span class="badge">${aiIsWeek ? '本周' : '近30天'} · ${pf || '6平台合计'}</span></div>${renderTrendLine(aiTrendPts, { color: '#c084fc', fmt: n => n, label: '收录数' })}</div>`;
-
-  // 未关联记录（AI收录但找不到对应内容）
-  const orphanAi = [...currAiStats].filter(s => findLinkedTitle(s, 'article') === null).sort((a,b) => b.date.localeCompare(a.date));
-  html += `<div class="card"><div class="card-title">未关联记录 <span class="badge">${orphanAi.length}</span></div>`;
-  if (orphanAi.length === 0) {
-    html += '<p style="font-size:12px;color:var(--text2);padding:6px 0;">当前周期无未关联记录</p>';
-  } else {
-    html += '<p style="font-size:12px;color:var(--orange);margin-bottom:8px;">以下 AI 收录未找到对应登记内容（已失效或被删除），可删除或补录内容</p>';
-    html += '<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>日期</th><th>平台</th><th>收录数</th><th>操作</th></tr></thead><tbody>';
-    orphanAi.forEach(s => {
-      let n = 0;
-      AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) n++; });
-      html += `<tr><td>${s.date}</td><td><span class="platform-tag article">${s.platform}</span></td><td>${n}/${AI_ENGINES.length}</td><td><button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;" onclick="deleteAiStat('${s.id}')">删除</button></td></tr>`;
-    });
-    html += '</tbody></table></div>';
-  }
-  html += '</div>';
-  return html;
-}
-
-function toggleAiCheck(el) {
-  const isNone = el.dataset.ai === '__none__';
-  if (isNone && !el.classList.contains('checked')) {
-    // 勾选「无」：清空所有引擎勾选（互斥）
-    document.querySelectorAll('#aiChecks .ai-check-item').forEach(x => {
-      x.classList.remove('checked');
-      x.querySelector('.check-box').innerHTML = '';
-    });
-    el.classList.add('checked');
-    el.querySelector('.check-box').innerHTML = '&#10003;';
-    return;
-  }
-  if (isNone && el.classList.contains('checked')) {
-    // 取消「无」：正常取消
-    el.classList.remove('checked');
-    el.querySelector('.check-box').innerHTML = '';
-    return;
-  }
-  // 勾选引擎：若「无」已选中则先取消「无」
-  const noneEl = document.querySelector('#aiChecks .ai-check-item[data-ai="__none__"]');
-  if (noneEl && noneEl.classList.contains('checked')) {
-    noneEl.classList.remove('checked');
-    noneEl.querySelector('.check-box').innerHTML = '';
-  }
-  el.classList.toggle('checked');
-  if (el.classList.contains('checked')) el.querySelector('.check-box').innerHTML = '&#10003;';
-  else el.querySelector('.check-box').innerHTML = '';
-}
-
-function deleteAiStat(id) {
-  showConfirm({
-    title: '确认删除',
-    desc: '将删除这条AI收录数据记录，内容登记本身不受影响，收录统计会随之更新。',
-    danger: true,
-    onOk: async () => {
-      aiStats = aiStats.filter(s => s.id != id && s.id != Number(id));
-      await saveData('aiStats', aiStats); render(); showToast('已删除');
-    }
-  });
-}
-
-
 // ===== 账号总数据（视频平台账号级快照）=====
 // 快照式：每平台按日期记一条累计数据（日期以当天为准）
 const ACCOUNT_FIELDS = [
@@ -588,14 +428,10 @@ const ACCOUNT_FIELDS = [
 ];
 
 let accSelectedPlatform = '抖音'; // 记录表单当前选中的平台（标题右侧按钮切换）
-let accSelectedPlatformArticle = ARTICLE_PLATFORMS[0]; // 文书账号登记表单当前选中的平台
 
 function selectAccountPlatform(p) { accSelectedPlatform = p; render(); }
-function selectArticleAccountPlatform(p) { accSelectedPlatformArticle = p; render(); }
 
 function renderAccountData() {
-  // 文书工作台：账号登记为精简版（平台 + 账号ID + 备注 + 登录手机号 + 实名人 + 运营人），无快照/趋势/历史
-  if (workspace === 'article') return renderArticleAccountData();
   let html = '';
 
   // 1. 记录表单（日期固定为今天=最新总数据快照；平台在标题右侧按钮选择；账号ID/备注随平台联动）
@@ -708,7 +544,7 @@ function renderAccountData() {
         html += '<tr><td>' + escapeHtml(r.date) + '</td>';
         html += '<td>' + accountDeltaCell(r, prev, 'posts') + '</td><td>' + accountDeltaCell(r, prev, 'followers') + '</td><td>' + accountDeltaCell(r, prev, 'views') + '</td>';
         html += '<td>' + accountDeltaCell(r, prev, 'likes') + '</td><td>' + accountDeltaCell(r, prev, 'comments') + '</td><td>' + accountDeltaCell(r, prev, 'shares') + '</td>';
-        html += '<td><button class="btn-delete-mini" onclick="deleteAccountSnapshot(\'' + r.id + '\')">删除</button></td></tr>';
+        html += '<td style="white-space:nowrap;"><button class="btn-edit-mini" onclick="editAccountSnapshot(\'' + r.id + '\')">编辑</button> <button class="btn-delete-mini" onclick="deleteAccountSnapshot(\'' + r.id + '\')">删除</button></td></tr>';
       });
       html += '</tbody></table>';
     });
@@ -879,81 +715,66 @@ function deleteAccountSnapshot(id) {
   });
 }
 
-// ===== 文书平台账号登记（精简版）=====
-// 仅登记静态信息：平台 + 账号ID + 备注 + 登录手机号 + 实名人姓名 + 运营人
-// 无历史记录 / 各平台数据 / 粉丝趋势（文书平台账号不具备这些数据）
-function renderArticleAccountData() {
-  let html = '';
-  const pf = accSelectedPlatformArticle;
-
-  // 1. 登记表单（平台在标题右侧按钮选择）
-  html += '<div class="card"><div class="card-title">文书平台账号登记';
-  html += '<span class="platform-pill">' + ARTICLE_PLATFORMS.map(function(p){ return '<button class="pill' + (p === pf ? ' active' : '') + '" onclick="selectArticleAccountPlatform(\'' + p + '\')">' + p + '</button>'; }).join('') + '</span>';
-  html += '</div>';
-  // 账号ID + 备注 + 登录手机号 + 实名人姓名 + 运营人（保存按钮与视频版统一：同行右侧、贴齐输入框底边）
-  html += '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">';
-  html += '<div class="form-group" style="margin-bottom:0;flex:1 1 140px;"><label>' + pf + ' 账号ID</label><input type="text" id="artAccountId" placeholder="未设置"></div>';
-  html += '<div class="form-group" style="margin-bottom:0;flex:1 1 140px;"><label>备注</label><input type="text" id="artAccountNote" placeholder="昵称/主页链接等（可选）"></div>';
-  html += '<div class="form-group" style="margin-bottom:0;flex:1 1 140px;"><label>登录手机号</label><input type="text" id="artAccountPhone" placeholder="账号登录手机号"></div>';
-  html += '<div class="form-group" style="margin-bottom:0;flex:1 1 140px;"><label>实名人姓名</label><input type="text" id="artAccountRealName" placeholder="实名认证姓名"></div>';
-  html += '<div class="form-group" style="margin-bottom:0;flex:1 1 140px;"><label>运营人</label><input type="text" id="artAccountOperator" placeholder="负责运营的人"></div>';
-  // 保存 — 与视频版账号页统一：最右侧、贴齐输入框底边
-  html += '<div style="margin-left:auto;align-self:flex-end;display:flex;justify-content:flex-end;">';
-  html += '<button class="btn-save" onclick="saveArticleAccount()" style="padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;">保存</button>';
-  html += '</div></div>';
-  // 分隔线：账号ID区 与 已登记列表 分隔（同视频工作台）
-  html += '<div style="border-top:1px dashed var(--border);margin:12px 0;"></div>';
-
-  // 2. 已登记账号列表（始终渲染表格，避免空/非空切换时跳动；每行带删除按钮）
-  var saved = articleAccounts.filter(function(r){
-    return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()) || (r.phone && r.phone.trim()) || (r.realName && r.realName.trim()) || (r.operator && r.operator.trim());
+// 历史记录快照编辑：当前正在编辑的账号引用（切平台时保持选择）
+let __editSnapAccountRef = '';
+// 切平台时刷新账号下拉（选项 = 该平台已登记的账号，与保存表单口径一致）
+function refreshEditSnapAccount(platform) {
+  const sel = document.getElementById('editSnapAccount');
+  if (!sel) return;
+  const recs = accountIds.filter(function(x){ return x.platform === platform; });
+  let opts = '<option value="">未指定账号</option>';
+  recs.forEach(function(a){
+    opts += '<option value="' + a.id + '"' + (String(a.id) === String(__editSnapAccountRef || '') ? ' selected' : '') + '>' + escapeHtml(a.accountId || '') + (a.note ? '（' + escapeHtml(a.note) + '）' : '') + '</option>';
   });
-  html += '<div style="margin:0 0 2px;"><div style="font-size:12px;color:var(--text3);margin-bottom:4px;">已登记的账号（' + saved.length + '条）</div>';
-  html += '<table class="data-table"><thead><tr><th style="width:90px;">平台</th><th>账号ID</th><th>备注</th><th>登录手机号</th><th>实名人姓名</th><th>运营人</th><th style="width:56px;"></th></tr></thead><tbody>';
-  if (saved.length === 0) {
-    html += '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:14px 0;">暂无，保存后显示在此处</td></tr>';
-  } else {
-    saved.slice().sort(function(a,b){
-      var ia = ARTICLE_PLATFORMS.indexOf(a.platform), ib = ARTICLE_PLATFORMS.indexOf(b.platform);
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.id - b.id;
-    }).forEach(function(r) {
-      html += '<tr><td><span class="platform-tag article">' + escapeHtml(r.platform) + '</span></td>'
-        + '<td>' + escapeHtml(r.accountId || '') + '</td>'
-        + '<td>' + escapeHtml(r.note || '') + '</td>'
-        + '<td>' + escapeHtml(r.phone || '') + '</td>'
-        + '<td>' + escapeHtml(r.realName || '') + '</td>'
-        + '<td>' + escapeHtml(r.operator || '') + '</td>';
-      html += '<td><button class="btn-delete-mini" onclick="deleteArticleAccount(\'' + r.id + '\')">删除</button></td></tr>';
-    });
-  }
-  html += '</tbody></table></div>';
-  html += '</div>';
-
-  return html;
+  sel.innerHTML = opts;
 }
 
-async function saveArticleAccount() {
-  var platform = accSelectedPlatformArticle;
-  var accountId = (document.getElementById('artAccountId').value || '').trim();
-  var note = (document.getElementById('artAccountNote').value || '').trim();
-  var phone = (document.getElementById('artAccountPhone').value || '').trim();
-  var realName = (document.getElementById('artAccountRealName').value || '').trim();
-  var operator = (document.getElementById('artAccountOperator').value || '').trim();
-  if (!accountId && !note && !phone && !realName && !operator) { showToast('请至少填写一项信息'); return; }
-  articleAccounts.push({ id: Date.now() + Math.random(), platform: platform, accountId: accountId, note: note, phone: phone, realName: realName, operator: operator });
-  await saveData('articleAccounts', articleAccounts); render(); showToast(platform + '账号已保存');
-}
-
-function deleteArticleAccount(id) {
-  var rec = articleAccounts.find(function(x){ return String(x.id) === String(id); });
+// 编辑单条账号数据快照（弹窗改平台/日期/账号/发布/粉丝/播放/点赞/评论/转发）
+function editAccountSnapshot(id) {
+  const rec = accountStats.find(function(s){ return String(s.id) === String(id); });
   if (!rec) { showToast('该记录不存在'); return; }
-  showConfirm({
-    title: '确认删除',
-    desc: '确定删除' + rec.platform + '的这条账号记录吗？',
-    danger: true,
-    onOk: async function() {
-      articleAccounts = articleAccounts.filter(function(r){ return String(r.id) !== String(id); });
-      await saveData('articleAccounts', articleAccounts); render(); showToast(rec.platform + '账号已删除');
-    }
+  __editSnapAccountRef = rec.accountRef || '';
+  const platOpts = VIDEO_PLATFORMS.map(function(p){ return '<option value="' + p + '"' + (p === rec.platform ? ' selected' : '') + '>' + p + '</option>'; }).join('');
+  const accRecs = accountIds.filter(function(x){ return x.platform === rec.platform; });
+  let accOpts = '<option value="">未指定账号</option>';
+  accRecs.forEach(function(a){
+    accOpts += '<option value="' + a.id + '"' + (String(a.id) === String(rec.accountRef || '') ? ' selected' : '') + '>' + escapeHtml(a.accountId || '') + (a.note ? '（' + escapeHtml(a.note) + '）' : '') + '</option>';
   });
+  document.getElementById('modalContent').innerHTML = `
+    <h3>编辑账号数据</h3>
+    <div class="form-row">
+      <div class="form-group"><label>平台</label><select id="editSnapPlatform" onchange="refreshEditSnapAccount(this.value)">${platOpts}</select></div>
+      <div class="form-group"><label>记录日期</label><input type="date" id="editSnapDate" value="${escapeHtml(rec.date || '')}"></div>
+    </div>
+    <div class="form-group"><label>账号</label><select id="editSnapAccount">${accOpts}</select></div>
+    <div class="form-row">${ACCOUNT_FIELDS.map(function(f){
+      const cur = rec[f.key];
+      return `<div class="form-group"><label>${f.label}</label><input type="number" id="editSnap_${f.key}" min="0" value="${cur === undefined || cur === null ? '' : cur}" placeholder="${f.ph}"></div>`;
+    }).join('')}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveAccountSnapshotEdit('${rec.id}')">保存</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('active');
 }
+
+// 保存编辑后的账号数据快照
+async function saveAccountSnapshotEdit(id) {
+  const rec = accountStats.find(function(s){ return String(s.id) === String(id); });
+  if (!rec) { showToast('该记录不存在'); return; }
+  const platform = document.getElementById('editSnapPlatform').value;
+  const accountRef = (document.getElementById('editSnapAccount').value || '').trim() || null;
+  const date = document.getElementById('editSnapDate').value || getToday();
+  const vals = {};
+  ACCOUNT_FIELDS.forEach(function(f){ vals[f.key] = Math.max(0, parseInt(document.getElementById('editSnap_' + f.key).value, 10) || 0); });
+  if (ACCOUNT_FIELDS.every(function(f){ return vals[f.key] === 0; })) { showToast('请至少填写一项指标数据'); return; }
+  // 与保存表单口径一致：同日同平台同账号只保留一条（编辑改键后若有重复记录则合并掉）
+  accountStats = accountStats.filter(function(s){
+    return String(s.id) === String(id) || !(s.platform === platform && s.date === date && String(s.accountRef || '') === String(accountRef || ''));
+  });
+  rec.platform = platform; rec.accountRef = accountRef; rec.date = date;
+  Object.assign(rec, vals);
+  await saveData('accountStats', accountStats); closeModal(); render(); showToast('账号数据已更新');
+}
+
+

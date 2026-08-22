@@ -21,7 +21,7 @@
     </div>
     <div class="brand">
       <h1>新媒体数据工作台</h1>
-      <div class="subtitle">Media Studio · 4短视频+6文书平台</div>
+      <div class="subtitle">Media Studio · 4短视频平台</div>
     </div>
   </div>
   <div class="nav-tabs" id="navTabs">
@@ -31,11 +31,7 @@
     <div class="nav-tab" data-tab="data">数据复盘</div>
     <div class="nav-tab" data-tab="calendar">发布日历</div>
     <div class="nav-tab" data-tab="overview">发布总览</div>
-    <select class="ws-select" id="wsSelect" onchange="switchWorkspace(this.value)" title="切换工作台分区 / AI 配置" aria-label="切换工作台分区">
-      <option value="video">短视频工作台</option>
-      <option value="article">文书工作台</option>
-      <option value="llm">🤖AI功能</option>
-    </select>
+    <button class="ws-ai-btn" onclick="switchWorkspace('llm')" title="AI 配置与功能">🤖AI功能</button>
   </div>
 </div>
 

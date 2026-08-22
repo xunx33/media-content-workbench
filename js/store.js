@@ -42,11 +42,8 @@ function countCorruptRecords(list, fields) {
 
 // ===== CONFIG =====
 const VIDEO_PLATFORMS = ['抖音', '快手', '小红书', '视频号'];
-const ARTICLE_PLATFORMS = ['百家号', '公众号', '知乎', '企鹅号', '搜狐号', '官网'];
-const ALL_PLATFORMS = [...VIDEO_PLATFORMS, ...ARTICLE_PLATFORMS];
-const PLATFORM_SHORT = { '抖音':'抖','快手':'快','小红书':'红','视频号':'视','百家号':'百','公众号':'公','知乎':'知','企鹅号':'企','搜狐号':'搜','官网':'官' };
-const AI_ENGINES = ['DeepSeek', '豆包', '千问', '文心', '元宝', '纳米'];
-const AI_ENGINES_SHORT = { 'DeepSeek': 'DS', '豆包': '豆包', '千问': '千问', '文心': '文心', '元宝': '元宝', '纳米': '纳米' };
+const ALL_PLATFORMS = [...VIDEO_PLATFORMS];
+const PLATFORM_SHORT = { '抖音':'抖','快手':'快','小红书':'红','视频号':'视' };
 
 // ===== 数据读写（异步 fetch） =====
 // API：GET/POST /api/data/{key}  →  server.js 服务
@@ -138,11 +135,9 @@ async function saveDataBatch(updates) {
 // ===== STATE（异步初始化） =====
 let contents = [];
 let stats = [];       // video stats: views/likes/shares/comments
-let aiStats = [];     // article AI inclusion stats
 let reviews = [];     // 周/月复盘记录
 let accountStats = []; // 视频平台账号总数据快照（投稿/粉丝/播放/点赞/评论/互动）
 let accountIds = [];   // 视频平台账号ID（平台 → 账号ID + 备注，静态信息）
-let articleAccounts = []; // 文书平台账号登记（平台 → 账号ID + 备注 + 登录手机号 + 实名人姓名 + 运营人，静态信息）
 let llmConfig = {};     // 大模型接入配置（baseUrl/apiKey/model，存 data/llmConfig.json，不随清空数据删除）
 
 // 备份提醒标记（用 localStorage 即可，无需走 server）
@@ -153,7 +148,6 @@ function getToday() {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 function isVideo(p) { return VIDEO_PLATFORMS.includes(p); }
-function isArticle(p) { return ARTICLE_PLATFORMS.includes(p); }
 
 // ===== 完成判定（以登记为准，条数累计制）=====
 function getPlatformContents(date, platform) {
@@ -169,7 +163,7 @@ function getDayStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-// 数据自动迁移：给旧版 stats/aiStats 补 contentId + title
+// 数据自动迁移：给旧版 stats 补 contentId + title
 async function migrateStatsData() {
   let migrated = false;
   stats.forEach(s => {
@@ -190,19 +184,8 @@ async function migrateStatsData() {
       migrated = true;
     }
   });
-  aiStats.forEach(s => {
-    if (s.contentId === undefined || s.title === undefined) {
-      const c = contents.find(x => x.platform === s.platform && x.createdAt === s.date);
-      if (c) {
-        if (s.contentId === undefined) s.contentId = c.id;
-        if (s.title === undefined) s.title = c.title;
-        migrated = true;
-      }
-    }
-  });
   if (migrated) {
     await saveData('stats', stats);
-    await saveData('aiStats', aiStats);
   }
 }
 
@@ -234,15 +217,13 @@ async function migrateAccountStats() {
 // storeReady：数据加载 + 任务生成 + 数据迁移全部完成后 resolve
 window.storeReady = (async () => {
   try {
-    // 并行加载 6 个数据文件
-    [contents, stats, aiStats, reviews, accountStats, accountIds, articleAccounts] = await Promise.all([
+    // 并行加载数据文件
+    [contents, stats, reviews, accountStats, accountIds] = await Promise.all([
       loadData('contents'),
       loadData('stats'),
-      loadData('aiStats'),
       loadData('reviews'),
       loadData('accountStats'),
-      loadData('accountIds'),
-      loadData('articleAccounts')
+      loadData('accountIds')
     ]);
     // 大模型接入配置独立加载（不参与 importData/清空数据等 7 类数据操作）
     // loadData 对缺失文件返回 []，此处做对象归一化
@@ -256,8 +237,8 @@ window.storeReady = (async () => {
     await migrateAccountStats();
     console.log('[store] 初始化完成', {
       contents: contents.length,
-      stats: stats.length, aiStats: aiStats.length, reviews: reviews.length,
-      accountStats: accountStats.length, accountIds: accountIds.length, articleAccounts: articleAccounts.length
+      stats: stats.length, reviews: reviews.length,
+      accountStats: accountStats.length, accountIds: accountIds.length
     });
   } catch (e) {
     console.error('[store] 初始化失败:', e);
@@ -266,40 +247,28 @@ window.storeReady = (async () => {
 
 // ===== UI 状态 =====
 let currentTab = 'today';
-// 工作台分区：'video' = 短视频工作台 | 'article' = 文书工作台（localStorage 记忆，刷新保持）
-let workspace = localStorage.getItem(STORAGE_KEY + 'workspace') === 'article' ? 'article' : 'video';
-// 下拉栏切换分区：'video' ↔ 'article'，或进入 'llm'（AI 配置与功能页）
+// 工作台分区：仅短视频工作台（'video'）与 AI 功能页（'llm'）
+let workspace = 'video';
+// 切换分区：'video' ↔ 'llm'（AI 配置与功能页）；从配置页点导航栏会自动回到短视频工作台
 function switchWorkspace(w) {
   if (w === 'llm') {
-    // 记住离开前的真实分区，方便从配置页点导航栏快速返回
-    if (workspace === 'video' || workspace === 'article') {
-      localStorage.setItem(STORAGE_KEY + 'prev_workspace', workspace);
-    }
     workspace = 'llm';
     localStorage.setItem(STORAGE_KEY + 'workspace', workspace);
     currentTab = 'today';
-    const sel = document.getElementById('wsSelect');
-    if (sel) sel.value = workspace;
     render();
     return;
   }
-  workspace = w === 'article' ? 'article' : 'video';
+  workspace = 'video';
   localStorage.setItem(STORAGE_KEY + 'workspace', workspace);
-  // 切换后自动回到今日待办首页（页面随分区渲染对应工作台的待办）
   currentTab = 'today';
-  // 数据复盘：子页类型与分区强绑定；旧平台的筛选不合法 → 重置为「全部」
-  dataSubTab = workspace;
-  const validPf = workspace === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
-  if (reviewPlatformFilter && !validPf.includes(reviewPlatformFilter)) reviewPlatformFilter = '';
-  // 同步下拉栏选中值
-  const sel = document.getElementById('wsSelect');
-  if (sel) sel.value = workspace;
+  dataSubTab = 'video';
+  if (reviewPlatformFilter && !VIDEO_PLATFORMS.includes(reviewPlatformFilter)) reviewPlatformFilter = '';
   render();
 }
 let currentMonth = new Date();
 let selectedDate = null;
 let dataSubTab = 'video';
-let reviewPlatformFilter = '';   // 数据复盘平台筛选：''=全部 | 具体平台名（随子页短视频/文书变化）
+let reviewPlatformFilter = '';   // 数据复盘平台筛选：''=全部 | 具体平台名
 let editId = null;
 let overviewMonth = new Date();
 let searchKeyword = '';

@@ -20,15 +20,11 @@ function renderContent() {
     </select>
     <select class="filter-select" id="platformFilterSelect" onchange="filterPlatformSelect(this.value)" aria-label="平台筛选">
       <option value="">平台筛选</option>
-      ${workspace === 'video'
-        ? `<optgroup label="短视频平台">
-            ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
-          </optgroup>`
-        : `<optgroup label="文书平台">
-            ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
-          </optgroup>`}
+      <optgroup label="短视频平台">
+        ${VIDEO_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
+      </optgroup>
     </select>
-    ${workspace === 'video' ? `<span class="filter-pill sort-views ${contentSortByViews === 'desc' ? 'active-desc' : contentSortByViews === 'asc' ? 'active-asc' : ''}" onclick="toggleSortViews()">${contentSortByViews === 'desc' ? '播放量 ↓' : contentSortByViews === 'asc' ? '播放量 ↑' : '播放量'}</span>` : ''}
+    <span class="filter-pill sort-views ${contentSortByViews === 'desc' ? 'active-desc' : contentSortByViews === 'asc' ? 'active-asc' : ''}" onclick="toggleSortViews()">${contentSortByViews === 'desc' ? '播放量 ↓' : contentSortByViews === 'asc' ? '播放量 ↑' : '播放量'}</span>
   </div>`;
 
   // 列表折叠区（可收起/展开）
@@ -48,11 +44,8 @@ function renderContent() {
 function openDataModal(contentId) {
   const c = contents.find(x => x.id == contentId || x.id == Number(contentId));
   if (!c) return;
-  const type = isVideo(c.platform) ? 'video' : 'article';
   pendingDataContentId = c.id;
-  document.getElementById('modalContent').innerHTML = type === 'video'
-    ? renderVideoDataModal(c)
-    : renderAiDataModal(c);
+  document.getElementById('modalContent').innerHTML = renderVideoDataModal(c);
   document.getElementById('modalOverlay').classList.add('active');
 }
 
@@ -102,97 +95,47 @@ function renderVideoDataModal(c) {
     </div>`;
 }
 
-function renderAiDataModal(c) {
-  const s = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
-  const savedAi = (s && s.ai) || {};
-  // 「无」选项：与「未登记」区分——未登记=无记录；「无」=已录入但无任何引擎收录（ai.__none__）
-  const noneChecked = savedAi.__none__ === true;
-  return `<h3>文书AI收录录入</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;"><span class="platform-tag article">${c.platform}</span> ${escapeHtml(c.title)}<br><span style="font-size:12px;color:var(--text3);">日期：${c.createdAt}${s ? ' · 已录入' : ' · 未登记'}</span></p>
-    <div class="form-group"><label>AI 收录情况（勾选已收录；若无任何收录请勾选「无」）</label>
-      <div class="ai-checks" id="aiChecks">
-        ${AI_ENGINES.map(eng => `<div class="ai-check-item ${savedAi[eng] ? 'checked' : ''}" data-ai="${eng}" onclick="toggleAiCheck(this)"><div class="check-box">${savedAi[eng] ? '&#10003;' : ''}</div><span>${eng}</span></div>`).join('')}
-        <div class="ai-check-item ai-none ${noneChecked ? 'checked' : ''}" data-ai="__none__" onclick="toggleAiCheck(this)"><div class="check-box">${noneChecked ? '&#10003;' : ''}</div><span style="color:var(--text3);">无</span></div>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn-save btn-danger" style="flex:0.6;" onclick="clearContentData()">清空</button>
-      <button class="btn-save" onclick="saveContentData()">保存数据</button>
-    </div>`;
-}
-
 let pendingDataContentId = null;
 
 // 清空当前弹窗的数据录入内容（不保存）
 function clearContentData() {
-  const c = contents.find(x => x.id == pendingDataContentId || x.id == Number(pendingDataContentId));
-  if (!c) return;
-  const type = isVideo(c.platform) ? 'video' : 'article';
-  if (type === 'video') {
-    ['statTitle', 'statViews', 'statCompletion', 'statAvgWatch', 'statLikes', 'statComments', 'statFavorites', 'statRecommend', 'statShares', 'statFollowers'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-  } else {
-    document.querySelectorAll('#aiChecks .ai-check-item').forEach(el => {
-      el.classList.remove('checked');
-      el.querySelector('.check-box').innerHTML = '';
-    });
-  }
+  ['statTitle', 'statViews', 'statCompletion', 'statAvgWatch', 'statLikes', 'statComments', 'statFavorites', 'statRecommend', 'statShares', 'statFollowers'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   showToast('已清空，点击保存后生效');
 }
 
 async function saveContentData() {
   const c = contents.find(x => x.id == pendingDataContentId || x.id == Number(pendingDataContentId));
   if (!c) { showToast('内容不存在'); return; }
-  const type = isVideo(c.platform) ? 'video' : 'article';
-  if (type === 'video') {
-    // 安全读取：弹窗按平台只渲染部分输入框（小红书无完播率、视频号无收藏），
-    // 缺失的输入框直接返回空串，避免 null.value 抛异常导致保存失败
-    const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-    // 空输入 → null（未录入留空）；录入 0 → 0；非法数字 → 0
-    const numOrNull = raw => {
-      const t = String(raw).trim();
-      if (t === '') return null;
-      const n = Number(t);
-      return isNaN(n) ? 0 : n;
-    };
-    const title = (gv('statTitle').trim()) || c.title;
-    const views = numOrNull(gv('statViews'));
-    const completionInput = gv('statCompletion');
-    const completionRate = completionInput !== '' ? parseFloat(completionInput) : null;
-    const avgWatchInput = gv('statAvgWatch');
-    const avgWatch = avgWatchInput !== '' ? parseFloat(avgWatchInput) : null;
-    const recommend = numOrNull(gv('statRecommend'));
-    const likes = numOrNull(gv('statLikes'));
-    const comments = numOrNull(gv('statComments'));
-    const favorites = numOrNull(gv('statFavorites'));
-    const shares = numOrNull(gv('statShares'));
-    const followers = numOrNull(gv('statFollowers'));
-    const existing = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
-    const statData = { platform: c.platform, date: c.createdAt, title, views, completionRate, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: c.id };
-    if (existing) Object.assign(existing, statData);
-    else stats.push({ id: Date.now() + Math.random(), ...statData });
-    await saveData('stats', stats);
-  } else {
-    const ai = {};
-    document.querySelectorAll('#aiChecks .ai-check-item').forEach(el => {
-      ai[el.dataset.ai] = el.classList.contains('checked');
-    });
-    const anyEngine = AI_ENGINES.some(eng => ai[eng] === true);
-    const noneChosen = ai['__none__'] === true;
-    const existing = aiStats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
-    if (anyEngine || noneChosen) {
-      // 已录入：勾选了引擎 或 明确选了「无」→ 保存/更新记录（与未登记区分）
-      if (existing) { existing.ai = ai; existing.contentId = c.id; }
-      else aiStats.push({ id: Date.now() + Math.random(), platform: c.platform, date: c.createdAt, title: c.title, ai, contentId: c.id });
-    } else if (existing) {
-      // 未录入：留空/清空后保存 = 删除已有记录（等同未登记，不再计入已录入）
-      aiStats = aiStats.filter(x => x !== existing);
-    }
-    await saveData('aiStats', aiStats);
-  }
+  // 安全读取：弹窗按平台只渲染部分输入框（小红书无完播率、视频号无收藏），
+  // 缺失的输入框直接返回空串，避免 null.value 抛异常导致保存失败
+  const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  // 空输入 → null（未录入留空）；录入 0 → 0；非法数字 → 0
+  const numOrNull = raw => {
+    const t = String(raw).trim();
+    if (t === '') return null;
+    const n = Number(t);
+    return isNaN(n) ? 0 : n;
+  };
+  const title = (gv('statTitle').trim()) || c.title;
+  const views = numOrNull(gv('statViews'));
+  const completionInput = gv('statCompletion');
+  const completionRate = completionInput !== '' ? parseFloat(completionInput) : null;
+  const avgWatchInput = gv('statAvgWatch');
+  const avgWatch = avgWatchInput !== '' ? parseFloat(avgWatchInput) : null;
+  const recommend = numOrNull(gv('statRecommend'));
+  const likes = numOrNull(gv('statLikes'));
+  const comments = numOrNull(gv('statComments'));
+  const favorites = numOrNull(gv('statFavorites'));
+  const shares = numOrNull(gv('statShares'));
+  const followers = numOrNull(gv('statFollowers'));
+  const existing = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
+  const statData = { platform: c.platform, date: c.createdAt, title, views, completionRate, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: c.id };
+  if (existing) Object.assign(existing, statData);
+  else stats.push({ id: Date.now() + Math.random(), ...statData });
+  await saveData('stats', stats);
   pendingDataContentId = null;
   closeModal(); render();
   showToast('数据已保存');
@@ -225,23 +168,21 @@ function toggleSortViews() {
 function deleteContent(id) {
   showConfirm({
     title: '确认删除',
-    desc: '确定删除这条记录吗？将连同其录入的视频/AI收录数据一并删除，不可恢复。',
+    desc: '确定删除这条记录吗？将连同其录入的视频数据一并删除，不可恢复。',
     danger: true,
     onOk: async () => {
       const numId = Number(id);
       const c = contents.find(x => x.id == id || x.id == numId);
       contents = contents.filter(x => x.id != id && x.id != numId);
-      // 同步清理关联的视频数据 / AI收录数据（与 findLinkedTitle 关联逻辑对称）：
+      // 同步清理关联的视频数据（与 findLinkedTitle 关联逻辑对称）：
       // 1) contentId 精确匹配；2) 兜底 platform + date 匹配（老数据/未绑定 contentId 的记录）
       const isLinked = s =>
         s.contentId == id || s.contentId == numId ||
         (c && s.platform === c.platform && s.date === c.createdAt);
       stats = stats.filter(s => !isLinked(s));
-      aiStats = aiStats.filter(s => !isLinked(s));
       await saveDataBatch([
         { key: 'contents', val: contents },
-        { key: 'stats', val: stats },
-        { key: 'aiStats', val: aiStats }
+        { key: 'stats', val: stats }
       ]);
       render();
       showToast('已删除');

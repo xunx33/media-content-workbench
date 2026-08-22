@@ -25,7 +25,7 @@ function render() {
 
 // 数据积累 30 条时，温和提示导出备份
 function checkBackupReminder() {
-  const total = contents.length + stats.length + aiStats.length;
+  const total = contents.length + stats.length;
   if (total >= 30 && !localStorage.getItem(STORAGE_KEY + 'backup_reminded')) {
     localStorage.setItem(STORAGE_KEY + 'backup_reminded', '1');
     showToast('数据已积累30条，建议导出备份');
@@ -48,17 +48,14 @@ function checkWeeklyReminder() {
     const weekAgoStr = getDayStr(weekAgo);
     const weekContents = contents.filter(c => c.createdAt >= weekAgoStr && c.createdAt <= today);
     const pendingCount = weekContents.filter(c => {
-      if (isVideo(c.platform)) {
-        return !stats.some(s => s.contentId == c.id || s.contentId == Number(c.id) || (s.platform === c.platform && s.date === c.createdAt));
-      }
-      return !aiStats.some(s => s.contentId == c.id || s.contentId == Number(c.id) || (s.platform === c.platform && s.date === c.createdAt));
+      return !stats.some(s => s.contentId == c.id || s.contentId == Number(c.id) || (s.platform === c.platform && s.date === c.createdAt));
     }).length;
     const hasReview = reviews.some(r => r.date >= weekAgoStr && r.date <= today);
     let msg;
     if (pendingCount > 0) {
       msg = `📊 已到每周复盘时间，本周还有 ${pendingCount} 条内容未录入数据，建议补录后复盘`;
     } else if (!hasReview) {
-      msg = `📊 已到每周复盘时间，记得进行一次数据登记复盘 + AI收录情况筛查`;
+      msg = `📊 已到每周复盘时间，记得进行一次数据登记复盘`;
     } else {
       msg = `📊 已到每周复盘时间，本周复盘已完成，继续保持！`;
     }
@@ -73,7 +70,7 @@ function checkWeeklyReminder() {
   if (window.storeReady) {
     try { await window.storeReady; } catch (e) { console.error('store 初始化失败', e); }
   }
-  // 启动时同步分区 UI（账号登记 tab 视频/文书分区均可用）
+  // 启动时同步分区 UI
   if (window.syncWorkspaceUI) window.syncWorkspaceUI();
   render();
   checkBackupReminder();

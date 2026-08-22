@@ -1,6 +1,6 @@
 function exportData() {
-  const data = { version: 4, exportedAt: new Date().toISOString(), contents, stats, aiStats, reviews, accountStats, accountIds, articleAccounts };
-  const counts = `内容${contents.length}·视频${stats.length}·文书${aiStats.length}·复盘${reviews.length}·账号数据${accountStats.length}·账号ID${accountIds.length}·文书账号${articleAccounts.length}`;
+  const data = { version: 5, exportedAt: new Date().toISOString(), contents, stats, reviews, accountStats, accountIds };
+  const counts = `内容${contents.length}·视频${stats.length}·复盘${reviews.length}·账号数据${accountStats.length}·账号ID${accountIds.length}`;
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `新媒体数据工作台_${getToday()}.json`; a.click();
@@ -8,7 +8,7 @@ function exportData() {
 }
 
 // ===== 导出 Excel（HTML 表格，Excel 双击可直接打开）=====
-// 报表含：数据概览 / 内容登记 / 视频数据 / 视频平台账号数据（有数据才显示）/ 文书AI收录情况 / 文书平台账号登记（有数据才显示）（视频平台复盘记录在其上方、文书平台复盘记录在其下方，存在复盘记录才显示这两栏）
+// 报表含：数据概览 / 内容登记 / 视频数据 / 视频平台账号数据（有数据才显示）/ 视频平台复盘记录（存在才显示）
 // 整体按「日期 + 平台」分组，同一日期的单元格纵向合并；只显示登记条数，不显示任务完成
 // 支持导出范围：全部 / 本周（周一~周日）/ 本月（日历月），区间复用数据复盘页的 getPeriodRanges
 
@@ -33,11 +33,6 @@ function videoMetric(s, key) {
   const apply = VIDEO_METRIC_APPLY[s.platform];
   if (apply && apply[key] === false) return '-';
   return cellNum(s[key]);
-}
-
-// AI 收录引擎 → ✓（绿）= 已收录；未收录则留白（不显示叉叉）
-function aiCell(ok) {
-  return ok ? '<span style="color:#059669;font-weight:700;">✓</span>' : '';
 }
 
 // 通用「日期合并」表格：groups = [{ date, rows: [[cellHtml,...], ...] }]；countText 可自定义标题条数说明
@@ -65,8 +60,6 @@ function buildMergedTable(title, colHeaders, groups, note, countText) {
 // 数据概览：总体指标 + 各平台分布（每日分布已并入下方内容登记表，此处不再重复）
 function buildOverviewSheet(ds) {
   const contents = ds.contents;
-  const videoCount = contents.filter(c => isVideo(c.platform)).length;
-  const articleCount = contents.filter(c => isArticle(c.platform)).length;
   const platformCounts = {};
   ALL_PLATFORMS.forEach(p => { platformCounts[p] = contents.filter(c => c.platform === p).length; });
   const dates = contents.map(c => c.createdAt || '').filter(Boolean).sort();
@@ -76,16 +69,17 @@ function buildOverviewSheet(ds) {
   let html = `<h2>数据概览</h2>`;
   html += '<table style="width:auto;min-width:440px;margin-bottom:18px;"><tbody>';
   html += `<tr><th>内容登记总数</th><td>${contents.length} 条</td><th>覆盖平台</th><td>${activePlatforms}/${ALL_PLATFORMS.length} 个</td></tr>`;
-  html += `<tr><th>视频内容</th><td>${videoCount} 条</td><th>文书内容</th><td>${articleCount} 条</td></tr>`;
   html += `<tr><th>日期范围</th><td colspan="3">${escapeHtml(dateRange)}</td></tr>`;
   html += '</tbody></table>';
 
   html += '<h3 style="margin:14px 0 6px;color:#374151;">各平台登记分布</h3>';
-  html += '<table style="width:auto;min-width:440px;margin-bottom:18px;"><thead><tr><th>平台</th><th>类型</th><th>登记条数</th></tr></thead><tbody>';
-  ALL_PLATFORMS.forEach(p => {
-    html += `<tr><td>${escapeHtml(p)}</td><td>${isVideo(p) ? '视频' : '文书'}</td><td style="text-align:center;">${platformCounts[p]}</td></tr>`;
+  html += '<div style="display:inline-flex;gap:16px;align-items:flex-start;margin-bottom:18px;">';
+  html += '<table style="width:auto;"><thead><tr><th>视频平台</th><th>登记条数</th></tr></thead><tbody>';
+  VIDEO_PLATFORMS.forEach(p => {
+    html += `<tr><td>${escapeHtml(p)}</td><td style="text-align:center;">${platformCounts[p]}</td></tr>`;
   });
   html += '</tbody></table>';
+  html += '</div>';
 
   return html;
 }
@@ -152,39 +146,8 @@ function buildVideoSheet(ds) {
   return html;
 }
 
-// 文书AI收录情况：来自 aiStats
-function buildAiSheet(ds) {
-  const aiStats = ds.aiStats;
-  const map = {};
-  aiStats.forEach(s => {
-    const d = s.date || '未注明日期';
-    (map[d] = map[d] || []).push(s);
-  });
-  const dates = Object.keys(map).sort();
-  const groups = dates.map(d => ({
-    date: d,
-    rows: map[d]
-      .slice()
-      .sort((a, b) => ARTICLE_PLATFORMS.indexOf(a.platform) - ARTICLE_PLATFORMS.indexOf(b.platform))
-      .map(s => {
-        const ai = (s.ai && typeof s.ai === 'object') ? s.ai : {};
-        const noneChosen = ai['__none__'] === true;
-        let engineCells;
-        if (noneChosen) {
-          // 明确勾选「无」= 所有引擎列显示「无」
-          engineCells = AI_ENGINES.map(() => '<span style="color:#9ca3af;">无</span>');
-        } else {
-          engineCells = AI_ENGINES.map(eng => aiCell(ai[eng]));
-        }
-        return [escapeHtml(s.platform), escapeHtml(statTitle(s)), ...engineCells];
-      })
-  }));
-  return buildMergedTable('文书AI收录情况', ['日期', '平台', '标题', ...AI_ENGINES], groups,
-    '✓ = 已收录；无 = 已确认未被收录（勾选「无」）；空白 = 未录入');
-}
-
-// 复盘记录表：type='video' 视频平台复盘 / type='article' 文书平台复盘
-// 仅在导出数据里存在对应类型复盘记录时才生成（范围外或为空则不显示该栏）
+// 复盘记录表：视频平台复盘
+// 仅在导出数据里存在视频复盘记录时才生成（范围外或为空则不显示该栏）
 function buildReviewSheet(ds, type, title) {
   const list = (ds.reviews || []).filter(r => r.type === type);
   if (list.length === 0) return '';
@@ -277,26 +240,6 @@ function buildAccountSheet(ds) {
   return html;
 }
 
-// 文书平台账号（精简版登记信息：平台 + 账号ID + 备注 + 登录手机号 + 实名人 + 运营人）
-function buildArticleAccountSheet(ds) {
-  const list = (ds.articleAccounts || []).filter(function(r){
-    return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()) || (r.phone && r.phone.trim()) || (r.realName && r.realName.trim()) || (r.operator && r.operator.trim());
-  });
-  const headers = ['平台', '账号ID', '备注', '登录手机号', '实名人姓名', '运营人'];
-  const groups = ARTICLE_PLATFORMS
-    .filter(function(p){ return list.some(function(r){ return r.platform === p; }); })
-    .map(function(p){
-      return {
-        date: p,
-        rows: list.filter(function(r){ return r.platform === p; }).map(function(r){
-          return [escapeHtml(r.accountId || ''), escapeHtml(r.note || ''), escapeHtml(r.phone || ''), escapeHtml(r.realName || ''), escapeHtml(r.operator || '')];
-        })
-      };
-    });
-  return buildMergedTable('文书平台账号登记', headers, groups,
-    '各文书平台登记的账号静态信息（账号ID / 备注 / 登录手机号 / 实名人姓名 / 运营人）');
-}
-
 // ===== 导出下拉菜单控制 =====
 function toggleExportMenu(e) {
   if (e) e.stopPropagation();
@@ -338,29 +281,19 @@ function buildReportHtml(scope, scopeLabel) {
   const ds = {
     contents: contents.filter(c => inRange(c.createdAt || '')),
     stats: stats.filter(s => inRange(s.date || '')),
-    aiStats: aiStats.filter(s => inRange(s.date || '')),
     accountStats: accountStats.filter(s => inRange(s.date || '')),
     reviews: reviews.filter(r => inRange(r.date || '')), // 复盘记录按日期纳入导出范围
     accountIds: accountIds, // 账号ID为静态信息，不按日期过滤
-    articleAccounts: articleAccounts, // 文书账号为静态信息，不按日期过滤
   };
-  // 复盘记录栏：有视频类复盘 → 在「文书AI收录情况」上方插入；有文书类复盘 → 在下方插入；都没有则不显示
+  // 复盘记录栏：有视频复盘才显示
   const videoReviews = ds.reviews.filter(r => r.type === 'video');
-  const articleReviews = ds.reviews.filter(r => r.type === 'article');
-  // 文书平台账号：有登记数据才显示（与复盘记录逻辑一致）
-  const hasArticleAccounts = (ds.articleAccounts || []).some(function(r){
-    return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()) || (r.phone && r.phone.trim()) || (r.realName && r.realName.trim()) || (r.operator && r.operator.trim());
-  });
   // 视频平台账号数据：有账号ID或有账号快照数据才显示
   const hasVideoAccounts = (ds.accountIds || []).some(function(r){
     return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim());
   }) || (ds.accountStats || []).length > 0;
   const metaParts = ['数据概览', '内容登记', '视频数据'];
   if (hasVideoAccounts) metaParts.push('视频平台账号数据');
-  metaParts.push('文书AI收录情况');
   if (videoReviews.length) metaParts.push('视频平台复盘记录');
-  if (hasArticleAccounts) metaParts.push('文书平台账号登记');
-  if (articleReviews.length) metaParts.push('文书平台复盘记录');
   const sectionsArr = [
     buildOverviewSheet(ds),
     buildContentRegSheet(ds),
@@ -368,9 +301,6 @@ function buildReportHtml(scope, scopeLabel) {
   ];
   if (hasVideoAccounts) sectionsArr.push(buildAccountSheet(ds));
   if (videoReviews.length) sectionsArr.push(buildReviewSheet(ds, 'video', '视频平台复盘记录'));
-  sectionsArr.push(buildAiSheet(ds));   // 文书AI收录情况
-  if (hasArticleAccounts) sectionsArr.push(buildArticleAccountSheet(ds));
-  if (articleReviews.length) sectionsArr.push(buildReviewSheet(ds, 'article', '文书平台复盘记录'));
   const sections = sectionsArr.join('');
   const rangeText = range ? `（${range.start} ~ ${range.end}）` : '';
   const html = `<!DOCTYPE html>
@@ -408,19 +338,12 @@ function exportExcel(scope) {
   a.click();
   URL.revokeObjectURL(url);
   const hasVReview = reviews.some(r => r.type === 'video');
-  const hasAReview = reviews.some(r => r.type === 'article');
-  const hasAAccounts = articleAccounts.some(function(r){
-    return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim()) || (r.phone && r.phone.trim()) || (r.realName && r.realName.trim()) || (r.operator && r.operator.trim());
-  });
   const hasVAccounts = accountIds.some(function(r){
     return (r.accountId && r.accountId.trim()) || (r.note && r.note.trim());
   }) || accountStats.length > 0;
   const toastParts = ['数据概览/内容登记/视频数据'];
   if (hasVAccounts) toastParts.push('视频平台账号数据');
-  toastParts.push('文书AI收录情况');
   if (hasVReview) toastParts.push('视频平台复盘记录');
-  if (hasAAccounts) toastParts.push('文书平台账号登记');
-  if (hasAReview) toastParts.push('文书平台复盘记录');
   showToast(`已导出${scopeLabel}Excel 报表（${toastParts.join('/')}）`);
 }
 
@@ -447,29 +370,23 @@ function importData(event) {
       const asArr = (v) => Array.isArray(v) ? v : [];
       contents = asArr(data.contents);          if (data.contents) picked.push('内容' + contents.length);
       stats = asArr(data.stats);                if (data.stats)    picked.push('视频' + stats.length);
-      aiStats = asArr(data.aiStats);            if (data.aiStats)  picked.push('文书' + aiStats.length);
       reviews = asArr(data.reviews);            if (data.reviews)  picked.push('复盘' + reviews.length);
       accountStats = asArr(data.accountStats);  if (data.accountStats) picked.push('账号数据' + accountStats.length);
       accountIds = asArr(data.accountIds);      if (data.accountIds)   picked.push('账号ID' + accountIds.length);
-      articleAccounts = asArr(data.articleAccounts); if (data.articleAccounts) picked.push('文书账号' + articleAccounts.length);
-      // 一次性原子写入全部 7 类数据（写完成后才继续，避免"已导入"提示时数据还没落盘）
+      // 一次性原子写入全部 5 类数据（写完成后才继续，避免"已导入"提示时数据还没落盘）
       await saveDataBatch([
         { key: 'contents', val: contents },
         { key: 'stats', val: stats },
-        { key: 'aiStats', val: aiStats },
         { key: 'reviews', val: reviews },
         { key: 'accountStats', val: accountStats },
-        { key: 'accountIds', val: accountIds },
-        { key: 'articleAccounts', val: articleAccounts }
+        { key: 'accountIds', val: accountIds }
       ]);
       render();
       // 乱码检测：导入后扫描关键文本字段（标题/平台/账号ID/备注等）
       const corrupt = countCorruptRecords(contents, ['title', 'topic', 'url', 'platform'])
         + countCorruptRecords(stats, ['title', 'platform'])
-        + countCorruptRecords(aiStats, ['title', 'platform'])
         + countCorruptRecords(accountIds, ['accountId', 'note'])
         + countCorruptRecords(accountStats, ['platform'])
-        + countCorruptRecords(articleAccounts, ['accountId', 'note', 'phone', 'realName', 'operator'])
         + countCorruptRecords(reviews, ['highlights', 'problems', 'plans']);
       const corruptTip = corrupt > 0 ? ' ⚠️含' + corrupt + '条乱码记录（源文件编码可能非 UTF-8）' : '';
       showToast('已导入：' + picked.join('·') + corruptTip);
@@ -481,7 +398,7 @@ function importData(event) {
 function clearAllData() {
   document.getElementById('modalContent').innerHTML = `
     <h3>确认清空</h3>
-    <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、AI收录数据、账号总数据），此操作不可恢复！<br><br>建议先导出备份。</p>
+    <p class="confirm-text">即将清空所有数据（发布任务、内容登记、视频数据、复盘记录、账号总数据），此操作不可恢复！<br><br>建议先导出备份。</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-danger" onclick="confirmClear()">确认清空</button>
@@ -490,16 +407,14 @@ function clearAllData() {
 }
 
 async function confirmClear() {
-  contents = []; stats = []; aiStats = []; reviews = []; accountStats = []; accountIds = []; articleAccounts = [];
+  contents = []; stats = []; reviews = []; accountStats = []; accountIds = [];
   // 全部清空（batch 原子保存，写完成后才提示）
   await saveDataBatch([
     { key: 'contents', val: [] },
     { key: 'stats', val: [] },
-    { key: 'aiStats', val: [] },
     { key: 'reviews', val: [] },
     { key: 'accountStats', val: [] },
-    { key: 'accountIds', val: [] },
-    { key: 'articleAccounts', val: [] }
+    { key: 'accountIds', val: [] }
   ]);
   selectedDate = null; closeModal(); render();
   showToast('已清空，已重置今日任务');
@@ -512,15 +427,13 @@ function fillSampleData() {
     danger: true,
     onOk: async () => {
       const s = buildSampleData(getToday());
-      contents = s.contents; stats = s.stats; aiStats = s.aiStats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds; articleAccounts = s.articleAccounts;
+      contents = s.contents; stats = s.stats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds;
       await saveDataBatch([
         { key: 'contents', val: contents },
         { key: 'stats', val: stats },
-        { key: 'aiStats', val: aiStats },
         { key: 'reviews', val: reviews },
         { key: 'accountStats', val: accountStats },
-        { key: 'accountIds', val: accountIds },
-        { key: 'articleAccounts', val: articleAccounts }
+        { key: 'accountIds', val: accountIds }
       ]);
       render(); showToast('已重置示例数据（最近3天）');
     }

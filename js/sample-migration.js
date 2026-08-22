@@ -8,7 +8,7 @@ function checkSampleDataVersion() {
   if (hasOldSample || statsMissingContentId) {
     showConfirm({
       title: '检测到旧版示例数据',
-      desc: '示例数据已更新为完整版（最近3天 + 10平台 + 账号总数据）。是否重置为最新示例？<br><br><span style="color:var(--text3);">如果你的内容是真实数据，请选择「取消」；只有测试/示例数据需要重置。</span>',
+      desc: '示例数据已更新为完整版（最近3天 + 4平台 + 账号总数据）。是否重置为最新示例？<br><br><span style="color:var(--text3);">如果你的内容是真实数据，请选择「取消」；只有测试/示例数据需要重置。</span>',
       danger: false,
       onOk: () => {
         fillSampleDataSilent();
@@ -21,22 +21,19 @@ function checkSampleDataVersion() {
 }
 
 // ===== 示例数据构造（最近 3 天）=====
-// 覆盖：单条登记（contents/stats/aiStats）+ 账号总数据（accountStats），日期跨 今天/昨天/前天
+// 覆盖：单条登记（contents/stats）+ 账号总数据（accountStats），日期跨 今天/昨天/前天
 function buildSampleData(today) {
   const dayN = (n) => { const x = new Date(Date.now() - n * 86400000); return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0'); };
   const D0 = today, D1 = dayN(1), D2 = dayN(2);
   const dates = [D2, D1, D0]; // 下标 0=前天 1=昨天 2=今天
   const DAY_LABEL = ['前天', '昨天', '今天'];
-  const platformOrder = [...VIDEO_PLATFORMS, ...ARTICLE_PLATFORMS]; // 4 视频 + 6 文书
+  const platformOrder = VIDEO_PLATFORMS; // 4 视频平台
 
-  // 每天 10 平台各 1 条内容标题（顺序与 platformOrder 一致）
+  // 每天 4 平台各 1 条内容标题（顺序与 platformOrder 一致）
   const titleSets = [
-    ['健身晨练打卡vlog', '宠物日常：橘猫的一天', '城市徒步路线分享', '节气养生小课堂',
-     '如何写出有说服力的技术方案', '新媒体运营避坑指南', '剪辑软件横向评测', '直播带货新手误区', '如何稳定更新不断更', '官网博客：数据看板设计实践'],
-    ['夏日清凉穿搭挑战', '农村生活记录·收稻谷', '秋冬护肤指南·干皮救星', '父母必看：儿童安全座椅选购',
-     '2026年入门数据分析的学习路径', '小红书爆款标题的5个公式', 'AI绘画入门到进阶', '短视频脚本写作模板', '账号冷启动的3个阶段', '官网博客：前端性能优化清单'],
-    ['新品开箱vlog：夏日防晒好物推荐', '街头美食探店EP38', '618购物清单｜闭眼入的5件数码好物', '职场高效办公技巧合集',
-     'Python自动化脚本：批量处理Excel报表', '如何用AI提升10倍工作效率', '2024年AI工具大盘点', '新媒体运营入门指南', '内容创作者必备的5个习惯', '官网技术博客：API 性能优化实战'],
+    ['健身晨练打卡vlog', '宠物日常：橘猫的一天', '城市徒步路线分享', '节气养生小课堂'],
+    ['夏日清凉穿搭挑战', '农村生活记录·收稻谷', '秋冬护肤指南·干皮救星', '父母必看：儿童安全座椅选购'],
+    ['新品开箱vlog：夏日防晒好物推荐', '街头美食探店EP38', '618购物清单｜闭眼入的5件数码好物', '职场高效办公技巧合集'],
   ];
 
   // --- 单条登记：contents ---
@@ -48,8 +45,8 @@ function buildSampleData(today) {
       cid++;
     });
   });
-  // 某天某平台的内容 id（di=0/1/2 前天/昨天/今天，pi=平台下标 0..9）
-  const contentIdOf = (di, pi) => di * 10 + pi + 1;
+  // 某天某平台的内容 id（di=0/1/2 前天/昨天/今天，pi=平台下标 0..3）
+  const contentIdOf = (di, pi) => di * 4 + pi + 1;
 
   // --- 单条视频数据 stats（每平台每天 1 条；小红书 avgWatch、视频号 recommend）---
   const vBase = {
@@ -69,22 +66,6 @@ function buildSampleData(today) {
         likes: b.likes[di], comments: b.comments[di], favorites: b.fav[di],
         shares: b.shares[di], recommend: b.recommend[di], followers: b.followers[di],
       });
-    });
-  });
-
-  // --- 单条文书 AI 收录 aiStats（每平台每天 1 条）---
-  const AI_PATTERNS = [
-    { 'DeepSeek': true, '豆包': true, '千问': false, '文心': true, '元宝': false, '纳米': false },
-    { 'DeepSeek': true, '豆包': false, '千问': true, '文心': true, '元宝': true, '纳米': false },
-    { 'DeepSeek': false, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false },
-    { 'DeepSeek': true, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': true },
-    { 'DeepSeek': false, '豆包': false, '千问': false, '文心': false, '元宝': false, '纳米': false },
-    { 'DeepSeek': true, '豆包': true, '千问': true, '文心': false, '元宝': false, '纳米': false },
-  ];
-  const aiStats = [];
-  ARTICLE_PLATFORMS.forEach((p, ai) => {
-    dates.forEach((date, di) => {
-      aiStats.push({ id: 200 + ai * 10 + di, platform: p, date: date, contentId: contentIdOf(di, 4 + ai), title: titleSets[di][4 + ai], ai: AI_PATTERNS[ai] });
     });
   });
 
@@ -115,35 +96,22 @@ function buildSampleData(today) {
 
   // --- 复盘记录 ---
   const reviews = [
-    { id: 301, type: 'article', period: 'week', date: D0, highlights: '本周知乎/公众号技术文收录良好', problems: '搜狐号内容量偏少，需要补齐', plans: '下周优化搜狐号选题，尝试AI工具方向' },
     { id: 302, type: 'video', period: 'week', date: D0, highlights: '抖音防晒选题播放量破万，粉丝量稳步上升', problems: '小红书完播率偏低', plans: '尝试竖版封面+前3秒钩子' },
   ];
 
-  // --- 文书平台账号（静态信息：账号ID/备注/登录手机号/实名人/运营人）---
-  const articleAccounts = [
-    { id: 601, platform: '百家号', accountId: 'baijia_10001', note: '主账号', phone: '13800000001', realName: '张三', operator: '运营A' },
-    { id: 602, platform: '公众号', accountId: 'wx_media_workbench', note: '服务号', phone: '13800000002', realName: '张三', operator: '运营A' },
-    { id: 603, platform: '知乎', accountId: 'zhihu_media', note: '企业号', phone: '13800000003', realName: '李四', operator: '运营B' },
-    { id: 604, platform: '企鹅号', accountId: 'qq_media_888', note: '主账号', phone: '13800000004', realName: '李四', operator: '运营B' },
-    { id: 605, platform: '搜狐号', accountId: 'sohu_media', note: '主账号', phone: '13800000005', realName: '王五', operator: '运营C' },
-    { id: 606, platform: '官网', accountId: '官网博客', note: '技术博客', phone: '13800000006', realName: '王五', operator: '运营C' },
-  ];
-
-  return { contents, stats, aiStats, reviews, accountStats, accountIds, articleAccounts };
+  return { contents, stats, reviews, accountStats, accountIds };
 }
 
 // 静默重置示例（不弹确认框，供版本迁移用）
 async function fillSampleDataSilent() {
   const s = buildSampleData(getToday());
-  contents = s.contents; stats = s.stats; aiStats = s.aiStats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds; articleAccounts = s.articleAccounts;
+  contents = s.contents; stats = s.stats; reviews = s.reviews; accountStats = s.accountStats; accountIds = s.accountIds;
   await saveDataBatch([
     { key: 'contents', val: contents },
     { key: 'stats', val: stats },
-    { key: 'aiStats', val: aiStats },
     { key: 'reviews', val: reviews },
     { key: 'accountStats', val: accountStats },
-    { key: 'accountIds', val: accountIds },
-    { key: 'articleAccounts', val: articleAccounts }
+    { key: 'accountIds', val: accountIds }
   ]);
   render(); showToast('已重置为最新示例数据');
 }

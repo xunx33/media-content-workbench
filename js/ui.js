@@ -6,10 +6,10 @@ function formatNum(n) {
 
 // ===== MODAL =====
 let pendingLinkTaskId = null;
-// 登记弹窗平台下拉：按工作台分区只显示对应平台（短视频工作台 → 4 视频平台；文书工作台 → 6 文书平台）
+// 登记弹窗平台下拉：仅 4 个短视频平台
 function platformOptions(selected) {
-  const list = workspace === 'video' ? VIDEO_PLATFORMS : ARTICLE_PLATFORMS;
-  const label = workspace === 'video' ? '短视频平台' : '文书平台';
+  const list = VIDEO_PLATFORMS;
+  const label = '短视频平台';
   const fallback = list.includes(selected) ? selected : list[0];
   return `<optgroup label="${label}">${list.map(p => `<option value="${p}" ${p === fallback ? 'selected' : ''}>${p}</option>`).join('')}</optgroup>`;
 }
@@ -17,7 +17,7 @@ function platformOptions(selected) {
 function openAddModal(prefillPlatform, taskId, prefillDate) {
   editId = null;
   pendingLinkTaskId = taskId || null;
-  const preP = prefillPlatform || (workspace === 'video' ? VIDEO_PLATFORMS[0] : ARTICLE_PLATFORMS[0]);
+  const preP = prefillPlatform || VIDEO_PLATFORMS[0];
   const preD = prefillDate || getToday();
   document.getElementById('modalContent').innerHTML = `
     <h3>登记内容</h3>
@@ -95,8 +95,7 @@ async function saveContent() {
         statChanged = true;
       };
       stats.forEach(follow);
-      aiStats.forEach(follow);
-      if (statChanged) { await saveData('stats', stats); await saveData('aiStats', aiStats); }
+      if (statChanged) { await saveData('stats', stats); }
     }
   } else {
     savedId = Date.now() + Math.random();
@@ -136,16 +135,13 @@ document.addEventListener('keydown', function(e) {
 // ===== NAV =====
 document.querySelectorAll('.nav-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    // 从「AI 配置与功能」页点导航：先切回之前的视频/文书分区再进对应页
-    if (workspace === 'llm') {
-      const prev = localStorage.getItem(STORAGE_KEY + 'prev_workspace');
-      switchWorkspace(prev === 'article' ? 'article' : 'video');
-    }
+    // 从「AI 配置与功能」页点导航：先切回短视频工作台再进对应页
+    if (workspace === 'llm') switchWorkspace('video');
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     currentTab = tab.dataset.tab;
-    // 数据复盘子 tab 跟随分区（video→短视频数据 / article→文书AI收录）
-    if (currentTab === 'data') dataSubTab = workspace;
+    // 数据复盘子页固定为视频数据
+    if (currentTab === 'data') dataSubTab = 'video';
     if (currentTab === 'calendar' && !selectedDate) selectedDate = getToday();
     // 切换 tab 时重置 AI busy 标志（避免切回来后按钮点不动）
     resetAiBusyFlags();
@@ -153,12 +149,8 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
   });
 });
 
-// ===== WORKSPACE 分区同步 =====
-function syncWorkspaceUI() {
-  const sel = document.getElementById('wsSelect');
-  if (sel) sel.value = workspace;
-  // 「账号登记」tab 视频/文书分区均可用（文书为精简版）
-}
+// ===== WORKSPACE 分区同步（已无下拉框，仅保留入口供启动调用） =====
+function syncWorkspaceUI() {}
 
 // ===== TOAST =====
 function showToast(msg) {
