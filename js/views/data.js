@@ -147,6 +147,7 @@ function renderReviewPanel(period) {
   html += '<div style="margin-top:16px;">';
   html += `<div class="review-history-box">
     <div class="review-history-title">📋 ${isVideo ? '短视频' : '文书'}复盘记录 <span class="badge">${sortedReviews.length}条</span></div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.6;padding:2px 0 6px;">每个周期（本周/本月）仅保留最新一条：保存新复盘会覆盖本周/本月的旧记录，过期历史不长期留存。</div>
     <div class="review-history-list">`;
   if (sortedReviews.length === 0) {
     html += '<p style="font-size:12px;color:var(--text3);padding:8px 0;">暂无复盘记录</p>';
@@ -464,12 +465,22 @@ function renderArticleData(period) {
   html += renderDualBarChart(AI_ENGINES, AI_ENGINES.map(ai => aiCounts[ai]), AI_ENGINES.map(ai => prevAiCounts[ai]), 'article', n => n, ranges.label, ranges.prevLabel);
   html += '</div>';
 
-  // 文书平台被收录情况（平台视角柱形图，当前周期 vs 上期；筛选单平台时只显示该平台一根柱）
-  // 标题命名统一：「被收录情况 · 平台名」；未筛选时「文书平台被收录情况」
-  html += `<div class="card"><div class="card-title">${pf ? '被收录情况 · ' + pf : '文书平台被收录情况'} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+  // 文书平台「发布收录对比」（平台视角柱形图：总发布数 + 收录数，均含当前周期 vs 上期对比；筛选单平台时只显示该平台）
+  html += `<div class="card"><div class="card-title">发布收录对比${titleSuffix} <span class="badge">${ranges.label} vs ${ranges.prevLabel}</span></div>`;
+  const barPlatforms = pf ? [pf] : ARTICLE_PLATFORMS;  // 筛选单平台时图表只显示该平台
+
+  // 总发布数（以登记内容为准）：当前周期 vs 上期
+  const pubCounts = {};
+  const prevPubCounts = {};
+  barPlatforms.forEach(p => { pubCounts[p] = 0; prevPubCounts[p] = 0; });
+  contents.filter(c => byPf(c) && c.createdAt >= ranges.start && c.createdAt <= ranges.end)
+    .forEach(c => { if (pubCounts[c.platform] !== undefined) pubCounts[c.platform]++; });
+  contents.filter(c => byPf(c) && c.createdAt >= ranges.prevStart && c.createdAt <= ranges.prevEnd)
+    .forEach(c => { if (prevPubCounts[c.platform] !== undefined) prevPubCounts[c.platform]++; });
+
+  // 收录数：当前周期 vs 上期
   const platformCounts = {};
   const prevPlatformCounts = {};
-  const barPlatforms = pf ? [pf] : ARTICLE_PLATFORMS;  // 筛选单平台时图表只显示该平台
   barPlatforms.forEach(p => { platformCounts[p] = 0; prevPlatformCounts[p] = 0; });
   currAiStats.forEach(s => {
     if (platformCounts[s.platform] !== undefined) {
@@ -481,6 +492,11 @@ function renderArticleData(period) {
       AI_ENGINES.forEach(ai => { if (s.ai && s.ai[ai]) prevPlatformCounts[s.platform]++; });
     }
   });
+
+  html += '<div style="font-size:13px;font-weight:600;margin:4px 0 2px;">总发布数对比</div>';
+  html += renderChartLegend('article', ranges.label, ranges.prevLabel);
+  html += renderDualBarChart(barPlatforms, barPlatforms.map(p => pubCounts[p]), barPlatforms.map(p => prevPubCounts[p]), 'article', n => n, ranges.label, ranges.prevLabel);
+  html += '<div style="font-size:13px;font-weight:600;margin:14px 0 2px;">收录数对比</div>';
   html += renderChartLegend('article', ranges.label, ranges.prevLabel);
   html += renderDualBarChart(barPlatforms, barPlatforms.map(p => platformCounts[p]), barPlatforms.map(p => prevPlatformCounts[p]), 'article', n => n, ranges.label, ranges.prevLabel);
   html += '</div>';

@@ -62,6 +62,27 @@ async function loadData(key) {
   }
 }
 
+// 保存失败提示：写入被后端拒绝（非 2xx / 网络错误）时显示持久横幅，直到后续保存成功才消失。
+// 不打断正常流程，但用户能明确看到「改动可能未落盘」，避免静默吞错导致内存与磁盘状态漂移。
+let __saveFailedShown = false;
+function showSaveFailedBanner() {
+  if (__saveFailedShown) return;
+  __saveFailedShown = true;
+  if (typeof document === 'undefined' || !document.getElementById) return;
+  if (document.getElementById('save-failed-banner')) return;
+  const div = document.createElement('div');
+  div.id = 'save-failed-banner';
+  div.innerHTML = '⚠️ 数据保存失败（后台写入异常），当前改动可能未落盘，请检查后台服务与磁盘空间';
+  div.style.cssText = 'position:fixed;top:38px;left:0;right:0;background:#d97706;color:#fff;text-align:center;padding:8px;z-index:99998;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
+  document.body.appendChild(div);
+}
+function clearSaveFailedBanner() {
+  if (!__saveFailedShown) return;
+  __saveFailedShown = false;
+  if (typeof document === 'undefined' || !document.getElementById) return;
+  document.getElementById('save-failed-banner')?.remove();
+}
+
 // 串行化同 key 的保存请求（防竞态：先发的请求先到后到达会被覆盖）
 const _inflightSaves = {};
 async function saveData(key, val) {
@@ -69,13 +90,20 @@ async function saveData(key, val) {
   if (_inflightSaves[key]) {
     try { await _inflightSaves[key]; } catch (e) {}
   }
-  const p = fetch('/api/data/' + key, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(val)
-  }).catch(e => console.warn('[saveData] ' + key + ' 失败:', e));
+  const p = (async () => {
+    const res = await fetch('/api/data/' + key, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(val)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    clearSaveFailedBanner();
+  })();
   _inflightSaves[key] = p;
-  try { await p; } catch (e) {}
+  try { await p; } catch (e) {
+    console.warn('[saveData] ' + key + ' 失败:', e);
+    showSaveFailedBanner();
+  }
   delete _inflightSaves[key];
 }
 
@@ -88,14 +116,21 @@ async function saveDataBatch(updates) {
       try { await _inflightSaves[key]; } catch (e) {}
     }
   }
-  const p = fetch('/api/data/batch', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates)
-  }).catch(e => console.warn('[saveDataBatch] 失败:', e));
+  const p = (async () => {
+    const res = await fetch('/api/data/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    clearSaveFailedBanner();
+  })();
   // 标记所有 key 为进行中
   updates.forEach(({ key }) => { _inflightSaves[key] = p; });
-  try { await p; } catch (e) {}
+  try { await p; } catch (e) {
+    console.warn('[saveDataBatch] 失败:', e);
+    showSaveFailedBanner();
+  }
   // 清除标记
   updates.forEach(({ key }) => { delete _inflightSaves[key]; });
 }
@@ -287,12 +322,17 @@ async function pingService(force) {
   const now = Date.now();
   if (!force && now - __lastPingTime < 2000) return;  // 2 秒内已 ping 过则跳过
   __lastPingTime = now;
+  // 手动超时（不用 AbortSignal.timeout，兼容旧浏览器）
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 2000);
   try {
-    const res = await fetch('/api/data/contents?ping=1', { cache: 'no-store', signal: AbortSignal.timeout(2000) });
+    const res = await fetch('/api/data/contents?ping=1', { cache: 'no-store', signal: ctrl.signal });
     if (!res.ok) throw new Error('not ok');
     if (!__serviceAlive) { __serviceAlive = true; hideServiceDeadBanner(); }
   } catch (e) {
     if (__serviceAlive) { __serviceAlive = false; showServiceDeadBanner(); }
+  } finally {
+    clearTimeout(timer);
   }
 }
 

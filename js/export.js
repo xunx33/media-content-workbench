@@ -12,11 +12,6 @@ function exportData() {
 // 整体按「日期 + 平台」分组，同一日期的单元格纵向合并；只显示登记条数，不显示任务完成
 // 支持导出范围：全部 / 本周（周一~周日）/ 本月（日历月），区间复用数据复盘页的 getPeriodRanges
 
-function escapeHtml(s) {
-  if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 // 数字单元格：数字原样输出（含 0），null/undefined/空 → 留空（未录入）
 function cellNum(v) {
   if (typeof v === 'number') return v;
@@ -448,13 +443,15 @@ function importData(event) {
       const data = JSON.parse(e.target.result);
       const picked = [];
       // 先清空再填充：备份里缺失的字段也会被重置为空，避免旧数据残留（恢复更彻底）
-      contents = data.contents || [];          if (data.contents) picked.push('内容' + contents.length);
-      stats = data.stats || [];                if (data.stats)    picked.push('视频' + stats.length);
-      aiStats = data.aiStats || [];            if (data.aiStats)  picked.push('文书' + aiStats.length);
-      reviews = data.reviews || [];            if (data.reviews)  picked.push('复盘' + reviews.length);
-      accountStats = data.accountStats || [];  if (data.accountStats) picked.push('账号数据' + accountStats.length);
-      accountIds = data.accountIds || [];      if (data.accountIds)   picked.push('账号ID' + accountIds.length);
-      articleAccounts = data.articleAccounts || []; if (data.articleAccounts) picked.push('文书账号' + articleAccounts.length);
+      // 字段必须是数组；非数组（损坏/手改的 JSON）统一视为空，避免把对象写入磁盘导致后续渲染崩溃
+      const asArr = (v) => Array.isArray(v) ? v : [];
+      contents = asArr(data.contents);          if (data.contents) picked.push('内容' + contents.length);
+      stats = asArr(data.stats);                if (data.stats)    picked.push('视频' + stats.length);
+      aiStats = asArr(data.aiStats);            if (data.aiStats)  picked.push('文书' + aiStats.length);
+      reviews = asArr(data.reviews);            if (data.reviews)  picked.push('复盘' + reviews.length);
+      accountStats = asArr(data.accountStats);  if (data.accountStats) picked.push('账号数据' + accountStats.length);
+      accountIds = asArr(data.accountIds);      if (data.accountIds)   picked.push('账号ID' + accountIds.length);
+      articleAccounts = asArr(data.articleAccounts); if (data.articleAccounts) picked.push('文书账号' + articleAccounts.length);
       // 一次性原子写入全部 7 类数据（写完成后才继续，避免"已导入"提示时数据还没落盘）
       await saveDataBatch([
         { key: 'contents', val: contents },

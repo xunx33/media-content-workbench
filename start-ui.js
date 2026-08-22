@@ -105,6 +105,7 @@ function openWorkbench(port) {
     const child = spawn(process.execPath, [path.join(ROOT, 'server.js')], {
       detached: true,
       stdio: 'ignore',
+      windowsHide: true,   // 完全后台：不让 server.js 的 console 窗口出现在任务栏
       cwd: ROOT,
     });
     child.unref();

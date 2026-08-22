@@ -558,6 +558,8 @@ async function parseTableRows(rows, type, platform) {
   let parsedCount = 0;
   let contentCreatedCount = 0;
   const results = [];
+  const overwriteWarnings = [];  // 同日期同标题但数据不同、被后一条覆盖的提示
+  const newlyCreatedIds = new Set();   // 本次导入内新建的内容 id：占位标题匹配时排除，避免同一次导入内互相合并
   for (let i = dataStart; i < rows.length; i++) {
     const cells = rows[i];
     const date = colDate >= 0 ? cells[colDate] : '';
@@ -566,6 +568,7 @@ async function parseTableRows(rows, type, platform) {
 
     if (type === 'video') {
       let title = colTitle >= 0 ? String(cells[colTitle] || '').trim() : '';
+      const titleEmpty = !title;   // 原表标题是否为空（占位标题无法唯一标识内容）
       // 空白标题 → 占位符「空标题」，保证内容与数据照常录入
       if (!title) title = platform === '小红书' ? '空标题' : (platform + ' ' + normDate + ' 作品');
       const views = colViews >= 0 ? cellNumOrNull(cells[colViews]) : null;
@@ -579,26 +582,48 @@ async function parseTableRows(rows, type, platform) {
       const shares = colShares >= 0 ? cellNumOrNull(cells[colShares]) : null;
       const followers = colFollowers >= 0 ? cellNumOrNull(cells[colFollowers]) : null;
 
-      // 内容登记：优先匹配已登记内容，没有则自动登记一条（标题取表格作品名，平台/日期从表格读取）
-      let content = contents.find(c => c.platform === platform && c.createdAt === normDate);
+      // 内容登记：优先按「平台+日期+标题」匹配已登记内容（同日多条作品不会互相覆盖，避免数据丢失），
+      // 没有则自动登记一条（标题取表格作品名，平台/日期从表格读取）；重复导入同一文件可命中并复用。
+      // 占位标题（原表标题为空自动生成）无法唯一标识内容：仅当该平台当天恰好只有一条同名占位时才复用（幂等），
+      // 多条同名占位（如一天多篇「空标题」小红书笔记）无法区分 → 逐条新建，避免互相覆盖丢数据
+      const normTitle = (title || '').trim();
+      let content = null;
       let autoCreated = false;
+      if (!titleEmpty) {
+        content = contents.find(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === normTitle);
+      } else {
+        // 占位标题：仅当该平台当天「此前已存在」恰好一条同名占位时才复用（幂等重导入）；
+        // 本次导入内新建的占位（newlyCreatedIds）不参与匹配，多条空标题逐条新建、互不覆盖
+        const placeholders = contents.filter(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === normTitle && !newlyCreatedIds.has(c.id));
+        if (placeholders.length === 1) content = placeholders[0];
+      }
       if (!content) {
         content = {
           id: Date.now() + Math.random(),
-          title: title || (platform + ' ' + normDate + ' 作品'),
+          title: normTitle || (platform + ' ' + normDate + ' 作品'),
           platform,
           topic: '',
           url: '',
           createdAt: normDate
         };
         contents.push(content);
+        newlyCreatedIds.add(content.id);
         autoCreated = true;
       }
 
-      // 数据登记：更新或新建 stats 并关联内容
-      const existing = stats.find(s => s.platform === platform && s.date === normDate);
-      const newStat = { platform, date: normDate, title: title || content.title, views, completionRate: completion, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: content.id };
-      if (existing) Object.assign(existing, newStat);
+      // 数据登记：按关联内容匹配（同一内容重导入时覆盖更新，不同内容互不影响）；占位标题仅按 contentId 匹配（新内容无旧记录 → 新建）
+      const existing = !titleEmpty
+        ? stats.find(s => s.contentId == content.id || s.contentId == Number(content.id) || (s.platform === platform && s.date === normDate && (s.title || '').trim() === normTitle))
+        : stats.find(s => s.contentId == content.id || s.contentId == Number(content.id));
+      const newStat = { platform, date: normDate, title: normTitle || content.title, views, completionRate: completion, avgWatch, recommend, likes, comments, favorites, shares, followers, contentId: content.id };
+      if (existing) {
+        // 检测「同日期同标题但数据不同」：后一条会覆盖前一条，收集起来提醒用户知情（重复导入同一文件数据相同 → 不提醒）
+        const dataKeys = ['views', 'completionRate', 'avgWatch', 'recommend', 'likes', 'comments', 'favorites', 'shares', 'followers'];
+        const norm = v => (v === null || v === undefined || v === '') ? null : Number(v);
+        const differs = dataKeys.some(k => norm(existing[k]) !== norm(newStat[k]));
+        if (differs) overwriteWarnings.push(normDate + ' · ' + platform + '「' + content.title + '」');
+        Object.assign(existing, newStat);
+      }
       else stats.push({ id: Date.now() + Math.random(), ...newStat });
       parsedCount++;
       if (autoCreated) contentCreatedCount++;
@@ -616,16 +641,17 @@ async function parseTableRows(rows, type, platform) {
         const v = idx >= 0 ? cells[idx] : '';
         ai[eng] = isYesValue(v);
       });
-      // 内容登记：无已登记内容时自动登记
-      let content = contents.find(c => c.platform === platform && c.createdAt === normDate);
+      // 内容登记：优先按「平台+日期+标题」匹配；无已登记内容时自动登记（标题优先取表格作品名）
+      const artTitle = (colTitle >= 0 ? String(cells[colTitle] || '').trim() : '') || ('文书 ' + platform + ' ' + normDate);
+      let content = contents.find(c => c.platform === platform && c.createdAt === normDate && (c.title || '').trim() === artTitle);
       let autoCreated = false;
       if (!content) {
-        content = { id: Date.now() + Math.random(), title: '文书 ' + platform + ' ' + normDate, platform, topic: '', url: '', createdAt: normDate };
+        content = { id: Date.now() + Math.random(), title: artTitle, platform, topic: '', url: '', createdAt: normDate };
         contents.push(content);
         autoCreated = true;
         contentCreatedCount++;
       }
-      const existing = aiStats.find(s => s.platform === platform && s.date === normDate);
+      const existing = aiStats.find(s => s.contentId == content.id || s.contentId == Number(content.id) || (s.platform === platform && s.date === normDate && (s.title || '').trim() === artTitle));
       if (existing) { existing.ai = ai; existing.contentId = content.id; }
       else aiStats.push({ id: Date.now() + Math.random(), platform, date: normDate, title: content.title, ai, contentId: content.id });
       parsedCount++;
@@ -642,7 +668,7 @@ async function parseTableRows(rows, type, platform) {
     + countCorruptRecords(stats.slice(startS), ['title', 'platform'])
     + countCorruptRecords(aiStats.slice(startA), ['title', 'platform']);
   if (newCorrupt > 0) showToast('⚠️ 本次解析出 ' + newCorrupt + ' 条乱码记录：源表格可能不是 UTF-8 编码，建议改用 xlsx 或另存为 UTF-8 再导入');
-  return { parsedCount, contentCreatedCount, results };
+  return { parsedCount, contentCreatedCount, results, overwriteWarnings };
 }
 
 function showParserResult(result, type) {
@@ -651,7 +677,16 @@ function showParserResult(result, type) {
   if (result.parsedCount > 0) {
     const createdInfo = result.contentCreatedCount > 0 ? `（含自动登记内容 ${result.contentCreatedCount} 条）` : '';
     resultDiv.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">✅ 成功处理 ${result.parsedCount} 条数据${createdInfo}</div>${result.results.join('')}`;
-    showToast(`解析完成：${result.parsedCount} 条数据` + (result.contentCreatedCount ? ` + 新登记 ${result.contentCreatedCount} 条内容` : ''));
+    const warns = result.overwriteWarnings || [];
+    if (warns.length > 0) {
+      // 同日期同标题但数据不同：已用后一条覆盖，明确提醒用户知情
+      const list = warns.slice(0, 5).join('、');
+      const more = warns.length > 5 ? ` 等共 ${warns.length} 条` : '';
+      resultDiv.innerHTML += `<div style="font-size:12px;color:var(--red);font-weight:600;margin-top:10px;">⚠️ ${warns.length} 条「同日期同标题但数据不同」已用后一条覆盖：${list}${more}<br><span style="font-weight:400;color:var(--text3);">若这些是互不相同的作品，请先在内容登记里改标题区分后再导入。</span></div>`;
+      showToast(`⚠️ 有 ${warns.length} 条同标题不同数据被覆盖`);
+    } else {
+      showToast(`解析完成：${result.parsedCount} 条数据` + (result.contentCreatedCount ? ` + 新登记 ${result.contentCreatedCount} 条内容` : ''));
+    }
     render();
   } else {
     resultDiv.innerHTML = `<div style="font-size:13px;color:var(--red);">❌ 未解析到有效数据，请检查表头是否包含日期列、数据表是否与所选平台匹配</div>`;
@@ -777,8 +812,8 @@ function getFilteredContents() {
   // Apply platform filter（具体平台名）
   if (contentFilterType && ALL_PLATFORMS.includes(contentFilterType)) filtered = filtered.filter(c => c.platform === contentFilterType);
 
-  // 播放量排序：排除文书平台，只显示视频内容并按播放量排序（无数据排最后）
-  if (contentSortByViews === 'desc' || contentSortByViews === 'asc') {
+  // 播放量排序：仅短视频工作台启用（文书工作台无播放量指标，且残留排序态不会把文书内容过滤为空）
+  if ((contentSortByViews === 'desc' || contentSortByViews === 'asc') && workspace === 'video') {
     filtered = filtered.filter(c => isVideo(c.platform));
     const viewOf = c => {
       const s = stats.find(x => x.contentId == c.id || x.contentId == Number(c.id) || (x.platform === c.platform && x.date === c.createdAt));
@@ -891,8 +926,10 @@ function renderContentItem(c) {
     </div>`;
   if (c.url) {
     const safeLink = safeUrl(c.url);
-    const urlHtml = highlightText(c.url, kw);
-    leftHtml += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer">${c.url.length > 50 ? urlHtml.slice(0,50)+'...' : urlHtml}</a></div>`;
+    // 按码点安全截断（避免切断多字节字符或高亮 span 标签造成残缺 HTML）
+    const shortUrl = c.url.length > 50 ? Array.from(c.url).slice(0, 50).join('') + '…' : c.url;
+    const urlHtml = highlightText(shortUrl, kw);
+    leftHtml += `<div class="content-url"><span style="color:var(--text2);">链接：</span><a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer">${urlHtml}</a></div>`;
   }
   // 最后一行：日期在前，选题在后（同一行同字号）
   leftHtml += `<div class="content-meta">${c.createdAt || ''}${c.topic ? `<span class="meta-topic"><span style="color:var(--text2);">· 选题：</span>${topicHtml}</span>` : ''}</div>`;

@@ -10,12 +10,13 @@ function renderOverview() {
   </div><button class="btn-today" onclick="goOverviewThisMonth()">本月</button></div>`;
 
   // 总览统计（以登记为准，条数累计制）
-  const monthContents = contents.filter(c => c.createdAt.startsWith(monthStr));
+  // 日期可能缺失（旧数据/手改 JSON），统一用 (x || '') 防护避免整页崩溃
+  const monthContents = contents.filter(c => (c.createdAt || '').startsWith(monthStr));
   const vDone = monthContents.filter(c => isVideo(c.platform)).length;
   const aDone = monthContents.filter(c => isArticle(c.platform)).length;
 
   // 视频平台数据汇总（与数据复盘页同口径：总发布数/总播放量/总点赞/总评论/总收藏/总涨粉）
-  const monthVideoStats = stats.filter(s => s.date.startsWith(monthStr) && isVideo(s.platform));
+  const monthVideoStats = stats.filter(s => (s.date || '').startsWith(monthStr) && isVideo(s.platform));
   const monthViews = monthVideoStats.reduce((sum, s) => sum + (s.views || 0), 0);
   const monthLikes = monthVideoStats.reduce((sum, s) => sum + (s.likes || 0), 0);
   const monthComments = monthVideoStats.reduce((sum, s) => sum + (s.comments || 0), 0);
@@ -23,7 +24,7 @@ function renderOverview() {
   const monthFollowers = monthVideoStats.reduce((sum, s) => sum + (s.followers || 0), 0);
 
   // 文书平台数据汇总（与数据复盘页同口径：总发布数 / AI收录数(x/y) / AI收录率）
-  const monthAiStats = aiStats.filter(s => s.date.startsWith(monthStr));
+  const monthAiStats = aiStats.filter(s => (s.date || '').startsWith(monthStr));
   let aiChecked = 0, aiPossible = 0;
   monthAiStats.forEach(s => { AI_ENGINES.forEach(ai => { aiPossible++; if (s.ai && s.ai[ai]) aiChecked++; }); });
   const aiRate = aiPossible > 0 ? Math.round(aiChecked / aiPossible * 100) : 0;

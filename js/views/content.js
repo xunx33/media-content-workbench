@@ -28,7 +28,7 @@ function renderContent() {
             ${ARTICLE_PLATFORMS.map(p => `<option value="${p}" ${contentFilterType === p ? 'selected' : ''}>${p}</option>`).join('')}
           </optgroup>`}
     </select>
-    <span class="filter-pill sort-views ${contentSortByViews === 'desc' ? 'active-desc' : contentSortByViews === 'asc' ? 'active-asc' : ''}" onclick="toggleSortViews()">${contentSortByViews === 'desc' ? '播放量 ↓' : contentSortByViews === 'asc' ? '播放量 ↑' : '播放量'}</span>
+    ${workspace === 'video' ? `<span class="filter-pill sort-views ${contentSortByViews === 'desc' ? 'active-desc' : contentSortByViews === 'asc' ? 'active-asc' : ''}" onclick="toggleSortViews()">${contentSortByViews === 'desc' ? '播放量 ↓' : contentSortByViews === 'asc' ? '播放量 ↑' : '播放量'}</span>` : ''}
   </div>`;
 
   // 列表折叠区（可收起/展开）

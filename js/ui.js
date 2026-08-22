@@ -82,14 +82,16 @@ async function saveContent() {
       const oldKeyOnly = contents.filter(x => x.platform === oldPlatform && x.createdAt === oldDate).length === 1;
       c.title = title; c.platform = platform; c.topic = topic; c.url = url; c.createdAt = date; savedId = c.id;
       // 同步关联统计表副本（标题/平台/日期跟随内容变更，避免导出/复盘读到旧平台旧日期）
-      // contentId 精确关联必跟随；旧「平台+日期」兜底关联：标题跟随，平台/日期仅当该旧键唯一时跟随（防止误移走同键其他内容的记录）
+      // contentId 精确关联必跟随；旧「平台+日期」兜底关联：仅当该旧键唯一时可归属（防止误改同键其他内容的记录）
       let statChanged = false;
       const follow = s => {
         const byContentId = s.contentId == c.id || s.contentId == Number(c.id);
         const byOldKey = s.platform === oldPlatform && s.date === oldDate;
         if (!byContentId && !byOldKey) return;
+        // 旧键不唯一时无法确认归属，跳过该记录（其属于另一条内容，标题/平台/日期都不应被改动）
+        if (!byContentId && !oldKeyOnly) return;
         s.title = title;
-        if (byContentId || (oldKeyOnly && byOldKey)) { s.platform = platform; s.date = date; }
+        s.platform = platform; s.date = date;
         statChanged = true;
       };
       stats.forEach(follow);
@@ -97,7 +99,7 @@ async function saveContent() {
       if (statChanged) { await saveData('stats', stats); await saveData('aiStats', aiStats); }
     }
   } else {
-    savedId = Date.now();
+    savedId = Date.now() + Math.random();
     contents.push({ id: savedId, title, platform, topic, url, createdAt: date });
   }
   await saveData('contents', contents); closeModal();

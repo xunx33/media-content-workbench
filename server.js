@@ -10,6 +10,9 @@ const path = require('path');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
+// 安全：默认仅本机可访问（绑定 127.0.0.1），避免局域网内任意设备读写数据 / 窃取 LLM 配置。
+// 需要手机 / 局域网访问时，以环境变量 MCB_LAN=1 启动才会监听所有网卡。
+const HOST = process.env.MCB_LAN === '1' ? undefined : '127.0.0.1';
 const DATA_DIR = path.join(__dirname, 'data');
 
 // 首次启动自动创建数据目录
@@ -170,6 +173,10 @@ const server = http.createServer(async (req, res) => {
 
     // 静态文件白名单：仅允许页面入口、资源目录（css/js/icons）与固定文件，
     // 防止通过 URL 直接下载项目源码（如 /server.js、/tests/、/package.json 等）
+    // 先拒绝含路径穿越片段（..）的 URL，避免 /js/../server.js 之类绕过下方前缀白名单
+    if (url.split('/').includes('..')) {
+      res.writeHead(403); res.end('Forbidden'); return;
+    }
     const allowed =
       url === '/' || url === '/index.html' ||
       url === '/manifest.webmanifest' || url === '/sw.js' ||
@@ -220,10 +227,24 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error('==============================================');
+    console.error(`✗ 端口 ${PORT} 已被占用`);
+    console.error(`  若已是本工作台在运行：直接访问 http://localhost:${PORT}`);
+    console.error(`  否则换端口启动：set PORT=3001 再启动`);
+    console.error('==============================================');
+    process.exit(1);
+  }
+  console.error('服务器错误:', err && err.message);
+  process.exit(1);
+});
+
+server.listen(PORT, HOST, () => {
+  const addr = HOST ? `http://localhost:${PORT}` : `http://<电脑IP>:${PORT}（局域网模式 MCB_LAN=1）`;
   console.log('==============================================');
   console.log(`✓ 新媒体数据工作台服务已启动`);
-  console.log(`✓ 访问地址: http://localhost:${PORT}`);
+  console.log(`✓ 访问地址: ${addr}`);
   console.log(`✓ 数据存储: ${DATA_DIR}`);
   console.log(`✓ 关闭服务: Ctrl+C`);
   console.log('==============================================');

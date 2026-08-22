@@ -429,6 +429,7 @@ function buildOverviewReviewData(range) {
 }
 
 let __overviewAiBusy = false;
+let __aiReviewCompleted = false;   // 本次分析是否已拿到结果（已完成后取消不再退款）
 // 各分析对象的 AI 数据总结分析结果相互独立（视频/文书分开保存），切换不串扰、不清空
 const __aiReviewReplies = {};
 function aiReviewReply() { return __aiReviewReplies[__aiReviewTarget] || ''; }
@@ -515,6 +516,7 @@ async function runOverviewAiReview() {
   const monthsText = months > 0 ? '账号已运营 ' + months + ' 个月' : '未填写账号运营时长';
   __overviewAiBusy = true;
   __aiReviewController = new AbortController();
+  __aiReviewCompleted = false;
   if (out) out.innerHTML = '<div class="llm-loading"><span>正在按「' + range.label + '」对' + (ws === 'video' ? '视频平台' : '文书平台') + '进行 AI 数据总结分析...</span><span class="llm-loading-hint">预计需要1-3分钟（内容量大小），请稍候。</span></div>';
   // 在操作区域显示取消按钮
   const actionsEl = document.getElementById('overviewAiActions');
@@ -529,6 +531,7 @@ async function runOverviewAiReview() {
       { role: 'system', content: buildAiReviewSystemPrompt(range.label, monthsText) },
       { role: 'user', content: '以下是 ' + range.label + ' 导出的数据表：\n\n' + buildOverviewReviewData(range) }
     ], __aiReviewController.signal);
+    __aiReviewCompleted = true;
     __aiReviewReplies[ws] = reply;
     // 检查 DOM 是否存在（可能已切换 tab 再切回，元素已重建）
     if (document.getElementById('overviewAiOutput')) {
@@ -557,6 +560,8 @@ async function runOverviewAiReview() {
 function cancelAiReview() {
   if (__aiReviewController) { __aiReviewController.abort(); __aiReviewController = null; }
   __overviewAiBusy = false;
+  // 未拿到结果前取消 → 退还本次额度（已完成后取消则不退，避免重复退款）
+  if (!__aiReviewCompleted) llmQuotaRefund('review');
   __aiReviewReplies[__aiReviewTarget] = '';
   const out = document.getElementById('overviewAiOutput');
   if (out) out.innerHTML = '<div class="llm-error" style="color:var(--text3);">已取消运行</div>';
@@ -648,7 +653,8 @@ async function generateAiVideoCopy() {
   
   const cfg = llmConfig || {};
   if (!cfg.baseUrl || !cfg.apiKey || !cfg.model) { showToast('请先在「大模型配置」页面配置 AI 接口'); return; }
-  if (!llmQuotaConsume('chat')) { showToast('今日 AI 生成视频描述额度已用尽，明天再来'); return; }
+  if (!__llmQuotaLoaded) await loadLlmQuota();
+  if (llmQuotaRemaining('chat') <= 0) { showToast('今日 AI 生成视频描述额度已用尽，明天再来'); return; }
   
   __aiCopyLoading = true;
   __aiCopyResult = null;
@@ -657,6 +663,8 @@ async function generateAiVideoCopy() {
   // 在操作区域显示取消按钮
   const actionsEl = document.getElementById('aiCopyActions');
   if (actionsEl) actionsEl.innerHTML = '<button class="btn-cancel" onclick="cancelAiCopy()">取消</button>';
+  // 扣减额度（等请求真正开始前计数，失败时下方 llmQuotaRefund 退还）
+  await llmQuotaConsume('chat');
 
   try {
     const systemPrompt = buildVideoCopyPrompt(platform, topic, selling);
@@ -684,7 +692,6 @@ async function generateAiVideoCopy() {
   if (actionsEl2 && actionsEl2.querySelector('.btn-cancel')) {
     actionsEl2.innerHTML = '<button class="btn-save" onclick="generateAiVideoCopy()">AI 生成描述</button>';
   }
-  refreshQuota();
   const qEl = document.getElementById('aiCopyQuota');
   if (qEl) qEl.textContent = '今日 AI 生成视频描述剩余 ' + llmQuotaRemaining('chat') + ' 次';
 }
